@@ -1,16 +1,19 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 22-10-2013
+ #DATE: 18-01-2016
  #PACKAGE: apm-gui
  #DESCRIPTION: APM - Alpatech Package Manager
- #VERSION: 2.4beta
- #CHANGELOG: 22-10-2013 : Autenticazione.
+ #VERSION: 2.7beta
+ #CHANGELOG: 18-01-2015 : Bug fix repository.
+			 16-03-2015 : Possibilità di aggiornare subito i pacchetti senza bisogno di premere il tasto aggiorna.
+			 14-03-2015 : Possibilità di installare pacchetti specificando l'argomento installpackages.
+			 22-10-2013 : Autenticazione.
 			 27-04-2013 : Some bug fixes and auto-upload on start-up.
 			 05-02-2013 : Bug fix on check depends.
 			 01-12-2012 : Bug fix.
@@ -71,6 +74,9 @@ for($c=0; $c < count($packages); $c++)
  $bySections[$p['section']][] = $p;
 }
 asort($bySections);
+
+$_INSTALL_PACKAGES = $_REQUEST['installpackages'];	/* packages separated by comma "," */
+$_AUTOUPDATE = $_REQUEST['autoupdate'] ? true : false;
 
 ?>
 <html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8"><title>Alpatech Package Manager</title>
@@ -197,9 +203,13 @@ marked['to_be_upgrade'] = new Array();
 marked['to_be_install'] = new Array();
 marked['to_be_reinstall'] = new Array();
 
+var INSTALL_PACKAGES = "<?php echo $_INSTALL_PACKAGES; ?>";
+var AUTO_UPDATE = <?php echo $_AUTOUPDATE ? 'true' : 'false'; ?>;
+var RETURN_SUCCESS = false;
+
 function widget_apm_close()
 {
- gframe_close("done!");
+ gframe_close("done!", RETURN_SUCCESS);
 }
 
 function bodyOnLoad()
@@ -215,7 +225,24 @@ function bodyOnLoad()
 	close: function(){$('#packageproperty-form').dialog('close');}
 	});
 
- _apmUpdate();
+ if(INSTALL_PACKAGES)
+ {
+  _apmUpdate(function(){
+	 _apmUpgrade(function(){
+		 _apmActionApply();
+		});
+	});
+ }
+ else if(AUTO_UPDATE)
+ {
+  _apmUpdate(function(){
+	 _apmUpgrade(function(){
+		 _apmActionApply();
+		});
+	});
+ }
+ else
+  _apmUpdate();
 }
 
 function _apmPopUpClose()
@@ -244,6 +271,7 @@ function _apmSelectRow(r)
  if(!r.data)
  {
   var sh = new GShell();
+  sh.OnError = function(err){alert(err);}
   sh.OnOutput = function(o,a){
 	 r.data = a;
 	 document.getElementById('packagedescription').innerHTML = "<h4><?php echo i18n('Package description'); ?>: "+a['name']+"</h4>"+a['description'];
@@ -290,6 +318,7 @@ function _apmPkgMenu(td)
 function _apmPkgProperty(pkg)
 {
  var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
  sh.OnOutput = function(o,a){
 	 if(!a) return;
 	 document.getElementById('package_name').innerHTML = a['name'];
@@ -447,7 +476,7 @@ function _apmActionApply()
   params+= (c>0 ? "," : "&tobereinstall=")+marked['to_be_reinstall'][c];
  
  var sh = new GShell();
- sh.OnFinish = function(){
+ sh.OnFinish = function(o,retA){
 	 // update package status //
 	 var a = new Array('uninstall','remove','upgrade','install','reinstall');
 	 var s = new Array('available','available','installed','installed','installed');
@@ -469,11 +498,12 @@ function _apmActionApply()
 	  }
 	  marked['to_be_'+a[c]] = new Array();
 	 }
+	 RETURN_SUCCESS = retA;
 	}
  sh.sendCommand("gframe -f apm.process --fullspace -params "+params.substr(1,params.length-1));
 }
 
-function _apmUpdateList()
+function _apmUpdateList(callback)
 {
  var sec = document.getElementById('section').value;
  var act = new Array('uninstall','remove','upgrade','install','reinstall');
@@ -482,13 +512,21 @@ function _apmUpdateList()
  var infobox = document.getElementById('infobox-message');
 
  var sh = new GShell();
+ sh.OnError = function(err){
+	 infobox.style.display = "none";
+	 alert(err);
+	}
+
  sh.OnOutput = function(o,a){
 	 infobox.style.display = "none"; 
 	 var tb = document.getElementById('packagelist');
 	 while(tb.rows.length > 1)
 	  tb.deleteRow(1);
 	 if(!a || !a.length)
+	 {
+	  if(callback) return callback();
 	  return;
+	 }
 	 for(var c=0; c < a.length; c++)
 	 {
 	  var p = a[c];
@@ -519,21 +557,27 @@ function _apmUpdateList()
 	  var td = r.insertCell(-1); td.className = "pkgver"; td.innerHTML = p['version'];
 	  var td = r.insertCell(-1); td.className = "pkgver"; td.innerHTML = p['installed_version'];
 	 }
+	 if(callback) return callback();
 	}
  sh.sendCommand("gpkg list"+(sec != "all" ? " -section '"+sec+"'" : ""));
 }
 
-function _apmUpdate()
+function _apmUpdate(callback)
 {
  var infobox = document.getElementById('infobox-message');
  infobox.getElementsByTagName('SPAN')[0].innerHTML = "Updating package list. Please wait!";
  infobox.style.display = "";
 
  var sh = new GShell();
+ sh.OnError = function(err){
+	 infobox.style.display = "none";
+	 alert(err);
+	}
  sh.OnOutput = function(o,a){
 	 if(!a)
 	 {
-	  infobox.style.display = "none"; 
+	  infobox.style.display = "none";
+	  if(callback) return callback();
 	  return;
 	 }
 	 var sel = document.getElementById('section');
@@ -549,26 +593,31 @@ function _apmUpdate()
 	   sel.appendChild(opt);
 	  }
 	  sel.options[0].selected = true;
-	  _apmUpdateList();
+	  _apmUpdateList(callback);
 	 }
 	 else
-	  infobox.style.display = "none"; 
+	  infobox.style.display = "none";
 	}
  sh.sendCommand("apm update");
-
 }
 
-function _apmUpgrade()
+function _apmUpgrade(callback)
 {
  var infobox = document.getElementById('infobox-message');
  infobox.getElementsByTagName('SPAN')[0].innerHTML = "Check for packages updates.<br/"+">Please wait!";
  infobox.style.display = "";
 
  var sh = new GShell();
+ sh.OnError = function(err){
+	 infobox.style.display = "none";
+	 alert(err);
+	}
+
  sh.OnOutput = function(o,a){
 	 if(!a)
 	 {
-	  infobox.style.display = "none"; 
+	  infobox.style.display = "none";
+	  if(callback) return callback(); 
 	  return;
 	 }
 	 if(a['outdated'])
@@ -583,14 +632,48 @@ function _apmUpgrade()
 	   r.cells[0].setAttribute('action','upgrade');
 	   r.cells[0].getElementsByTagName('IMG')[0].src = BASE_PATH+"share/widgets/apm/icons/"+icons['upgrade'];
 	  }
+
+	  if(INSTALL_PACKAGES)
+	  {
+	   var tmp = INSTALL_PACKAGES.split(",");
+	   for(var c=0; c < tmp.length; c++)
+	   {
+	    _apmPkgSelect(tmp[c],"install");
+	    packages+= ","+tmp[c];
+	    var r = apm_getRowById(document.getElementById('packagelist'),'pkg-'+tmp[c]);
+	    if(!r) continue;
+	    r.cells[0].setAttribute('action','install');
+	    r.cells[0].getElementsByTagName('IMG')[0].src = BASE_PATH+"share/widgets/apm/icons/"+icons['install'];
+	   }
+   	  }
+
 	  document.getElementById('apmmainmenu').rows[0].cells[2].getElementsByTagName('IMG')[0].src = BASE_PATH+"share/widgets/apm/icons/apply.png";
 	  document.getElementById('apmmainmenu').rows[0].cells[2].setAttribute('enabled','true');
 	  document.getElementById('apply-btn').style.visibility='visible';
-	  _apmResolveDepends(packages.substr(1));
+	  _apmResolveDepends(packages.substr(1),callback);
+	 }
+	 else if(INSTALL_PACKAGES)
+	 {
+	  var tmp = INSTALL_PACKAGES.split(",");
+	  var packages = "";
+	  for(var c=0; c < tmp.length; c++)
+	  {
+	   _apmPkgSelect(tmp[c],"install");
+	   packages+= ","+tmp[c];
+	   var r = apm_getRowById(document.getElementById('packagelist'),'pkg-'+tmp[c]);
+	   if(!r) continue;
+	   r.cells[0].setAttribute('action','install');
+	   r.cells[0].getElementsByTagName('IMG')[0].src = BASE_PATH+"share/widgets/apm/icons/"+icons['install'];
+	  }
+	  document.getElementById('apmmainmenu').rows[0].cells[2].getElementsByTagName('IMG')[0].src = BASE_PATH+"share/widgets/apm/icons/apply.png";
+	  document.getElementById('apmmainmenu').rows[0].cells[2].setAttribute('enabled','true');
+	  document.getElementById('apply-btn').style.visibility='visible';
+	  _apmResolveDepends(packages.substr(1), callback);
 	 }
 	 else
 	 {
 	  infobox.style.display = "none"; 
+	  if(callback) return callback();
 	  alert("<?php echo i18n('All packages are already updated to latest version'); ?>");
 	 }
 	}
@@ -605,14 +688,20 @@ function _apmFind()
 function _apmSettings()
 {
  var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
  sh.OnOutput = function(){_apmUpdate();}
  sh.sendCommand("gframe -f apm.settings --fullspace");
 }
 
-function _apmResolveDepends(packages)
+function _apmResolveDepends(packages, callback)
 {
  var infobox = document.getElementById('infobox-message');
  var sh = new GShell();
+ sh.OnError = function(err){
+	 infobox.style.display = "none";
+	 alert(err);
+	}
+
  sh.OnOutput = function(o,a){
 	 infobox.style.display = "none"; 
 	 if(!a)
@@ -630,6 +719,7 @@ function _apmResolveDepends(packages)
 	  document.getElementById('apmmainmenu').rows[0].cells[2].setAttribute('enabled','false');
 	  document.getElementById('apply-btn').style.visibility='hidden';
 
+	  if(callback) return callback();
 	  return;
 	 }
 
@@ -645,7 +735,8 @@ function _apmResolveDepends(packages)
 		 }
 		}
 	  for(var c=0; c < a['UNAVAILABLE'].length; c++)
-	   sh2.sendCommand("gpkg reverse-check-depends -package `"+a['UNAVAILABLE'][c]+"`");	  
+	   sh2.sendCommand("gpkg reverse-check-depends -package `"+a['UNAVAILABLE'][c]+"`");
+	  if(callback) return callback();
 	  return;
 	 }
 
@@ -682,6 +773,7 @@ function _apmResolveDepends(packages)
 	   r.cells[0].getElementsByTagName('IMG')[0].src = BASE_PATH+"share/widgets/apm/icons/"+icons['install'];
 	  }
 	 }
+	 if(callback) return callback();
 	}
 
  sh.sendCommand("apmgui resolve `"+packages+"`");

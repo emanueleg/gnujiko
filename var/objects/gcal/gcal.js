@@ -38,6 +38,9 @@ function GCal()
  this.O.style.position = "absolute";
  this.O.style.display = "block";
 
+ this.O.onmouseover = function(){this.mouseOverCalendar=true;}
+ this.O.onmouseout = function(){this.mouseOverCalendar=false;}
+
  this.months = new Array("Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre");
 
  this.date = new Date();
@@ -63,6 +66,13 @@ GCal.prototype.Show = function(obj, date, correctX, correctY)
 
  this.O.style.top = xy.y + obj.offsetHeight;
  this.O.style.left = (xy.x + Math.floor(obj.offsetWidth/2)) - Math.floor(this.O.offsetWidth/2);
+ if(!correctX && !correctY)
+ {
+  var screenWidth = window.innerWidth ? window.innerWidth : document.body.clientWidth;
+  //var screenHeight = window.innerHeight ? window.innerHeight : document.body.clientHeight;
+  if((parseFloat(this.O.style.left)+this.O.offsetWidth) > screenWidth)
+   this.O.style.left = screenWidth - this.O.offsetWidth;
+ }
  this.O.style.visibility = "visible";
 
  var r = this.O.getElementsByTagName('TABLE')[0].rows[0];
@@ -76,8 +86,10 @@ GCal.prototype.Show = function(obj, date, correctX, correctY)
  this.Update();
 }
 
-GCal.prototype.Hide = function()
+GCal.prototype.Hide = function(forced)
 {
+ if(this.O.mouseOverCalendar && !forced)
+  return;
  this.O.style.visibility = "hidden";
 }
 
@@ -133,7 +145,7 @@ GCal.prototype._daySelect = function(td)
  this.date.setFromISO(td.id);
  if(this.OnChange)
   this.OnChange(this.date);
- this.Hide();
+ this.Hide(true);
 }
 
 GCal.prototype.getObjectPosition = function(e)

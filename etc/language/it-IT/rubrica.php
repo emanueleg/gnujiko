@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 13-02-2013
+ #DATE: 02-10-2014
  #PACKAGE: rubrica-language-pack-it
  #DESCRIPTION: Italian translation file for Rubrica
- #VERSION: 2.3beta
- #CHANGELOG:
+ #VERSION: 2.5beta
+ #CHANGELOG: 02-10-2014 : Integrazione con i soci.
+			 10-12-3013 : Integrazione con gli agenti.
  #TODO:
  
 */
@@ -58,6 +59,7 @@ $_DICTIONARY['Customer info'] = "Scheda cliente";
 $_DICTIONARY['Vendor info'] = "Scheda fornitore";
 $_DICTIONARY['Shipper info'] = "Scheda trasportatore";
 $_DICTIONARY['Agent info'] = "Scheda agente";
+$_DICTIONARY['Member info'] = "Scheda socio";
 $_DICTIONARY['Employee/Collaborator'] = "Dipendente/Collaboratore";
 $_DICTIONARY['Contact info'] = "Scheda contatto";
 $_DICTIONARY['Details'] = "Dettagli";
@@ -98,6 +100,14 @@ $_DICTIONARY['BANK'] = "Banca";
 $_DICTIONARY['HOLDER'] = "Intestatario";
 $_DICTIONARY['IBAN'] = "IBAN";
 $_DICTIONARY['Holder:'] = "Intestatario:";
+$_DICTIONARY['Fidelity card number'] = "Cod. Fidelity Card";
+$_DICTIONARY['Agent'] = "Agente";
+$_DICTIONARY['Member'] = "Socio";
+$_DICTIONARY['Boss Agent'] = "Agente Capo";
+$_DICTIONARY['Referrers'] = "Riferimenti";
+$_DICTIONARY['Name and Surname'] = "Nome e Cognome";
+$_DICTIONARY['Type of ref.'] = "Tipo di rif.";
+
 
 /* share/widgets/rubrica/rubrica.js */
 $_DICTIONARY['Are you sure you want to delete this contact?'] = "Sei sicuro di voler eliminare questo contatto?";

@@ -1,0 +1,53 @@
+div.riba-form {
+	background: #ffffff;
+	border: 1px solid #d8d8d8;
+	border-radius: 1px;
+	padding: 3px;
+	text-align: left;
+}
+
+div.riba-form-header {
+	background: #0169c9;
+	height: 24px;
+	font-family: Arial, sans-serif;
+	font-size: 13px;
+	color: #ffffff;
+	padding-left: 5px;
+	line-height: 24px;
+}
+
+div.riba-form-body {
+	height: 220px;
+	padding: 10px;
+}
+
+div.riba-form-body td {
+	font-family: Arial, sans-serif;
+	font-size: 12px;
+}
+
+div.riba-form-footer {
+	border-top: 1px solid #d8d8d8;
+	height: 30px;
+	padding-top: 3px;
+}
+
+span.company-name {
+	font-family: Arial, sans-serif;
+	font-size: 16px;
+	color: #000;
+}
+
+span.company-addr {
+	font-family: Arial, sans-serif;
+	font-size: 12px;
+	color: #666;
+}
+
+span.company-vatnum {
+	font-family: Arial, sans-serif;
+	font-size: 10px;
+	color: #333;
+	font-weight: bold;
+}
+

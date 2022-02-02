@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 25-05-2013
+ #DATE: 05-02-2016
  #PACKAGE: gnujiko-base
  #DESCRIPTION: Register environment variable
- #VERSION: 2.1beta
- #CHANGELOG: 25-05-2013 : Aggiunto parametro -time per impostare il termine della scadenza.
+ #VERSION: 2.2beta
+ #CHANGELOG: 05-02-2016 : Bug fix sui cookies.
+			 25-05-2013 : Aggiunto parametro -time per impostare il termine della scadenza.
  #TODO:
  
 */
@@ -34,12 +35,12 @@ function shell_export($args, $sessid)
 	 $val = trim($x[1]);
 	 if($val)
 	 {
-	  setcookie($var,$val,strtotime("+".$time));
+	  setcookie($var,$val,strtotime("+".$time),"/");
 	  $output.= "Variable has been registered: $var=$val\n";
 	 }
 	 else
 	 {
-	  setcookie($var,false);
+	  setcookie($var,false,strtotime("+".$time),"/");
 	  $output.= "Variable $var has been removed!\n";
 	 }
 	 $var = null;
@@ -51,12 +52,12 @@ function shell_export($args, $sessid)
  {
   if($val)
   {
-   setcookie($var,$val,strtotime("+1 week"));
+   setcookie($var,$val,strtotime("+".$time),"/");
    $output.= "Variable $var has been registered\n";
   }
   else
   {
-   setcookie($var,false);
+   setcookie($var,false,strtotime("+".$time),"/");
    $output.= "Variable $var has been removed!\n";
   }
  }

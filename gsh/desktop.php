@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 30-05-2013
+ #DATE: 24-10-2016
  #PACKAGE: gnujiko-desktop-base
  #DESCRIPTION: Gnujiko Desktop 
- #VERSION: 2.0beta
- #CHANGELOG: 30-05-2013 : Aggiunto html_contents nei moduli e ovviamente nella tabella gnujiko_desktop_modules
+ #VERSION: 2.2beta
+ #CHANGELOG: 24-10-2016 : MySQLi integration.
+			 30-05-2013 : Aggiunto html_contents nei moduli e ovviamente nella tabella gnujiko_desktop_modules
  #DEPENDS:
  #TODO:
  
@@ -96,7 +97,7 @@ function desktop_newPage($args, $sessid, $shellid)
  }
  $db->RunQuery("INSERT INTO gnujiko_desktop_pages(uid,gid,_mod,name,section_type,section_xml_params,ordering) VALUES('"
 	.$uid."','$gid','$mod','".$db->Purify($name)."','".$sectionType."','".$db->Purify($sectionParams)."','$ordering')");
- $id = mysql_insert_id();
+ $id = $db->GetInsertId();
  $db->Close();
  $outArr = array('id'=>$id,'name'=>$name,'ordering'=>$ordering);
  $out = "done!";
@@ -348,7 +349,7 @@ function desktop_addModule($args, $sessid, $shellid)
  $db->RunQuery("INSERT INTO gnujiko_desktop_modules(uid,gid,_mod,page_id,module_name,module_title,section_id,xml_params,ordering,html_contents,css,javascript) VALUES('"
 	.$uid."','".$gid."','".$mod."','".$pageId."','".$name."','".$db->Purify($title)."','".$sectionId."','".$db->Purify($params)."','".$ordering."','"
 	.$db->Purify($htmlContents)."','".$db->Purify($cssContents)."','".$db->Purify($jsContents)."')");
- $id = mysql_insert_id();
+ $id = $db->GetInsertId();
  $db->Close();
  $outArr = array('id'=>$id,'page_id'=>$pageId,'name'=>$name,'title'=>$title,'section_id'=>$sectionId,'ordering'=>$ordering);
  $out = "done!";
@@ -623,7 +624,7 @@ function desktop_connect($args, $sessid, $shellid)
  $db = new AlpaDatabase();
  $db->RunQuery("INSERT INTO gnujiko_desktop_connections(page_id,mod_src,port_src,mod_dest,port_dest) VALUES('".$pageId."','"
 	.$srcMod."','".$srcPort."','".$destMod."','".$destPort."')");
- $id = mysql_insert_id();
+ $id = $db->GetInsertId();
  $db->Close();
 
  $out.= "done!";

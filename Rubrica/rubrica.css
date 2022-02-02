@@ -1,0 +1,11 @@
+span.label {
+ padding: 3px;
+ margin-top: 3px;
+ margin-right: 3px;
+ font-family: arial, sans-serif;
+ font-size: 8px;
+ font-weight: bold;
+ border-radius: 3px;
+ white-space: nowrap;
+ float: left;
+}

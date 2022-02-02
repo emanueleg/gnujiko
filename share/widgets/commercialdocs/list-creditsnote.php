@@ -1,16 +1,20 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 13-01-2013
+ #DATE: 26-10-2014
  #PACKAGE: gcommercialdocs
  #DESCRIPTION: Credits note list
- #VERSION: 2.1beta
- #CHANGELOG: 13-01-2013 : Bug fix in assign group at every new items.
+ #VERSION: 2.5beta
+ #CHANGELOG: 26-10-2014 : Sostituito total con tot_netpay
+			 26-05-2014 : Integrato nuovo sistema di gestione colonne
+			 13-01-2014 : Aggiunta colonna codice.
+			 10-01-2014 : Aggiunta la possibilità di poter filtrare i clienti sia per nome che per codice.
+			 13-01-2013 : Bug fix in assign group at every new items.
  #TODO: Internazionalizzare (i18n).
  
 */
@@ -18,8 +22,18 @@
 include_once($_BASE_PATH."var/objects/htmlgutility/menu.php");
 include_once($_BASE_PATH."var/objects/editsearch/index.php");
 include_once($_BASE_PATH."include/layers.php");
+include_once($_BASE_PATH."include/vatnumbervalidator.php");
+include_once($_BASE_PATH."include/taxcodevalidator.php");
+include_once($_BASE_PATH."etc/commercialdocs/config.php");
+
+$_STATUSEXTRA = array();
+if($_COMMERCIALDOCS_CONFIG['STATUSEXTRA'] && $_COMMERCIALDOCS_CONFIG['STATUSEXTRA']['CREDITSNOTE'])
+ $_STATUSEXTRA = $_COMMERCIALDOCS_CONFIG['STATUSEXTRA']['CREDITSNOTE'];
+
 ?>
 <link rel="stylesheet" href="<?php echo $_ABSOLUTE_URL; ?>share/widgets/commercialdocs/common.css" type="text/css" />
+<script language="JavaScript" src="<?php echo $_ABSOLUTE_URL; ?>include/js/vatnumbervalidator.js" type="text/javascript"></script>
+<script language="JavaScript" src="<?php echo $_ABSOLUTE_URL; ?>include/js/taxcodevalidator.js" type="text/javascript"></script>
 
 <table width='100%' border='0' cellspacing='0' cellpadding='0'>
 <tr><td valign='middle' class='title' width='200'><?php if($_REQUEST['show'] == "trash") echo "Note di credito cestinate"; else echo "Note di accredito"; ?></td>
@@ -86,13 +100,24 @@ $trashInfo = $ret['outarr'];
 	</td></tr>
 
 <tr><td colspan='3' style="border-left:1px solid #dedede;border-bottom:1px solid #dedede;border-right:1px solid #dedede;border-collapse:collapse;">
-	<table width='100%' class='itemlist' cellspacing='0' cellpadding='0' border='0'>
+	<table width='100%' class='itemlist' id='itemlist-header' cellspacing='0' cellpadding='0' border='0'>
 	<tr><th width='32'><input type='checkbox' onchange="selectAllRows(this)" id="tbselectall"/></th>
-		<th width='190' style='text-align:left'>NOTA D&lsquo;ACCREDITO</th>
-		<th style='text-align:left'>CLIENTE</th>
-		<th width='100'>&nbsp;</th>
-		<th width='100'>STATUS</th>
-		<th width='106' style="text-align:left;">IMPORTO</th>
+		<?php
+		$_COLUMNS = $_COMMERCIALDOCS_CONFIG['COLUMNS']['CREDITSNOTE'] ? $_COMMERCIALDOCS_CONFIG['COLUMNS']['CREDITSNOTE'] : array(
+	 		0 => array("tag"=>"name", "title"=>"Nota d&lsquo;accredito", "width"=>190, "style"=>"text-align:left"),
+			1 => array("tag"=>"subject_code", "title"=>"Cod.", "width"=>50, "style"=>"text-align:left"),
+			2 => array("tag"=>"subject_name", "title"=>"Cliente", "style"=>"text-align:left"),
+			3 => array("tag"=>"options", "title"=>""),
+			4 => array("tag"=>"status", "title"=>"Status", "width"=>150),
+			5 => array("tag"=>"total", "title"=>"Importo", "width"=>80, "style"=>"text-align:left", "cellstyle"=>"text-align:right")
+		);
+		for($c=0; $c < count($_COLUMNS); $c++)
+		{
+		 $_COL = $_COLUMNS[$c];
+		 echo "<th tag='".$_COL['tag']."'".($_COL['width'] ? " width='".$_COL['width']."'" : "").($_COL['style'] ? " style='".$_COL['style']."'" : "").">"
+			.$_COL['title']."</th>";
+		}
+		?>
 	</tr>
 	</table>
 	</td></tr>
@@ -148,54 +173,104 @@ $trashInfo = $ret['outarr'];
 	 }
 
 	 echo "<tr id='".$itm['id']."'><td width='32' align='center'><input type='checkbox' onclick='selectRow(this)'/></td>";
-	 echo "<td width='190'><a class='link' href='".$_ABSOLUTE_URL."GCommercialDocs/docinfo.php?id=".$itm['id']."' target='GCD-".$itm['id']."'>".html_entity_decode($itm['name'],ENT_QUOTES,"UTF-8")."</a></td>";
-	 echo "<td><span class='subject'>".$itm['subject_name']."</span></td>";
-	 echo "<td width='100'>";
-	 if($_REQUEST['show'] == "trash")
-	  echo "<span class='smallroundbtn' onclick='restoreDocument(".$itm['id'].")'>ripristina</span>";
-	 else
-	  echo "<span class='smallroundbtn' onclick='showDocumentOptions(".$itm['id'].",this)'>opzioni</span>";
-	 echo "</td>";
-	 echo "<td width='100'>";
-	 switch($itm['status'])
+	 for($i=0; $i < count($_COLUMNS); $i++)
 	 {
-	  case 1 : echo "<img src='".$_ABSOLUTE_URL."share/widgets/commercialdocs/img/status-print.png' class='status-icon'/><span class='status-small'>stampato il<br/>".date('d/m/Y',strtotime($itm['print_date']))."</span>"; break;
+	  $_COL = $_COLUMNS[$i];
+	  echo "<td".($_COL['width'] ? " width='".$_COL['width']."'" : "").($_COL['cellstyle'] ? " style='".$_COL['cellstyle']."'" : "").">";
+	  switch($_COL['tag'])
+	  {
+	   case 'name' : echo "<a class='link' href='".$_ABSOLUTE_URL."GCommercialDocs/docinfo.php?id=".$itm['id']."' target='GCD-".$itm['id']."'>".html_entity_decode($itm['name'],ENT_QUOTES,"UTF-8")."</a>"; break;
 
-	  case 2 : echo "<img src='".$_ABSOLUTE_URL."share/widgets/commercialdocs/img/status-send.gif' class='status-icon'/><span class='status-small'>inviato il<br/>".date('d/m/Y',strtotime($itm['send_date']))."</span>"; break;
+	   case 'subject_code' : echo "<span class='subject'>".$itm['subject_code']."</span>"; break;
 
-	  case 3 : echo "<img src='".$_ABSOLUTE_URL."share/widgets/commercialdocs/img/status-pending.gif' class='status-icon'/><span class='status-normal'><b>in attesa</b></span>"; break;
+	   case 'subject_name' : echo "<span class='subject'>".$itm['subject_name']."</span>"; break;
 
-	  case 4 : echo "<img src='".$_ABSOLUTE_URL."share/widgets/commercialdocs/img/status-working.gif' class='status-icon'/><span class='status-normal'><b style='color:#013397'>in lavorazione</b></span>"; break;
+	   case 'docref' : {
+			 if($itm['docref_ap'] && $itm['docref_id'])
+			 {
+			  switch($itm['docref_ap'])
+			  {
+			   case 'commercialdocs' : echo "<span class='status-xsmall'><a href='".$_ABSOLUTE_URL."GCommercialDocs/docinfo.php?id="
+				.$itm['docref_id']."' target='GCD-".$itm['docref_id']."'>".$itm['docref_name']."</a></span>"; break;
+			   case 'commesse' : echo "<span class='status-xsmall'><a href='".$_ABSOLUTE_URL."Commesse/edit.php?id="
+				.$itm['docref_id']."' target='COMMESSA-".$itm['docref_id']."'>".$itm['docref_name']."</a></span>"; break;
+			   default : echo "<span class='status-xsmall'>".$itm['docref_name']."</span>"; break;
+			  }
+			 }
+			 else
+			  echo "<span class='status-small'>".$itm['aliasname']."</span>";
+			} break;
 
-	  case 5 : echo "<img src='".$_ABSOLUTE_URL."share/widgets/commercialdocs/img/status-suspended.gif' class='status-icon'/><span class='status-normal'><b style='color:#f44800'>sospeso</b></span>"; break;
-
-	  case 6 : echo "<img src='".$_ABSOLUTE_URL."share/widgets/commercialdocs/img/status-failed.gif' class='status-icon'/><span class='status-normal'><b style='color:#d40000'>fallito</b></span>"; break;
-
-	  case 7 : echo "<img src='".$_ABSOLUTE_URL."share/widgets/commercialdocs/img/status-completed.png' class='status-icon'/><span class='status-normal'><b style='color:#015a01'>completato</b></span>"; break;
-
-	  case 8 : {
-		 echo "<img src='".$_ABSOLUTE_URL."share/widgets/commercialdocs/img/status-converted.png' class='status-icon'/>";
-		 if($itm['conv_doc_id'] && $itm['conv_doc_name'])
-		  echo "<span class='status-xsmall'>convertito in<br/><a href='#' onclick='openDocument(".$itm['conv_doc_id'].")'>".$itm['conv_doc_name']."</a></span>";
+	   case 'options' : {
+		 if($_REQUEST['show'] == "trash")
+		  echo "<span class='smallroundbtn' onclick='restoreDocument(".$itm['id'].")'>ripristina</span>";
 		 else
-		  echo "<span class='status-xsmall'>convertito in<br/>documento sconosciuto</span>";
+		  echo "<span class='smallroundbtn' onclick='showDocumentOptions(".$itm['id'].",this)'>opzioni</span>";
+		 /* validate taxcode and vatnumber */
+		 if(!$itm['subject_taxcode'] && !$itm['subject_vatnumber'])
+		  echo "<img src='".$_ABSOLUTE_URL."share/icons/16x16/warning_orange.png' width='22' title=\"Questo soggetto &egrave; privo di partita iva e codice fiscale\" style='float:right;'/>";
+		 else
+		 {
+		  if($itm['subject_taxcode'] && !validateTaxCode($itm['subject_taxcode']) && !validateVatNumber($itm['subject_taxcode']))
+		   echo "<img src='".$_ABSOLUTE_URL."share/icons/16x16/warning_orange.png' width='22' title=\"Il codice fiscale di questo soggetto &egrave; sbagliato.\" style='float:right;'/>";
+		  else if($itm['subject_vatnumber'] && !validateVatNumber($itm['subject_vatnumber']))
+		   echo "<img src='".$_ABSOLUTE_URL."share/icons/16x16/warning_orange.png' width='22' title=\"La partita iva di questo soggetto &egrave; sbagliata.\" style='float:right;'/>";
+		 }
 		} break;
 
-	  case 9 : {
-		 echo "<img src='".$_ABSOLUTE_URL."share/widgets/commercialdocs/img/status-groupped.png' class='status-icon'/>";
-		 if($itm['group_doc_id'] && $itm['group_doc_name'])
-		  echo "<span class='status-xsmall'>raggruppato in<br/><a href='#' onclick='openDocument(".$itm['group_doc_id'].")'>".$itm['group_doc_name']."</a></span>";
-		 else
-		  echo "<span class='status-xsmall'>raggruppato in<br/>documento sconosciuto</span>";
+		case 'status' : {
+		 switch($itm['status'])
+		 {
+		  case 1 : echo "<img src='".$_ABSOLUTE_URL."share/widgets/commercialdocs/img/status-print.png' class='status-icon'/><span class='status-small'>stampato il<br/>".date('d/m/Y',strtotime($itm['print_date']))."</span>"; break;
+
+		  case 2 : echo "<img src='".$_ABSOLUTE_URL."share/widgets/commercialdocs/img/status-send.gif' class='status-icon'/><span class='status-small'>inviato il<br/>".date('d/m/Y',strtotime($itm['send_date']))."</span>"; break;
+
+		  case 3 : echo "<img src='".$_ABSOLUTE_URL."share/widgets/commercialdocs/img/status-pending.gif' class='status-icon'/><span class='status-normal'><b>in attesa</b></span>"; break;
+
+		  case 4 : echo "<img src='".$_ABSOLUTE_URL."share/widgets/commercialdocs/img/status-working.gif' class='status-icon'/><span class='status-normal'><b style='color:#013397'>in lavorazione</b></span>"; break;
+
+		  case 5 : echo "<img src='".$_ABSOLUTE_URL."share/widgets/commercialdocs/img/status-suspended.gif' class='status-icon'/><span class='status-normal'><b style='color:#f44800'>sospeso</b></span>"; break;
+
+		  case 6 : echo "<img src='".$_ABSOLUTE_URL."share/widgets/commercialdocs/img/status-failed.gif' class='status-icon'/><span class='status-normal'><b style='color:#d40000'>fallito</b></span>"; break;
+
+		  case 7 : echo "<img src='".$_ABSOLUTE_URL."share/widgets/commercialdocs/img/status-completed.png' class='status-icon'/><span class='status-normal'><b style='color:#015a01'>completato</b></span>"; break;
+
+		  case 8 : {
+			 echo "<img src='".$_ABSOLUTE_URL."share/widgets/commercialdocs/img/status-converted.png' class='status-icon'/>";
+			 if($itm['conv_doc_id'] && $itm['conv_doc_name'])
+			  echo "<span class='status-xsmall'>convertito in<br/><a href='#' onclick='openDocument(".$itm['conv_doc_id'].")'>".$itm['conv_doc_name']."</a></span>";
+			 else
+			  echo "<span class='status-xsmall'>convertito in<br/>documento sconosciuto</span>";
+			} break;
+
+		  case 9 : {
+			 echo "<img src='".$_ABSOLUTE_URL."share/widgets/commercialdocs/img/status-groupped.png' class='status-icon'/>";
+			 if($itm['group_doc_id'] && $itm['group_doc_name'])
+			  echo "<span class='status-xsmall'>raggruppato in<br/><a href='#' onclick='openDocument(".$itm['group_doc_id'].")'>".$itm['group_doc_name']."</a></span>";
+			 else
+			  echo "<span class='status-xsmall'>raggruppato in<br/>documento sconosciuto</span>";
+			} break;
+
+		  case 10 : echo "<span class='status-green'>pagato</span>"; break;
+
+		  default : echo "<span class='status-open'><i>aperto</i></span>"; break;
+		 }
 		} break;
 
-	  case 10 : echo "<span class='status-green'>pagato</span>"; break;
-	  default : echo "<span class='status-open'><i>aperto</i></span>"; break;
+	   case 'statusextra' : {
+		 if($_STATUSEXTRA[$itm['status_extra']])
+		  echo "<span class='status-small' style='color:".$_STATUSEXTRA[$itm['status_extra']]['color']."'>".$_STATUSEXTRA[$itm['status_extra']]['title']."</span>";
+		 else
+		  echo "<span class='status-small'></span>";
+		} break;
+
+	   case 'total' : echo "<b><em>&euro;</em>".number_format($itm['tot_netpay'],2,',','.')."</b>"; break;
+	  }
+	  echo "</td>";
 	 }
-	 echo "</td>";
-	 echo "<td width='90' align='right'><b><em>&euro;</em>".number_format($itm['total'],2,',','.')."</b></td></tr>";
+	 echo "</tr>";
 	 $subtot+= $itm['amount'];
-	 $subtotVI+= $itm['total'];
+	 $subtotVI+= $itm['tot_netpay'];
 	}
 	?>
 	</table>
@@ -311,14 +386,23 @@ MONTHS.push("Ottobre");
 MONTHS.push("Novembre");
 MONTHS.push("Dicembre");
 
+var STATUS_EXTRA = new Array();
+<?php
+reset($_STATUSEXTRA);
+while(list($k,$v) = each($_STATUSEXTRA))
+{
+ echo "STATUS_EXTRA[".$k."] = {title:\"".$v['title']."\",color:\"".$v['color']."\"};\n";
+}
+?>
+
 
 function bodyOnLoad()
 {
  new GPopupMenu(document.getElementById('btn-filter'), document.getElementById('filter-list'));
  new GMenu(document.getElementById('mainmenu'));
  var mE = EditSearch.init(document.getElementById('subject'),
-	"dynarc item-find -ap `rubrica` -field name `","` -limit 10 --order-by 'name ASC'",
-	"id","name","items",true);
+	"dynarc search -ap `rubrica` -fields name,code_str `","` -limit 10 --order-by 'name ASC'",
+	"id","name","items",true,"name",onSearchQry);
  if(!mE.value)
   mE.value = mE.getAttribute('emptyvalue');
 
@@ -350,6 +434,16 @@ function bodyOnLoad()
  document.addEventListener ? document.addEventListener("mouseup",hideDocumentOptions,false) : document.attachEvent("onmouseup",hideDocumentOptions);
 }
 
+function onSearchQry(items,resArr,retVal)
+{
+ for(var c=0; c < items.length; c++)
+ {
+  resArr.push(items[c]['code_str']+" - "+items[c]['name']);
+  retVal.push(items[c]['id']);
+ } 
+}
+
+
 function nextPage()
 {
  document.getElementById('loading').style.display="";
@@ -365,6 +459,7 @@ function nextPage()
 	 if(a && a['items'])
 	 {
 	  var tb = document.getElementById('itemlist');
+	  var tbH = document.getElementById("itemlist-header");
 	  var date = new Date();
 	  for(var c=0; c < a['items'].length; c++)
 	  {
@@ -385,56 +480,115 @@ function nextPage()
 	   r.id = itm['id'];
 	   r.insertCell(-1).innerHTML = "<input type='checkbox' onclick='selectRow(this)'/ >";
 	   r.cells[0].style.width = "32px"; r.cells[0].style.textAlign='center';
-	   r.insertCell(-1).innerHTML = "<a class='link' href='"+ABSOLUTE_URL+"GCommercialDocs/docinfo.php?id="+itm['id']+"' target='GCD-"+itm['id']+"'>"+itm['name']+"</a>";
-	   r.cells[1].style.width='190px';
-	   r.insertCell(-1).innerHTML = "<span class='subject'>"+itm['subject_name']+"</span>";
-	   <?php
-	   if($_REQUEST['show'] == "trash")
+
+	   /* COLUMNS CYCLE */
+	   for(var i=1; i < tbH.rows[0].cells.length; i++)
 	   {
-		?>
-		r.insertCell(-1).innerHTML = "<span class='smallroundbtn' onclick='restoreDocument("+itm['id']+")'>ripristina</span>";
-		<?php
-	   }
-	   else
-	   {
-		?>
-	    r.insertCell(-1).innerHTML = "<span class='smallroundbtn' onclick='showDocumentOptions("+itm['id']+",this)'>opzioni</span>";
-		<?php
-	   }
-	   ?>
-	   var printDate = new Date(); if(itm['print_date']) printDate.setFromISO(itm['print_date']);
-	   var sendDate = new Date(); if(itm['send_date']) sendDate.setFromISO(itm['send_date']);
-	   var tmp = "";
-	   switch(itm['status'])
-	   {
-		case '1' : tmp = "<img src='"+ABSOLUTE_URL+"share/widgets/commercialdocs/img/status-print.png' class='status-icon'/ ><span class='status-small'>stampato il<br/ >"+printDate.printf('d/m/Y')+"</span>"; break;
+		var th = tbH.rows[0].cells[i];
+		var cell = r.insertCell(-1);
+		if(th.width)
+		 cell.style.width = th.width+"px";
+		switch(th.getAttribute('tag'))
+		{
+		 case 'name' : cell.innerHTML = "<a class='link' href='"+ABSOLUTE_URL+"GCommercialDocs/docinfo.php?id="+itm['id']+"' target='GCD-"+itm['id']+"'>"+itm['name']+"</a>"; break;
 
-	    case '2' : tmp = "<img src='"+ABSOLUTE_URL+"share/widgets/commercialdocs/img/status-send.gif' class='status-icon'/ ><span class='status-small'>inviato il<br/ >"+printDate.printf('d/m/Y')+"</span>"; break;
+		 case 'subject_code' : cell.innerHTML = "<span class='subject'>"+itm['subject_code']+"</span>"; break;
 
-	    case '3' : tmp = "<img src='"+ABSOLUTE_URL+"share/widgets/commercialdocs/img/status-pending.gif' class='status-icon'/ ><span class='status-normal'><b>in attesa</b></span>"; break;
+		 case 'subject_name' : cell.innerHTML = "<span class='subject'>"+itm['subject_name']+"</span>"; break;
 
-	    case '4' : tmp = "<img src='"+ABSOLUTE_URL+"share/widgets/commercialdocs/img/status-working.gif' class='status-icon'/ ><span class='status-normal'><b style='color:#013397'>in lavorazione</b></span>"; break;
+		 case 'docref' : {
+			 if(itm['docref_ap'] && itm['docref_id'])
+			 {
+			  switch(itm['docref_ap'])
+			  {
+			   case 'commercialdocs' : cell.innerHTML = "<span class='status-xsmall'><a href='"+ABSOLUTE_URL+"GCommercialDocs/docinfo.php?id="
+				+itm['docref_id']+"' target='GCD-"+itm['docref_id']+"'>"+itm['docref_name']+"</a></span>"; break;
+			   case 'commesse' : cell.innerHTML = "<span class='status-xsmall'><a href='"+ABSOLUTE_URL+"Commesse/edit.php?id="
+				+itm['docref_id']+"' target='COMMESSA-"+itm['docref_id']+"'>"+itm['docref_name']+"</a></span>"; break;
+			   default : cell.innerHTML = "<span class='status-xsmall'>"+itm['docref_name']+"</span>"; break;
+			  }
+			 }
+			 else
+			  cell.innerHTML = "<span class='status-small'>"+itm['aliasname']+"</span>";
+			} break;
 
-	    case '5' : tmp = "<img src='"+ABSOLUTE_URL+"share/widgets/commercialdocs/img/status-suspended.gif' class='status-icon'/ ><span class='status-normal'><b style='color:#f44800'>sospeso</b></span>"; break;
+		 case 'alias' : cell.innerHTML = "<span class='status-small'>"+itm['aliasname']+"</span>"; break;
 
-	    case '6' : tmp = "<img src='"+ABSOLUTE_URL+"share/widgets/commercialdocs/img/status-failed.gif' class='status-icon'/ ><span class='status-normal'><b style='color:#d40000'>fallito</b></span>"; break;
+		 case 'options' : {
+		   	 <?php
+		     if($_REQUEST['show'] == "trash")
+		     {
+			  ?>
+			  cell.innerHTML = "<span class='smallroundbtn' onclick='restoreDocument("+itm['id']+")'>ripristina</span>";
+		      <?php
+	         }
+	   	     else
+		     {
+			  ?>
+		      var html = "<span class='smallroundbtn' onclick='showDocumentOptions("+itm['id']+",this)'>opzioni</span>";
+		 	  /* validate taxcode and vatnumber */
+			  if(!itm['subject_taxcode'] && !itm['subject_vatnumber'])
+			    html+= "<img src='"+ABSOLUTE_URL+"share/icons/16x16/warning_orange.png' width='22' title=\"Questo soggetto &egrave; privo di partita iva e codice fiscale\" style='float:right;'/"+">";
+			  else
+			  {
+			   if(itm['subject_taxcode'] && !validateTaxCode(itm['subject_taxcode']) && !validateVatNumber(itm['subject_taxcode']))
+			    html+= "<img src='"+ABSOLUTE_URL+"share/icons/16x16/warning_orange.png' width='22' title=\"Il codice fiscale di questo soggetto &egrave; sbagliato.\" style='float:right;'/"+">";
+			   else if(itm['subject_vatnumber'] && !validateVatNumber(itm['subject_vatnumber']))
+			    html+= "<img src='"+ABSOLUTE_URL+"share/icons/16x16/warning_orange.png' width='22' title=\"La partita iva di questo soggetto &egrave; sbagliata.\" style='float:right;'/"+">";
+			  }
+			  cell.innerHTML = html;
+			  <?php
+		     }
+		     ?>
+			} break;
 
-	    case '7' : tmp = "<img src='"+ABSOLUTE_URL+"share/widgets/commercialdocs/img/status-completed.png' class='status-icon'/ ><span class='status-normal'><b style='color:#015a01'>completato</b></span>"; break;
+		 case 'status' : {
+			   var printDate = new Date(); if(itm['print_date']) printDate.setFromISO(itm['print_date']);
+			   var sendDate = new Date(); if(itm['send_date']) sendDate.setFromISO(itm['send_date']);
+			   var tmp = "";
+			   switch(itm['status'])
+			   {
+				case '1' : tmp = "<img src='"+ABSOLUTE_URL+"share/widgets/commercialdocs/img/status-print.png' class='status-icon'/ ><span class='status-small'>stampato il<br/ >"+printDate.printf('d/m/Y')+"</span>"; break;
 
-	    case '8' : tmp = "<img src='"+ABSOLUTE_URL+"share/widgets/commercialdocs/img/status-converted.png' class='status-icon'/ ><span class='status-xsmall'>convertito in<br/ >"+((itm['conv_doc_id'] && itm['conv_doc_name']) ? "<a href='#' onclick='openDocument("+itm['conv_doc_id']+")'>"+itm['conv_doc_name']+"</a>" : "documento sconosciuto")+"</span>"; break;
+			    case '2' : tmp = "<img src='"+ABSOLUTE_URL+"share/widgets/commercialdocs/img/status-send.gif' class='status-icon'/ ><span class='status-small'>inviato il<br/ >"+printDate.printf('d/m/Y')+"</span>"; break;
 
-	    case '9' : tmp = "<img src='"+ABSOLUTE_URL+"share/widgets/commercialdocs/img/status-groupped.png' class='status-icon'/ ><span class='status-xsmall'>raggruppato in<br/ >"+((itm['group_doc_id'] && itm['group_doc_name']) ? "<a href='#' onclick='openDocument("+itm['group_doc_id']+")'>"+itm['group_doc_name']+"</a>" : "documento sconosciuto")+"</span>"; break;
+			    case '3' : tmp = "<img src='"+ABSOLUTE_URL+"share/widgets/commercialdocs/img/status-pending.gif' class='status-icon'/ ><span class='status-normal'><b>in attesa</b></span>"; break;
 
-	    case '10' : tmp = "<span class='status-green'>pagato</span>"; break;
+			    case '4' : tmp = "<img src='"+ABSOLUTE_URL+"share/widgets/commercialdocs/img/status-working.gif' class='status-icon'/ ><span class='status-normal'><b style='color:#013397'>in lavorazione</b></span>"; break;
+
+			    case '5' : tmp = "<img src='"+ABSOLUTE_URL+"share/widgets/commercialdocs/img/status-suspended.gif' class='status-icon'/ ><span class='status-normal'><b style='color:#f44800'>sospeso</b></span>"; break;
+
+			    case '6' : tmp = "<img src='"+ABSOLUTE_URL+"share/widgets/commercialdocs/img/status-failed.gif' class='status-icon'/ ><span class='status-normal'><b style='color:#d40000'>fallito</b></span>"; break;
+
+			    case '7' : tmp = "<img src='"+ABSOLUTE_URL+"share/widgets/commercialdocs/img/status-completed.png' class='status-icon'/ ><span class='status-normal'><b style='color:#015a01'>completato</b></span>"; break;
+
+			    case '8' : tmp = "<img src='"+ABSOLUTE_URL+"share/widgets/commercialdocs/img/status-converted.png' class='status-icon'/ ><span class='status-xsmall'>convertito in<br/ >"+((itm['conv_doc_id'] && itm['conv_doc_name']) ? "<a href='#' onclick='openDocument("+itm['conv_doc_id']+")'>"+itm['conv_doc_name']+"</a>" : "documento sconosciuto")+"</span>"; break;
+
+			    case '9' : tmp = "<img src='"+ABSOLUTE_URL+"share/widgets/commercialdocs/img/status-groupped.png' class='status-icon'/ ><span class='status-xsmall'>raggruppato in<br/ >"+((itm['group_doc_id'] && itm['group_doc_name']) ? "<a href='#' onclick='openDocument("+itm['group_doc_id']+")'>"+itm['group_doc_name']+"</a>" : "documento sconosciuto")+"</span>"; break;
+
+			    case '10' : tmp = "<span class='status-green'>pagato</span>"; break;
 	    
-		default : tmp = "<span class='status-open'><i>aperto</i></span>"; break;
-	   }
-	   r.insertCell(-1).innerHTML = tmp;
-	   r.cells[4].style.width='100px';
-	   r.insertCell(-1).innerHTML = "<b><em>&euro;</em>"+formatCurrency(itm['total'],2)+"</b>";
-	   r.cells[5].style.textAlign='right'; r.cells[4].style.width='90px';
+				default : tmp = "<span class='status-open'><i>aperto</i></span>"; break;
+	   		 }
+	   		 cell.innerHTML = tmp;
+			} break;
+
+		 case 'statusextra' : {
+			 if(STATUS_EXTRA[itm['status_extra']])
+			  cell.innerHTML = "<span class='status-small' style='color:"+STATUS_EXTRA[itm['status_extra']].color+"'>"+STATUS_EXTRA[itm['status_extra']].title+"</span>";
+			 else
+			  cell.innerHTML = "<span class='status-small'></span>";
+			} break;
+
+		 case 'total' : {
+			 cell.innerHTML = "<b><em>&euro;</em>"+formatCurrency(itm['tot_netpay'],2)+"</b>";
+			 cell.style.textAlign = "right";
+			} break;
+
+		} /* EOF - SWITCH */
+	   } /* EOF - COLUMNS CYCLE */
 	   total+= parseFloat(itm['amount']);
-	   totalVI+= parseFloat(itm['total']);
+	   totalVI+= parseFloat(itm['tot_netpay']);
 	  }
 	  document.getElementById('doctot-amount').innerHTML = "<em>&euro;</em>"+formatCurrency(total,2);
 	  document.getElementById('doctot-vat').innerHTML = "<em>&euro;</em>"+formatCurrency(totalVI-total,2);

@@ -1,16 +1,16 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 18-12-2012
+ #DATE: 01-02-2016
  #PACKAGE: gcommercialdocs
  #DESCRIPTION: Unlock locked document.
- #VERSION: 2.0beta
- #CHANGELOG:
+ #VERSION: 2.1beta
+ #CHANGELOG: 01-02-2016 : Modifica non sostanziale.
  #TODO:
  
 */
@@ -66,7 +66,7 @@ echo "<div id='contents' style='padding:5px;'>";
 <table width="100%" border="0">
 <tr><td valign='top'><img src="<?php echo $_ABSOLUTE_URL; ?>share/widgets/commercialdocs/img/locked.png"/></td>
 	<td valign='top'><h4 class='red'>Questo documento &egrave; bloccato!</h4>
-	<p>Quando un documento viene convertito o raggruppato il sistema blocca automaticamente il documento di origine per prevenire inconguenze e doppie voci nei registri contabili come la Prima Nota ed il Registro IVA.</p>
+	<p>Quando un documento viene chiuso, convertito o raggruppato il sistema blocca automaticamente il documento di origine per prevenire inconguenze e doppie voci nei registri contabili come la Prima Nota ed il Registro IVA.</p>
 	<p>E&lsquo; sconsigliato sbloccare documenti come gli <b>ordini</b> e i <b>D.D.T.</b> perch&egrave; non avendo pi&ugrave; riferimenti ai documenti convertiti il sistema automaticamente ri-conteggia quei documenti alterando cos&igrave; i dati nei registri contabili.</p>
 	<br/>
 	<br/>
@@ -89,6 +89,7 @@ function unlockSubmit()
   return;
 
  var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
  sh.OnOutput = function(o,a){gframe_close(o,a);}
  sh.sendCommand("dynarc edit-item -ap `commercialdocs` -id `<?php echo $docInfo['id']; ?>` -extset `cdinfo.status=0`");
 }

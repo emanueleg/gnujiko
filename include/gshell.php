@@ -1,16 +1,20 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 23-04-2013
+ #DATE: 15-03-2016
  #PACKAGE: gnujiko-base
  #DESCRIPTION: Gnujiko official shell PHP class
- #VERSION: 2.7beta
- #CHANGELOG: 23-04-2013 : Bug fix on line 336 gshPreOutput on chmod
+ #VERSION: 2.11beta
+ #CHANGELOG: 15-03-2016 : Modificata funzione GShell, bug fix su REDIRECT_OUTPUT, testare prima di pubblicare.
+			 04-02-2016 : Aggiunta funzione gshSaveDebugLog.
+			 23-10-2014 : Bug fix.
+			 17-07-2014 : Bug fix con CDATA nel commandLineParser su riga 87
+			 23-04-2013 : Bug fix on line 336 gshPreOutput on chmod
 			 11-04-2013 : Sistemato i permessi ai files.
 			 04-02-2013 : Extra argument "+" added.
 			 13-12-2012 - Added function gshCommandLog.
@@ -20,12 +24,7 @@
 			 30-08-2011 - Bug fix on mkdir function [row 209]
 			 26-02-2011 - Bug fix with special chars
  #TODO:
- #La massima del giorno:
- 
-   "Non sentirti orgoglioso quando uno ti fa un complimento, ed arrabbiato quando uno esalta i tuoi difetti, ma sentiti soddifatto quando raggiungi l'equilibrio trai i tuoi pregi e i tuoi difetti."
-
-   Di Loreto Alessandro.
- 
+  
 */
 global $_BASE_PATH, $_ABSOLUTE_URL, $_SHELL_CMD_PATH;
 include_once($_BASE_PATH."config.php");
@@ -83,7 +82,8 @@ function commandLineParser($string)
 	 if(substr($string,$cidx,9) == "<![CDATA[")
 	 {
 	  $qp = strpos($string, "]]>", $cidx+9);
-	  $str.= substr($string, $cidx, ($qp+3)-$cidx);
+	  //$str.= substr($string, $cidx, ($qp+3)-$cidx);
+	  $str.= substr($string, $cidx+9, ($qp-9)-$cidx);
 	  $cidx = $qp+2; 
 	 }
 	 else
@@ -153,22 +153,27 @@ function GShell($cmdstr, $sessid=null, $shellid=0, $extra=null)
 
  $messages = "";
  $lastOutarr = array();
+ $lastOutputMessage = "";
+ $lastMethod = null;
+
  // execute commands //
  for($c=0; $c < count($clp['commands']); $c++)
  {
   $cmd = $clp['commands'][$c]['name'];
   $args = $clp['commands'][$c]['args'];
   $method = isset($clp['commands'][$c]['method']) ? $clp['commands'][$c]['method'] : null;
+  $extraVar = null;
 
   if($c > 0)
   {
+   $lastMethod = isset($clp['commands'][$c-1]['method']) ? $clp['commands'][$c-1]['method'] : null;
    // parserize into args shell result pointers //
    $addToArg=-1;
    for($i=0; $i < count($args); $i++)
    {
     $arg = $args[$i];
 
-	if($args[$i] == "+")
+	if($arg == "+")
 	{
 	 $addToArg = $i-1;
 	 array_splice($args,$i,1);
@@ -176,33 +181,51 @@ function GShell($cmdstr, $sessid=null, $shellid=0, $extra=null)
 	 continue;
 	}
 
-    if(strpos($arg,"*") !== false) // check for last results pointer
+    if($arg[0] == "*") // check for last results pointer
     {
      if($arg[1] == "[")
       $num = (int)substr($arg,2,strpos($arg,"]")-2);
      else if($arg[1] == ".")
       $num = 1;
      else if($arg[1] == "*")
-      $num = strpos($arg,".");
-     $var = substr($arg, strpos($arg,".")+1, strlen($arg));
-	 /* check if $var contains [ ] */
-	 if(($pos = strpos($var,"[")) !== false)
 	 {
-	  $arrName = substr($var,0,$pos);
-	  $keys = explode(",",ltrim(rtrim(str_replace("][",",",substr($var,$pos)),"]"),"["));
-	  if($lastOutarr[$num-1])
-	  {
-	   $retarg = $lastOutarr[$num-1][$arrName];
-	   for($j=0; $j < count($keys); $j++)
-		$retarg = $retarg[$keys[$j]];
-	   $args[$i] = $retarg; 
-	  }
+	  if(strpos($arg,".") !== false)
+       $num = strpos($arg,".");
+	  else
+	   $num = 2; 
+	  /* Per indicare il penultimo risultato è sufficiente digitare 2 asterischi (**), dal terzultimo risultato in poi è necessario indicarlo
+		 tra parentesi. Es: *[2] per indicare il terzultimo risultato, *[3] per il quartultimo, ecc... */
 	 }
-	 else if($lastOutarr[$num-1])
-      $args[$i] = $lastOutarr[$num-1][$var];
+
+	 if(strpos($arg,".") !== false)
+	 {
+      $var = substr($arg, strpos($arg,".")+1, strlen($arg));
+	  /* check if $var contains [ ] */
+	  if(($pos = strpos($var,"[")) !== false)
+	  {
+	   $arrName = substr($var,0,$pos);
+	   $keys = explode(",",ltrim(rtrim(str_replace("][",",",substr($var,$pos)),"]"),"["));
+	   if($lastOutarr[$num-1])
+	   {
+	    $retarg = $lastOutarr[$num-1][$arrName];
+	    for($j=0; $j < count($keys); $j++)
+		 $retarg = $retarg[$keys[$j]];
+	    $args[$i] = $retarg; 
+	   }
+	  }
+	  else if($lastOutarr[$num-1])
+	  {
+	   if(is_array($lastOutarr[$num-1][$var]))
+		$extraVar  = $lastOutarr[$num-1][$var];
+	   else
+        $args[$i] = $lastOutarr[$num-1][$var];
+	  }
+	  else
+	   $args[$i] = "";
+	 }
 	 else
-	  $args[$i] = "";
-    }
+	  $extraVar = $lastOutarr[$num ? ($num-1) : 0];
+    } // EOF - check for last results pointer
 
     if($addToArg > -1)
 	{
@@ -212,14 +235,17 @@ function GShell($cmdstr, $sessid=null, $shellid=0, $extra=null)
 	 $addToArg = -1;
 	}
 
-   }
-  }
+   } // EOF - for args
+  } // EOF if ($c > 0)
   // EOF parserize into args shell result pointers //
+
+  if($lastMethod == "REDIRECT_OUTPUT")
+   $args[] = $lastOutputMessage;
 
   if(file_exists($_BASE_PATH.$_SHELL_CMD_PATH.$cmd.".php"))
   {
    include_once($_BASE_PATH.$_SHELL_CMD_PATH.$cmd.".php");
-   $ret = call_user_func("shell_$cmd", $args, $sessid, $shellid, $extra);
+   $ret = call_user_func("shell_".$cmd, $args, $sessid, $shellid, $extraVar ? $extraVar : $extra);
    if($method == "REDIRECT_TO_FILE")
    {
     /* detect home dir */
@@ -250,15 +276,18 @@ function GShell($cmdstr, $sessid=null, $shellid=0, $extra=null)
      $lastOutarr[] = $ret['outarr'];
    }
    else if($method == "REDIRECT_OUTPUT")
-	$clp['commands'][$c+1]['args'][] = $ret['htmloutput'] ? $ret['htmloutput'] : $ret['message'];
+   {
+	//$clp['commands'][$c+1]['args'][] = $ret['htmloutput'] ? $ret['htmloutput'] : $ret['message'];
+	$lastOutputMessage = $ret['htmloutput'] ? $ret['htmloutput'] : $ret['message'];
+   }
    else
     $messages.= $ret['message']."\n";
-  }
+  } // EOF - if file exists
   else if(file_exists($_BASE_PATH.$_SHELL_CMD_PATH.$cmd.".js"))
   {
    $ret = array('includejs'=>$_SHELL_CMD_PATH.$cmd.".js",'command'=>$cmd,'arguments'=>$args);
   }
- }
+ } // EOF - for $c
  if($ret)
  {
   $ret['message'] = $messages;
@@ -268,7 +297,8 @@ function GShell($cmdstr, $sessid=null, $shellid=0, $extra=null)
   /* if shell-log is enabled... */
   if(isset($_COOKIE['GNUJIKO-ENABLE-SHELL-LOG']) && $_COOKIE['GNUJIKO-ENABLE-SHELL-LOG'])
    gshCommandLog($cmd, $args, $ret);
-
+  else if(isset($_COOKIE['GNUJIKO-ENABLE-DEBUG']) && $_COOKIE['GNUJIKO-ENABLE-DEBUG'])
+   gshSaveDebugLog($cmd, $args, $ret);
   return $ret;
  }
 }
@@ -438,6 +468,21 @@ function gshCommandLog($cmd, $args, $ret)
 	return false;
  }
  return true;
+}
+//-------------------------------------------------------------------------------------------------------------------//
+function gshSaveDebugLog($cmd, $args, $ret)
+{
+ if(!$ret['error'] && (!isset($_COOKIE['GNUJIKO-ENABLE-DEBUG-ALLGSHCMD']) || !$_COOKIE['GNUJIKO-ENABLE-DEBUG-ALLGSHCMD']))
+  return;
+
+ if($args && is_array($args))
+  $cmd = $cmd." ".str_replace("\n", "",implode(" ",$args));
+
+ $ctime = date('Y-m-d H:i:s');
+ $db = new AlpaDatabase();
+ $db->RunQuery("INSERT INTO system_debug(ctime,log_type,log_query,ret_message,ret_errcode,success) VALUES('"
+	.$ctime."','GSH','".$db->Purify($cmd)."','".$db->Purify($ret['message'])."','".$ret['error']."','".($ret['error'] ? '0' : '1')."')");
+ $db->Close();
 }
 //-------------------------------------------------------------------------------------------------------------------//
 

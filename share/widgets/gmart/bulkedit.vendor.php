@@ -1,16 +1,16 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 13-09-2013
+ #DATE: 05-06-2014
  #PACKAGE: gmart
  #DESCRIPTION: Bulk edit - vendor
- #VERSION: 2.0beta
- #CHANGELOG: 
+ #VERSION: 2.1beta
+ #CHANGELOG: 05-06-2014 : Bug fix mtime
  #TODO:
  
 */
@@ -23,6 +23,7 @@ define("VALID-GNUJIKO",1);
 include_once($_BASE_PATH."include/gshell.php");
 
 $selected = explode(",",$_REQUEST['ids']);
+$mtime = date('Y-m-d H:i:s');
 
 if($_POST['action'] == "edit")
 {
@@ -43,6 +44,7 @@ if($_POST['action'] == "edit")
   $id = $selected[$c];
   $db->RunQuery("DELETE FROM dynarc_".$_AP."_vendorprices WHERE item_id='".$id."'");
   $db->RunQuery("INSERT INTO dynarc_".$_AP."_vendorprices(item_id,vendor_id,vendor_name) VALUES('".$id."','".$vendorId."','".$vendorName."')");
+  $db->RunQuery("UPDATE dynarc_".$_AP."_items SET mtime='".$mtime."' WHERE id='".$id."'");
  }
  $db->Close();
 }

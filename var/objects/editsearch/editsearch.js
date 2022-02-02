@@ -1,15 +1,20 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 28-11-2012
+ #DATE: 04-04-2016
  #PACKAGE: editsearch
  #DESCRIPTION: Basic edit object with search property
- #VERSION: 2.0beta
- #CHANGELOG: 24-07-2012 - Aggiunto funzione free.
+ #VERSION: 2.7beta
+ #CHANGELOG: 04-04-2016 : Bug fix larghezza.
+			 04-03-2016 : Aggiunto evento OnShowResults
+			 13-02-2016 : Bug fix.
+			 12-03-2015 : Bug fix.
+			 14-01-2014 : Bug fix su funzione _getObjectPosition e su errore ricorsivo.
+			 24-07-2012 - Aggiunto funzione free.
 			 18-07-2012 - Bug fix.
  #TODO:
  
@@ -18,7 +23,20 @@
 var EditSearch = {
 	init:function(obj,startQry,endQry,retValField,retTxtField,retArrName,focus,outValField,onQueryResultCallback)
 	{
+	 if(obj.editsearchinit)
+	 {
+	  obj.esHinst.startQry = startQry;
+	  obj.esHinst.endQry = endQry;
+	  obj.esHinst.retValField = retValField;
+	  obj.esHinst.retTxtField = retTxtField;
+	  obj.esHinst.retArrName = retArrName;
+	  obj.esHinst.outValField = outValField;
+	  if(focus) obj.focus();
+	  return obj;
+	 }
+	 obj.editsearchinit = true;
 	 var oThis = this;
+     this.STOP_QRY = false;
 	 var O = obj ? obj : document.createElement('INPUT');
 	 this.C = document.createElement('TABLE');
 	 this.C.border=0; this.C.cellSpacing=0; this.C.cellPadding=0;
@@ -42,6 +60,9 @@ var EditSearch = {
 	 if(O.onblur)
 	  O.oldOnBlur = O.onblur;
 	 O.onblur = function(e){
+		 if(oThis.qryTimer)
+	  	  clearInterval(oThis.qryTimer);
+		 oThis.STOP_QRY = true;
 		 oThis.hideResults();
 		 if(typeof(this.oldOnBlur) == "function")
 		  this.oldOnBlur(e);
@@ -117,7 +138,7 @@ var EditSearch = {
 	  if(keyNum == 27)
 	   O.value = O.defaultValue;
 	  oThis.hideResults();
-	  O.blur();
+	  //O.blur();
 	 }
 	 else
 	 {
@@ -155,14 +176,19 @@ var EditSearch = {
 	 this._hintElem(this.results[this.selectedIndex],true,O);
 	},
 
-	_execQry:function(O)
+	_execQry:function(O,otherQry)
 	{
 	 this.selectedIndex = -1;
-	 if(!O.value)
+	 if(!O.value && !otherQry)
 	  return this.hideResults();
 	 var oThis = this;
 	 this.sh.OnError = function(e,s){return false;}
 	 this.sh.OnOutput = function(o,a){
+		 if(oThis.STOP_QRY)
+		 {
+		  oThis.STOP_QRY = false;
+		  return oThis.hideResults();
+		 }
 		 if(!a)
 		 {
 		  O.data = null;
@@ -254,6 +280,8 @@ var EditSearch = {
 		  oThis.C.style.position = "absolute";
 		  oThis.C.style.left = xy['x'];
 		  oThis.C.style.top = 0;
+		  if(parseFloat(oThis.C.style.width) < O.offsetWidth)
+		   oThis.C.style.width = O.offsetWidth+"px";
 		  oThis.C.style.visibility = "hidden";
 		  oThis.C.style.display = "";
 		  document.body.appendChild(oThis.C);
@@ -265,6 +293,9 @@ var EditSearch = {
 		  else
 		   oThis.C.style.top = xy['y']+O.offsetHeight;
 		  
+		  if(O.OnShowResults)
+		   O.OnShowResults(oThis.C, O, xy);
+
 		  oThis.C.style.visibility='visible';
 		  oThis.C.style.zIndex = 999999;
 		 }
@@ -273,7 +304,10 @@ var EditSearch = {
 		  oThis.hideResults();
 		 }
 		}
-	 this.sh.sendCommand(O.esHinst.startQry+(O.getAttribute('convertspecialchars') == "true" ? real_htmlspecialchars(O.value) : O.value)+O.esHinst.endQry);
+	 if(otherQry)
+	  this.sh.sendCommand(otherQry);
+	 else
+	  this.sh.sendCommand(O.esHinst.startQry+(O.getAttribute('convertspecialchars') == "true" ? real_htmlspecialchars(O.value) : O.value)+O.esHinst.endQry);
 	},
 
 	_hintElem:function(elm,select,O)
@@ -303,7 +337,8 @@ var EditSearch = {
 	 this.hideResults();
 	 if(O.onchange)
 	  O.onchange();
-	 O.onblur();
+	 O.hideResults();
+	 //O.onblur();
 	},
 
 	hideResults:function(){
@@ -331,8 +366,8 @@ function _getObjectPosition(e)
 
  while(obj = obj.parentNode)
  {
-  //left+= obj.scrollLeft ? obj.scrollLeft : 0;
-  //top+= obj.scrollTop ? obj.scrollTop : 0;
+  left+= obj.scrollLeft ? obj.scrollLeft : 0;
+  top+= obj.scrollTop ? obj.scrollTop : 0;
  }
 
  return {x:left, y:top};

@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 30-03-2013
+ #DATE: 24-10-2016
  #PACKAGE: dynarc-css-extension
  #DESCRIPTION: CSS extension for Dynarc.
- #VERSION: 2.1beta
- #CHANGELOG: 30-03-2013 : Aggiornate funzioni import ed export.
+ #VERSION: 2.2beta
+ #CHANGELOG: 24-10-2016 : MySQLi integration.
+			 30-03-2013 : Aggiornate funzioni import ed export.
 			 03-12-2012 : Completamento delle funzioni principali.
  #TODO:
  
@@ -68,7 +69,7 @@ function dynarcextension_css_set($args, $sessid, $shellid, $archiveInfo, $itemIn
  else
  {
   $db->RunQuery("INSERT INTO dynarc_".$archiveInfo['prefix']."_css(item_id,src,content) VALUES('".$itemInfo['id']."','".$src."','".$db->Purify($content)."')");
-  $id = mysql_insert_id();
+  $id = $db->GetInsertId();
  }
  $itemInfo['last_css_id'] = $id;
 

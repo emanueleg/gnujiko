@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 11-02-2013
+ #DATE: 10-06-2014
  #PACKAGE: gserv
  #DESCRIPTION: GServ basic info extension for Dynarc.
- #VERSION: 2.3beta
- #CHANGELOG: 11-02-2013 : Aggiunti units e qty_sold.
+ #VERSION: 2.4beta
+ #CHANGELOG: 10-06-2014 : Aggiunta funzione onarchiveempty
+			 11-02-2013 : Aggiunti units e qty_sold.
 			 29-01-2013 : Aggiunto service-type.
 			 03-12-2012 : Completamento delle funzioni principali.
  #TODO:Rifare funzione import & export e completare funzioni syncimport & syncexport.
@@ -259,11 +260,14 @@ function dynarcextension_gserv_onmovecategory($args, $sessid, $shellid, $archive
  return true;
 }
 //-------------------------------------------------------------------------------------------------------------------//
-
-//-------------------------------------------------------------------------------------------------------------------//
 function dynarcextension_gserv_oncopycategory($sessid, $shellid, $archiveInfo, $srcInfo, $cloneInfo)
 {
  return $cloneInfo;
+}
+//-------------------------------------------------------------------------------------------------------------------//
+function dynarcextension_gserv_onarchiveempty($args, $sessid, $shellid, $archiveInfo)
+{
+ return true;
 }
 //-------------------------------------------------------------------------------------------------------------------//
 function dynarcextension_gserv_export($sessid, $shellid, $archiveInfo, $itemInfo)

@@ -174,3 +174,27 @@ div.excel-footer {
 	padding: 5px;
 }
 
+input.edit {
+	height: 30px;
+	border: 1px solid #d8d8d8;
+	font-family: arial, sans-serif;
+	font-size: 12px;
+	background: #ffffff;
+	color: #222;
+	padding-left: 8px;
+	padding-right: 8px;
+}
+
+input.edit:focus {
+	outline: none;
+	border: 1px solid #4486fa;
+}
+
+span.smalltext {
+	font-family: Arial, sans-serif;
+	font-size: 12px;
+	height: 30px;
+	line-height: 30px;
+	display: block;
+}
+

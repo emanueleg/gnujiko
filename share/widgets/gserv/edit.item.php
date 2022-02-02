@@ -1,22 +1,20 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 13-09-2013
+ #DATE: 17-12-2016
  #PACKAGE: gserv
  #DESCRIPTION: Edit service form.
- #VERSION: 2.6beta
- #CHANGELOG: 13-09-2013 : Bug fix nei listini prezzi.
-			 17-04-2013 : Aggiunto listini extra.
-			 25-03-2013 : Aggiunto allegati.
-			 11-02-2013 : Bug fix vari.
-			 31-01-2013 : Predisposizione per la scheda 'Prezzi imposti'
-			 29-01-2013 : Bug fix sui listini prezzi.
-			 06-12-2012 : Bug fix vari.
+ #VERSION: 2.11beta
+ #CHANGELOG: 17-12-2016 : Listini prezzi, campo sconto.
+			 17-03-2016 : Bug fix titolo lungo.
+			 02-10-2014 : Possibilità di ricercare in tutta la rubrica (x integrazione con soci) sulla lista fornitori.
+			 02-06-2014 : Sostituito -ct vendors con -into vendors
+			 19-04-2014 : Bug fix.
  #DEPENDS: guploader, pricelists, gmutable
  #TODO:
  
@@ -48,7 +46,7 @@ $get = "";
 for($c=0; $c < count($_PRICELISTS); $c++)
 {
  $pid = $_PRICELISTS[$c]['id'];
- $get.= ",pricelist_".$pid."_baseprice,pricelist_".$pid."_mrate,pricelist_".$pid."_vat";
+ $get.= ",pricelist_".$pid."_baseprice,pricelist_".$pid."_mrate,pricelist_".$pid."_vat,pricelist_".$pid."_discount";
 }
 
 $_AP = $_REQUEST['ap'] ? $_REQUEST['ap'] : "gserv";
@@ -56,6 +54,7 @@ $_AP = $_REQUEST['ap'] ? $_REQUEST['ap'] : "gserv";
 $ret = GShell("dynarc item-info -ap `".$_AP."` -id `".$id."` -extget `gserv,thumbnails,coding,idoc,pricing,custompricing,vendorprices`"
 	.($get ? " -get `".ltrim($get,",")."`" : ""),$_REQUEST['sessid'],$_REQUEST['shellid']);
 $itemInfo = $ret['outarr'];
+$_USE_DEFAULT_VALUES = !$itemInfo['mtime'] ? true : false;
 
 if($itemInfo['estimated_timelength'])
 {
@@ -64,7 +63,7 @@ if($itemInfo['estimated_timelength'])
  $timeLengthStr = $h.":".($m<10 ? "0".$m : $m);
 }
 else
- $timeLengthStr = "0:30";
+ $timeLengthStr = "0:00";
 
 if($itemInfo['cat_id'])
 {
@@ -132,12 +131,16 @@ include_once($_BASE_PATH."include/js/gshell.php");
 include_once($_BASE_PATH."var/objects/gmutable/index.php");
 include($_BASE_PATH."var/objects/htmlgutility/menu.php");
 include_once($_BASE_PATH."var/objects/guploader/index.php");
+
+$_ABBR_ART_TITLE = html_entity_decode($itemInfo['name']);
+if(strlen($_ABBR_ART_TITLE) > 60) $_ABBR_ART_TITLE = substr($_ABBR_ART_TITLE, 0, 60)."...";
+
 ?>
 </head><body>
 <div class="edit-product-form">
  <!-- HEADER -->
  <table width='100%' cellspacing='0' cellpadding='0' border='0'>
- <tr><td width='600' height='25'><div class='header'>Servizio: <span class='itemcode'><?php echo $itemInfo['code_str']; ?></span> <span class='title'><?php echo $itemInfo['name']; ?></span></div></td>
+ <tr><td width='600' height='25'><div class='header'>Servizio: <span class='itemcode'><?php echo $itemInfo['code_str']; ?></span> <span class='title'><?php echo $_ABBR_ART_TITLE; ?></span><?php if($_USE_DEFAULT_VALUES) echo " *"; ?></div></td>
 	<td align='center'><div class='header-right'><?php echo $catInfo['name']; ?></div></td>
  </tr>
  </table>
@@ -213,7 +216,7 @@ include_once($_BASE_PATH."var/objects/guploader/index.php");
 			 <tr><td class="field small">PREZZO DI BASE:</td>
 				 <td class='value' style='font-size:10px;'><input type='text' id='item_baseprice' style='width:70px;' value="<?php echo number_format($itemInfo['baseprice'],$_DECIMALS,',','.'); ?>" onchange="_basepriceChange(this)"/> &euro;<span class="field small" style="margin-left:50px">Unit&agrave; di Misura: <input type='text' id='item_units' style='width:40px;' value="<?php echo $itemInfo['units'] ? $itemInfo['units'] : 'PZ'; ?>"/></td></tr>
 			 <tr><td class="field small">I.V.A:</td>
-				 <td class='value' style='font-size:10px;'><input type='text' id='item_vat' style='width:30px;' value="<?php echo $itemInfo['vat'] ? $itemInfo['vat'] : $_FREQ_VAT_PERC; ?>" onchange="_vatChange(this)"/> %</td></tr>
+				 <td class='value' style='font-size:10px;'><input type='text' id='item_vat' style='width:30px;' value="<?php echo $itemInfo['vat'] ? $itemInfo['vat'] : ($_USE_DEFAULT_VALUES ? $_FREQ_VAT_PERC : 0); ?>" onchange="_vatChange(this)"/> %</td></tr>
 
 
 			 <tr><td class="field small">TIPO DI SERVIZIO:</td>
@@ -225,9 +228,9 @@ include_once($_BASE_PATH."var/objects/guploader/index.php");
 
 			 <!-- <tr><td class="field small">MODALITA&lsquo; PREZZO:</td>
 				 <td class='value' style="font-size:10px;">
-					<input type='radio' name='pricemode' value='0' <?php if($itemInfo['pricemode'] == 0) echo "checked='true'"; ?>/>Prezzo fisso <input type='radio' name='pricemode' value='1' id='pricemode1' <?php if($itemInfo['pricemode'] == 1) echo "checked='true'"; ?>/>Tariffa oraria</td></tr>
+					<input type='radio' name='pricemode' value='0' <?php if($itemInfo['pricemode'] == 0) echo "checked='true'"; ?>/>Prezzo fisso <input type='radio' name='pricemode' value='1' id='pricemode1' <?php if($itemInfo['pricemode'] == 1) echo "checked='true'"; ?>/>Tariffa oraria</td></tr>-->
 			 <tr><td class="field small lightblue">STIMA TEMPO<br/>ESECUZIONE</td>
-				 <td class='value'><input type='text' id='estimated_timelength' size='5' value="<?php echo $timeLengthStr; ?>"/></td></tr> -->
+				 <td class='value'><input type='text' id='estimated_timelength' size='5' value="<?php echo $timeLengthStr; ?>"/></td></tr>
 
 			</table>
 			<!-- EOF INFO -->
@@ -349,6 +352,7 @@ include_once($_BASE_PATH."var/objects/guploader/index.php");
 		 <th id='pricelistname' style="text-align:left;">LISTINO</th>
 		 <th width='80' id='baseprice' editable='true' format='currency' decimals="<?php echo $_DECIMALS; ?>">PREZZO BASE</th>
 		 <th width='70' id='markuprate' editable='true' format='percentage'>% RICARICO</th>
+		 <th width='70' id='discount' editable='true' format='percentage'>% SCONTO</th>
 		 <th width='80' id='finalprice'>PREZZO FINALE</th>
 		 <th width='40' id='vat' editable='true' format='percentage'>% IVA</th>
 		 <th width='80' id='finalpricevatincluded'>PREZZO + IVA</th></tr>
@@ -359,19 +363,24 @@ include_once($_BASE_PATH."var/objects/guploader/index.php");
 	 $starImg = $_ABSOLUTE_URL."share/widgets/gserv/img/star.png";
 	 for($c=0; $c < count($list); $c++)
 	 {
-	  $baseprice = $itemInfo["pricelist_".$list[$c]['id']."_baseprice"] ? $itemInfo["pricelist_".$list[$c]['id']."_baseprice"] : $itemInfo['baseprice'];
-	  $markuprate = $itemInfo["pricelist_".$list[$c]['id']."_mrate"] ? $itemInfo["pricelist_".$list[$c]['id']."_mrate"] : $list[$c]['markuprate'];
-	  $vat = $itemInfo["pricelist_".$list[$c]['id']."_vat"] ? $itemInfo["pricelist_".$list[$c]['id']."_vat"] : $list[$c]['vat'];
+	  $baseprice = $itemInfo["pricelist_".$list[$c]['id']."_baseprice"] ? $itemInfo["pricelist_".$list[$c]['id']."_baseprice"] : ($_USE_DEFAULT_VALUES ? $itemInfo['baseprice'] : 0);
+	  $markuprate = $itemInfo["pricelist_".$list[$c]['id']."_mrate"] ? $itemInfo["pricelist_".$list[$c]['id']."_mrate"] : ($_USE_DEFAULT_VALUES ? $list[$c]['markuprate'] : 0);
+	  $discount = $itemInfo["pricelist_".$list[$c]['id']."_discount"] ? $itemInfo["pricelist_".$list[$c]['id']."_discount"] : ($_USE_DEFAULT_VALUES ? $list[$c]['discount'] : 0);
+	  $vat = $itemInfo["pricelist_".$list[$c]['id']."_vat"] ? $itemInfo["pricelist_".$list[$c]['id']."_vat"] : ($_USE_DEFAULT_VALUES ? $list[$c]['vat'] : 0);
+
+	  $finalPrice = $baseprice ? $baseprice + (($baseprice/100)*$markuprate) : 0;
+	  $finalPrice = $finalPrice ? $finalPrice - (($finalPrice/100)*$discount) : 0;
+	  $finalPriceVI = $finalPrice ? $finalPrice + (($finalPrice/100)*$vat) : 0;
 
 	  echo "<tr id='pricelist-".$list[$c]['id']."' class='".($list[$c]['enabled'] ? 'row'.$row : 'unselected')."'>";
 	  echo "<td><input type='checkbox'".($list[$c]['enabled'] ? " checked='true'" : "")." onclick='pricelistCheckChange(this)'/></td>";
 	  echo "<td>".($list[$c]['isextra'] ? "<img src='".$starImg."' title='Listino extra'/> " : "").$list[$c]['name']."</td>";
 	  echo "<td align='right'>".number_format($baseprice,$_DECIMALS,",",".")."</td>";
 	  echo "<td align='center'>".($markuprate ? $markuprate."%" : "0%")."</td>";
-	  $finalPrice = $baseprice ? $baseprice + (($baseprice/100)*$markuprate) : 0;
+	  echo "<td align='center'>".($discount ? $discount."%" : "0%")."</td>";
+
 	  echo "<td align='right'><em>&euro;</em>".number_format($finalPrice,$_DECIMALS,",",".")."</td>";
 	  echo "<td align='center'>".($vat ? $vat."%" : "0%")."</td>";
-	  $finalPriceVI = $finalPrice ? $finalPrice + (($finalPrice/100)*$vat) : 0;
 	  echo "<td align='right'><em>&euro;</em>".number_format($finalPriceVI,$_DECIMALS,",",".")."</td></tr>";
 	  $row = $row ? 0 : 1;
 	 }
@@ -554,7 +563,7 @@ function bodyOnLoad()
 	  NEW_VENDORPRICES.splice(NEW_VENDORPRICES.indexOf(r),1);
 	}
 
- VENDORSTB.FieldByName['vendor'].enableSearch("dynarc item-find -ap rubrica -ct vendors -field name `","` -limit 10 --order-by 'name ASC'","id","name","items",true);
+ VENDORSTB.FieldByName['vendor'].enableSearch("dynarc item-find -ap rubrica -field name `","` -limit 10 --order-by 'name ASC'","id","name","items",true);
 
  /* CUSTOM PRICING TABLE */
  CPTB = new GMUTable(document.getElementById('custompricing-table'), {autoresize:false, autoaddrows:false});
@@ -651,7 +660,7 @@ function saveAndClose()
  var vat = document.getElementById('item_vat').value;
  var units = document.getElementById('item_units').value;
  var priceMode = 0;
- //var _tl =  document.getElementById('estimated_timelength').value;
+ var _tl =  document.getElementById('estimated_timelength').value;
  var type = document.getElementById('service-type').value;
 
  switch(type)
@@ -659,7 +668,7 @@ function saveAndClose()
   case 'HOURLY-RATE' : priceMode=1; break;
  }
 
- /*if(_tl)
+ if(_tl)
  {
   var x = _tl.split(":");
   if(x[1])
@@ -668,7 +677,7 @@ function saveAndClose()
    _tl = parseFloat(_tl);
  }
  else
-  _tl = 0;*/
+  _tl = 0;
 
 
  /* Save pricelists */
@@ -681,7 +690,7 @@ function saveAndClose()
   if(r.cells[0].getElementsByTagName('INPUT')[0].checked)
    pricelists+= ","+pid;
 
-  set+= ",pricelist_"+pid+"_baseprice='"+parseCurrency(r.cell['baseprice'].getValue())+"',pricelist_"+pid+"_mrate='"+parseFloat(r.cell['markuprate'].getValue())+"',pricelist_"+pid+"_vat='"+parseFloat(r.cell['vat'].getValue())+"'";
+  set+= ",pricelist_"+pid+"_baseprice='"+parseCurrency(r.cell['baseprice'].getValue())+"',pricelist_"+pid+"_mrate='"+parseFloat(r.cell['markuprate'].getValue())+"',pricelist_"+pid+"_discount='"+parseFloat(r.cell['discount'].getValue())+"',pricelist_"+pid+"_vat='"+parseFloat(r.cell['vat'].getValue())+"'";
  }
  if(pricelists)
   pricelists = pricelists.substr(1);
@@ -689,7 +698,7 @@ function saveAndClose()
 
  var sh = new GShell();
  sh.OnFinish = function(o,a){gframe_close(o,a);}
- sh.sendCommand("dynarc edit-item -ap `"+AP+"` -id `<?php echo $itemInfo['id']; ?>` -name `"+_name+"` -code-str `"+code+"` -extset `gserv.pricemode='"+priceMode+"',type='"+type+"',units='"+units+"',pricing.baseprice='"+baseprice+"',vat='"+vat+"',pricelists='"+pricelists+"'` -desc `"+desc+"`"+(set ? " -set `"+set.substr(1)+"`" : ""));
+ sh.sendCommand("dynarc edit-item -ap `"+AP+"` -id `<?php echo $itemInfo['id']; ?>` -name `"+_name+"` -code-str `"+code+"` -extset `gserv.pricemode='"+priceMode+"',type='"+type+"',units='"+units+"',tl='"+_tl+"',pricing.baseprice='"+baseprice+"',vat='"+vat+"',pricelists='"+pricelists+"'` -desc `"+desc+"`"+(set ? " -set `"+set.substr(1)+"`" : ""));
 
  /* SAVE VENDOR PRICES */
  for(var c=0; c < DELETED_VENDORPRICES.length; c++)
@@ -1023,9 +1032,11 @@ function _pricelistsUpdateTotals(r)
 {
  var baseprice = parseCurrency(r.cell['baseprice'].getValue());
  var markuprate = parseFloat(r.cell['markuprate'].getValue());
+ var discount = parseFloat(r.cell['discount'].getValue());
  var vat = parseFloat(r.cell['vat'].getValue());
 
  var finalPrice = baseprice ? baseprice + ((baseprice/100)*markuprate) : 0;
+ finalPrice = finalPrice ? finalPrice - ((finalPrice/100)*discount) : 0;
  var finalPriceVatIncluded = finalPrice ? finalPrice + ((finalPrice/100)*vat) : 0;
 
  r.cell['finalprice'].setValue("<em>&euro;</em>"+formatCurrency(finalPrice,DECIMALS));

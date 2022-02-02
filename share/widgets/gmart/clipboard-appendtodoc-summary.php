@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 10-10-2013
+ #DATE: 08-10-2014
  #PACKAGE: gmart
  #DESCRIPTION: Clipboard Summary for GMart
- #VERSION: 2.2beta
- #CHANGELOG: 10-10-2013 : Bug fix sui prezzi. Ora li calcola giusti.
+ #VERSION: 2.3beta
+ #CHANGELOG: 08-10-2014 : Bug fix su generazione ordini fornitore.
+			 10-10-2013 : Bug fix sui prezzi. Ora li calcola giusti.
 			 13-01-2013 : Bug fix in assign group at new documents.
  #TODO: La clipboard inserisce solo nell'archivio gmart. Modificare in modo che si possa usare anche con gli altri archivi.
  
@@ -72,6 +73,8 @@ $ret = GShell("dynarc clipboard-info -id `".$id."`",$_REQUEST['sessid'],$_REQUES
 if(!$ret['error'])
  $cbInfo = $ret['outarr'];
 
+$_IS_VENDOR = false;
+
 ?>
 <html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8"><title>Summary</title>
 <script>var BASE_PATH = "<?php echo $_BASE_PATH; ?>"; var ABSOLUTE_URL = "<?php echo $_ABSOLUTE_URL; ?>"; var USER_HOME = "<?php echo $_USERS_HOMES.$_SESSION['HOMEDIR']; ?>/";</script>
@@ -122,7 +125,10 @@ include_once($_BASE_PATH."var/objects/dynrubricaedit/index.php");
 			  case 'preemptives' : $newTit = "Genera nuovo preventivo"; break;
 			  case 'orders' : $newTit = "Genera nuovo ordine"; break;
 			  case 'ddt' : $newTit = "Genera nuovo D.D.T."; break;
-			  case 'vendororders' : $newTit = "Genera nuovo ordine fornitore"; break;
+			  case 'vendororders' : {
+				 $newTit = "Genera nuovo ordine fornitore"; 
+				 $_IS_VENDOR = true;
+				}break;
 			  case 'invoices' : $newTit = "Genera nuova fattura"; break;
 			  default : $newTit = "Genera nuovo documento"; break;
 			 }
@@ -159,7 +165,8 @@ include_once($_BASE_PATH."var/objects/dynrubricaedit/index.php");
 		 <th width='60' id='code'>CODICE</th>
 		 <th id='description' minwidth='250'>ARTICOLO / DESCRIZIONE</th>
 		 <th width='40' id='qty' style='text-align:center;' editable='true'>QTA'</th>
-		 <th width='60' id='unitprice' format='currency' decimals="<?php echo $_DECIMALS; ?>">PR. UNIT.</th>
+		 <th width='60' id='vendorprice' format='currency' decimals="<?php echo $_DECIMALS; ?>">PR. ACQ.</th>
+		 <th width='60' <?php if($_IS_VENDOR) echo "style='display:none'"; ?> id='unitprice' format='currency' decimals="<?php echo $_DECIMALS; ?>">PR. UNIT.</th>
 		 <th width='40' id='vat' style='text-align:center;' format='percentage'>I.V.A.</th>
 		 <th width='120' id='price' style='text-align:center;' minwidth='100'>TOTALE</th>
 		 <th width='120' id='vatprice' style='text-align:center;' minwidth='100'>TOT. + IVA</th>
@@ -170,16 +177,20 @@ include_once($_BASE_PATH."var/objects/dynrubricaedit/index.php");
 	for($c=0; $c < count($cbInfo['elements']); $c++)
 	{
 	 $el = $cbInfo['elements'][$c];
-  	 $ret = GShell("commercialdocs getfullinfo -ap `".$el['ap']."` -id `".$el['id']."` -subjectid `".$customerInfo['id']."`");
+  	 $ret = GShell("commercialdocs getfullinfo -ap `".$el['ap']."` -id `".$el['id']."` "
+		.($_IS_VENDOR ? "-vendorid `".$customerInfo['id']."`" : "-subjectid `".$customerInfo['id']."`"),$_REQUEST['sessid'],$_REQUEST['shellid']);
 	 if($ret['error'])
 	  continue;
 	 $itm = $ret['outarr'];
 
 	 $qty = $el['qty'] ? $el['qty'] : 1;
 
-	 $finalPrice = $itm['finalprice'];
+	 $finalPrice = $_IS_VENDOR ? $itm['vendor_price'] : $itm['finalprice'];
 	 $total = $finalPrice*$qty;
-	 $totalVI = $itm['finalpricevatincluded']*$qty;
+	 if($_IS_VENDOR)
+	  $totalVI = $itm['vendor_price'] ? $itm['vendor_price'] + (($itm['vendor_price']/100)*$itm['vendor_vatrate']) : 0;
+	 else
+	  $totalVI = $itm['finalpricevatincluded']*$qty;
 
 	 $subtot+= $total;
 	 $subtotVI+= $totalVI;
@@ -188,7 +199,8 @@ include_once($_BASE_PATH."var/objects/dynrubricaedit/index.php");
 	 echo "<td><span class='graybold'>".$itm['code_str']."</span></td>";
 	 echo "<td><span class='graybold doubleline'>".$itm['name']."</span></td>";
 	 echo "<td><span class='graybold 13 center'>".$el['qty']."</span></td>";
-	 echo "<td><span class='graybold'>".number_format($finalPrice,$_DECIMALS,",",".")."</span></td>";
+	 echo "<td><span class='graybold'>".number_format($itm['vendor_price'],$_DECIMALS,",",".")."</span></td>";
+	 echo "<td ".($_IS_VENDOR ? 'style=\"display:none\"' : '')."><span class='graybold'>".number_format($finalPrice,$_DECIMALS,",",".")."</span></td>";
 	 echo "<td><span class='graybold center'>".$itm['vat']."%</span></td>";
 	 echo "<td><span class='eurogreen'><em>&euro;</em>".number_format($total,$_DECIMALS,",",".")."</span></td>";
 	 echo "<td><span class='eurogreen'><em>&euro;</em>".number_format($totalVI,$_DECIMALS,",",".")."</span></td>";
@@ -239,6 +251,7 @@ var DOC_TYPE = "<?php echo $_REQUEST['doctype'] ? $_REQUEST['doctype'] : 'preemp
 var DOC_ID = <?php echo $_REQUEST['docid'] ? $_REQUEST['docid'] : '0'; ?>;
 var PLID = <?php echo $_PLID ? $_PLID : "0"; ?>;
 var INCLUDE_TITLE = <?php echo $_REQUEST['includecbtitle'] ? "true" : "false"; ?>;
+var IS_VENDOR = <?php echo $_IS_VENDOR ? 'true' : 'false'; ?>;
 
 function bodyOnLoad()
 {
@@ -302,6 +315,7 @@ function submit()
    var desc = r.cell['description'].getValue();
    var qty = parseFloat(r.cell['qty'].getValue());
    var unitprice = parseCurrency(r.cell['unitprice'].getValue());
+   var vendorprice = parseCurrency(r.cell['vendorprice'].getValue());
    var vat = parseFloat(r.cell['vat'].getValue());
 
    var refap = r.getAttribute('refap');
@@ -313,7 +327,7 @@ function submit()
     case 'gserv' : type='service'; break;
    }
 
-   sh.sendCommand("dynarc edit-item -ap `commercialdocs` -id `"+DOC_ID+"` -extset `cdelements.type='"+type+"',refap='"+refap+"',refid='"+refid+"',code='"+code+"',name='''"+desc+"''',qty='"+qty+"',price='"+unitprice+"',vat='"+vat+"',vatid='"+r.getAttribute('vatid')+"',vattype='"+r.getAttribute('vattype')+"',pricelist='"+PLID+"'`");
+   sh.sendCommand("dynarc edit-item -ap `commercialdocs` -id `"+DOC_ID+"` -extset `cdelements.type='"+type+"',refap='"+refap+"',refid='"+refid+"',code='"+code+"',name='''"+desc+"''',qty='"+qty+"',saleprice='"+unitprice+"',vendorprice='"+vendorprice+"',price='"+(IS_VENDOR ? vendorprice : unitprice)+"',vat='"+vat+"',vatid='"+r.getAttribute('vatid')+"',vattype='"+r.getAttribute('vattype')+"',pricelist='"+PLID+"'`");
   }
   sh.sendCommand("commercialdocs updatetotals -id '"+DOC_ID+"'");
  }

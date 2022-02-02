@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 24-09-2013
+ #DATE: 24-05-2014
  #PACKAGE: dynarc-mmr-extension
  #DESCRIPTION: Money Movements Reports.
- #VERSION: 2.2beta
- #CHANGELOG: 24-09-2013 : Aggiunto funzione clean.
+ #VERSION: 2.3beta
+ #CHANGELOG: 24-05-2014 : Aggiunto parametro --only-invoices su funzione schedule
+			 24-09-2013 : Aggiunto funzione clean.
 			 13-09-2013 : Bug fix sulle scadenze. 
  #DEPENDS: 
  #TODO: 
@@ -47,23 +48,47 @@ function mmr_schedule($args, $sessid, $shellid)
  $orderBy = "expire_date ASC";
 
  $out = "";
- $outArr = array();
+ $outArr = array("count"=>0, "results"=>array());
 
  for($c=1; $c < count($args); $c++)
   switch($args[$c])
   {
    case '-ap' : {$_ARCHIVE_PREFIXES[]=$args[$c+1]; $c++;} break; // se non viene specificato alcun archivio, verranno mostrati tutti.
 
-   case '-from' : {$dateFrom=strtotime($args[$c+1]); $c++;} break;
-   case '-to' : {$dateTo=strtotime($args[$c+1]); $c++;} break;
+   case '-from' : {$dateFrom=$args[$c+1]; $c++;} break;
+   case '-to' : {$dateTo=$args[$c+1]; $c++;} break;
    case '--order-by' : {$orderBy=$args[$c+1]; $c++;} break;
    case '-limit' : case '--limit' : {$limit=$args[$c+1]; $c++;} break;
    case '--include-expired' : $includeExpired=true; break;
+   case '--all-expired' : case '--only-expired' : $onlyExpired=true; break;
+   case '--only-expiring' : $onlyExpiring=true; break;
 
-   case '-verbose' : $verbose=true; break;
+   case '-subject-id' : {$subjectId=$args[$c+1]; $c++;} break;
+   case '-subject' : {$subjectName=$args[$c+1]; $c++;} break;
+
+   case '--only-incomes' : $onlyIncomes=true; break;
+   case '--only-expenses' : $onlyExpenses=true; break;
+   case '--only-invoices' : $onlyInvoices=true; break;
+
+   case '-verbose' : case '--verbose' : $verbose=true; break;
   }
 
  $mod = new GMOD();
+ if($dateFrom == "always")
+  $dateFrom = strtotime("1970-01-01");
+ else if($dateFrom == "lastmonth")
+  $dateFrom = strtotime("-1 month",time());
+ else if(!$dateFrom)
+  $dateFrom = strtotime(date('Y-m-01'));
+ else
+  $dateFrom = strtotime($dateFrom);
+
+ if($dateTo == "forever")
+  $dateTo = strtotime("+12 year");
+ else if(!$dateTo)
+  $dateTo = strtotime("+1 month",$dateFrom);
+ else
+  $dateTo = strtotime($dateTo);
 
  if(count($_ARCHIVE_PREFIXES))
  {
@@ -109,12 +134,9 @@ function mmr_schedule($args, $sessid, $shellid)
  $db->Close();
 
  /* ELENCO DEI RISULTATI */
- if(!$dateFrom)
-  $dateFrom = strtotime(date('Y-m-01'));
- if(!$dateTo)
-  $dateTo = strtotime("+1 month",$dateFrom);
 
- $totIncomes = 0; $totExpenses = 0;
+ $totIncomes = 0; $totExpenses = 0; $totExpired = 0;
+ $totPaid = 0; $totUnpaid = 0; $totRatePaid = 0;
 
  $out.= "Money Movement Report: from ".date('d/m/Y',$dateFrom)." to ".date('d/m/Y',$dateTo)."\n";
 
@@ -141,15 +163,35 @@ function mmr_schedule($args, $sessid, $shellid)
   $db->Close();
 
   $db = new AlpaDatabase();
-  $qry = "(expire_date>='".date('Y-m-d',$dateFrom)."' AND expire_date<'".date('Y-m-d',$dateTo)."' AND payment_date='0000-00-00')";
+  if($onlyExpired)
+   $qry = "(expire_date>='".date('Y-m-d',$dateFrom)."' AND expire_date<'".date('Y-m-d')."' AND payment_date='0000-00-00')";
+  else if($onlyExpiring)
+   $qry = "(expire_date>='".date('Y-m-d')."' AND expire_date<'".date('Y-m-d',$dateTo)."' AND payment_date='0000-00-00')";
+  else
+   $qry = "(expire_date>='".date('Y-m-d',$dateFrom)."' AND expire_date<'".date('Y-m-d',$dateTo)."' AND payment_date='0000-00-00')";
   if($includeExpired)
-   $qry.= " OR (payment_date='0000-00-00' AND expire_date<='".date('Y-m-d',$dateFrom)."')";
-  $db->RunQuery("SELECT * FROM dynarc_".$archiveInfo['prefix']."_mmr WHERE ".$qry." ORDER BY ".$orderBy);
+   $qry.= " OR (payment_date='0000-00-00' AND expire_date<='".date('Y-m-d')."')";
+
+  if($subjectId)
+   $qry.= " AND subject_id='".$subjectId."'";
+  else if($subjectName)
+   $qry.= " AND subject_name='".$db->Purify($subjectName)."'";
+  if($onlyIncomes)
+   $qry.= " AND incomes>0 AND expenses=0";
+  else if($onlyExpenses)
+   $qry.= " AND expenses>0 AND incomes=0";
+
+  // get count
+  $db->RunQuery("SELECT COUNT(*) FROM dynarc_".$archiveInfo['prefix']."_mmr WHERE ".$qry);
+  $db->Read();
+  $outArr['count'] = $db->record[0];
+
+  $db->RunQuery("SELECT * FROM dynarc_".$archiveInfo['prefix']."_mmr WHERE ".$qry." ORDER BY ".$orderBy.($limit ? " LIMIT ".$limit : ""));
   while($db->Read())
   {
    $a = array('id'=>$db->record['id'],'doc_id'=>$db->record['item_id'],'name'=>$db->record['description'],'incomes'=>$db->record['incomes'],
-	'expenses'=>$db->record['expenses'],'expire_date'=>$db->record['expire_date'],'subject_id'=>$db->record['subject_id'],
-	'subject_name'=>$db->record['subject_name']);
+	'expenses'=>$db->record['expenses'],'expire_date'=>$db->record['expire_date'],'payment_date'=>$db->record['payment_date'],
+	'subject_id'=>$db->record['subject_id'],'subject_name'=>$db->record['subject_name']);
    // detect document info
    $db2 = new AlpaDatabase();
    $db2->RunQuery("SELECT * FROM dynarc_".$archiveInfo['prefix']."_items WHERE id='".$db->record['item_id']."'");
@@ -157,17 +199,34 @@ function mmr_schedule($args, $sessid, $shellid)
    if($db2->record['trash'])
     continue;
    $ct = $_CAT_TAG[$db2->record['cat_id']];
-   if(($ct != "INVOICES") && ($ct != "ORDERS") && ($ct != "DDT") && ($ct != "INTERVREPORTS") && ($ct != "DEBITSNOTE") && ($ct != "PAYMENTNOTICE") && ($ct != "RECEIPTS"))
+   if($onlyInvoices && ($ct != "INVOICES"))
 	continue;
 
    $a['doc_name'] = $db2->record['name'];
    $a['payment_mode'] = $db2->record['payment_mode'];
    $a['payment_mode_name'] = $_PAYMENT_MODES[$a['payment_mode']];
    $a['bank_support'] = $db2->record['bank_support'];
+   $a['expiry'] = date('d/m/Y',strtotime($a['expire_date']));
+   $a['currency'] = "Eur";
    $db2->Close();
    
    if($a['incomes']) $totIncomes+=$a['incomes'];
    if($a['expenses']) $totExpenses+=$a['expenses'];
+   if($a['payment_date'] != "0000-00-00")
+   {
+	if($a['expire_date'] == "0000-00-00") // è un anticipo
+	 $totAdvance+= $a['incomes'] ? $a['incomes'] : $a['expenses'];
+	else
+	 $totRatePaid+= $a['incomes'] ? $a['incomes'] : $a['expenses'];
+	$totPaid+= $a['incomes'] ? $a['incomes'] : $a['expenses'];
+   }
+   if(($a['expire_date'] != "0000-00-00") && ($a['payment_date'] == "0000-00-00"))
+   {
+	if(strtotime($a['expire_date']) < time()) // è scaduta
+     $totExpired+= $a['incomes'] ? $a['incomes'] : $a['expenses'];
+	else // è in scadenza
+	 $totExpiring+= $a['incomes'] ? $a['incomes'] : $a['expenses'];
+   }
 
    if($verbose)
    {
@@ -175,10 +234,21 @@ function mmr_schedule($args, $sessid, $shellid)
     $out.= date('d/m/Y',strtotime($a['expire_date']))." - ".$a['subject_name']." (EUR: ".($amount ? number_format($amount,2,',','.') : "0,00").")\n";
    }
 
-   $outArr[] = $a;
+   $outArr['results'][] = $a;
   }
   $db->Close();
  }
+
+ $outArr['date_from'] = $dateFrom;
+ $outArr['date_to'] = $dateTo;
+ $outArr['tot_incomes'] = $totIncomes;
+ $outArr['tot_expenses'] = $totExpenses;
+ $outArr['tot_advance'] = $totAdvance;
+ $outArr['tot_rate_paid'] = $totRatePaid;
+ $outArr['tot_paid'] = $totPaid;
+ $outArr['tot_unpaid'] = ($totIncomes ? $totIncomes : $totExpenses) - $totAdvance - $totPaid;
+ $outArr['tot_expired'] = $totExpired;
+ $outArr['tot_expiring'] = $totExpiring;
 
  if($verbose)
  {
@@ -186,7 +256,7 @@ function mmr_schedule($args, $sessid, $shellid)
   $out.= "Tot. expenses: EUR. ".($totExpenses ? number_format($totExpenses,2,',','.') : "0,00")."\n";
  }
 
- $out.= "\n".count($outArr)." results found.";
+ $out.= "\n".$outArr['count']." results found.";
  return array('message'=>$out, 'outarr'=>$outArr);
 }
 //-------------------------------------------------------------------------------------------------------------------//

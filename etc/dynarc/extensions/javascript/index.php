@@ -1,16 +1,18 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 30-03-2013
+ #DATE: 24-10-2016
  #PACKAGE: dynarc-javascript-extension
  #DESCRIPTION: Javascript extension for iDoc.
- #VERSION: 2.2beta
- #CHANGELOG: 30-03-2013 : Aggiornato funzioni import ed export.
+ #VERSION: 2.4beta
+ #CHANGELOG: 24-10-2016 : MySQLi integration.
+			 12-06-2014 : Messo nl2br su funzione export e preg_replace <br/> su funzione import perchè altrimenti non mi importava i ritorni a capo e l'esecuzione dei javascript dava problemi.
+			 30-03-2013 : Aggiornato funzioni import ed export.
 			 03-12-2012 : Completamento delle funzioni di base.
  #TODO:
  
@@ -68,7 +70,7 @@ function dynarcextension_javascript_set($args, $sessid, $shellid, $archiveInfo, 
  else
  {
   $db->RunQuery("INSERT INTO dynarc_".$archiveInfo['prefix']."_javascript(item_id,src,content) VALUES('".$itemInfo['id']."','".$src."','".$db->Purify($content)."')");
-  $id = mysql_insert_id();
+  $id = $db->GetInsertId();
  }
  $itemInfo['last_javascript_id'] = $id;
 
@@ -219,7 +221,7 @@ function dynarcextension_javascript_export($sessid, $shellid, $archiveInfo, $ite
  {
   if(!$db->record['src'] && !$db->record['content'])
    continue;
-  $xml.= "<item src=\"".$db->record['src']."\" content=\"".sanitize($db->record['content'])."\"/>";
+  $xml.= "<item src=\"".$db->record['src']."\" content=\"".sanitize(nl2br($db->record['content']))."\"/>";
  }
  $db->Close();
  $xml.= "</javascript>";
@@ -237,7 +239,7 @@ function dynarcextension_javascript_import($sessid, $shellid, $archiveInfo, $ite
  {
   $n = $list[$c];
   $db->RunQuery("INSERT INTO dynarc_".$archiveInfo['prefix']."_javascript(item_id,src,content) VALUES('".$itemInfo['id']."','"
-	.$n->getString('src')."','".$db->Purify($n->getString('content'))."')");
+	.$n->getString('src')."','".$db->Purify(preg_replace('/\<br(\s*)?\/?\>/i', "\n",$n->getString('content')))."')");
  }
  $db->Close();
  return true;

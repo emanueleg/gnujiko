@@ -16,7 +16,7 @@
 */
 
 
-function shell_zip($args, $sessid, $shellid=0)
+function shell_zip($args, $sessid, $shellid=0, $extraParams=null)
 {
  $out = "";
  $outArr = array();
@@ -43,11 +43,18 @@ function shell_zip($args, $sessid, $shellid=0)
   return array("message"=>"Usage: zip file-or-dir dest_file.zip\n","error"=>"INVALID_ARGUMENTS");
 
  $src=array();
+ $fdest=array();
+ $absSrc = array();
+ $absDest = array();
+ if(!$extraParams) $extraParams=array();
 
  for($c=0; $c < count($args); $c++)
   switch($args[$c])
   {
-   case '-i' : {$src[]=$args[$c+1]; $c++;} break;
+   case '-i' : {$src[]=$args[$c+1]; $fdest[]=$args[$c+1]; $c++;} break;
+   case '-dest' : {$fdest[count($fdest)-1] = $args[$c+1]; $c++;} break;		//OPTIONAL: destination of file into zip.
+   case '-absi' : {$absSrc[]=$args[$c+1]; $c++;} break;
+   case '-abso' : {$absDest[]=$args[$c+1]; $c++;} break;
    case '-o' : {$dst=$args[$c+1]; $c++;} break;
    default: {if(!count($src))$src[]=$args[$c]; else $dst=$args[$c];} break;
   }
@@ -80,9 +87,22 @@ function shell_zip($args, $sessid, $shellid=0)
    }
   }
   else if(file_exists($_USER_PATH.$src[$c]))
-   $z->addFile(implode("", file($_USER_PATH.$src[$c])),$src[$c]);
+   $z->addFile(implode("", file($_USER_PATH.$src[$c])),$fdest[$c]);
   else
    return array("message"=>"File ".$src[$c]." does not exists!\n","error"=>"INVALID_FILE_NAME");
+ }
+
+ if($extraParams['ALLOW_ABS_PATH'])
+ {
+  for($c=0; $c < count($absSrc); $c++)
+  {
+   $src = $absSrc[$c];
+   $dest = $absDest[$c];
+   if(!file_exists($_BASE_PATH.$src))
+    return array("message"=>"File ".$src." does not exists\n", "error"=>"FILE_DOES_NOT_EXISTS");
+   if(!is_dir($_BASE_PATH.$src))
+    $z->addFile(implode("", file($_BASE_PATH.$src)),$dest);
+  }
  }
 
  $h = fwopen($dst,"w",$_USER_PATH, $sessid, $shellid);

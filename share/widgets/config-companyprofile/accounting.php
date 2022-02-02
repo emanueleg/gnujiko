@@ -1,16 +1,18 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2015 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 18-10-2013
+ #DATE: 12-03-2015
  #PACKAGE: companyprofile-config
  #DESCRIPTION: Company profile accounting panel.
- #VERSION: 2.4beta
- #CHANGELOG: 18-10-2013 : Aggiunto i bolli
+ #VERSION: 2.6beta
+ #CHANGELOG: 12-03-2015 : Aggiunto decimali a 5, prima però bisogna modificare tutte le tabelle a decimal 10,5
+			 03-03-2015 : Aggiunto regime fiscale per fatture PA.
+			 18-10-2013 : Aggiunto i bolli
 			 04-10-2013 : Aggiunta l'aliquota IVA su Contr. cassa prev.
 			 05-07-2013 : Aggiunta riv.inps,rit.acconto,rit.enasarco,contr.cassa.prev, ecc..
 			 10-04-2013 : Predisposto per le colonne extra.
@@ -71,6 +73,7 @@ table.section td.small {
 		 <option value='2' <?php if($_ACCOUNTING['decimals_pricing'] == "2") echo "selected='selected'"; ?>>2</option>
 		 <option value='3' <?php if($_ACCOUNTING['decimals_pricing'] == "3") echo "selected='selected'"; ?>>3</option>
 		 <option value='4' <?php if($_ACCOUNTING['decimals_pricing'] == "4") echo "selected='selected'"; ?>>4</option>
+		 <!-- <option value='5' <?php if($_ACCOUNTING['decimals_pricing'] == "5") echo "selected='selected'"; ?>>5</option> -->
 		</select></td></tr>
 
 <tr><td><?php echo i18n('VAT rate most frequently used:'); ?></td>
@@ -83,6 +86,40 @@ table.section td.small {
 			.$vatlist[$c]['name']."</option>";
 		?>
 		</select></td></tr>
+
+<tr><td><?php echo i18n('Tax regime:'); ?></td>
+	<td><select id='tax_regime' style='width:500px'>
+		<?php
+		$_TAX_REGIME = array(
+		 "RF01" => "Ordinario",
+		 "RF02" => "Contribuenti minimi",
+		 "RF03" => "Nuove iniziative produttive",
+		 "RF04" => "Agricoltura e attività connesse e pesca",
+		 "RF05" => "Vendita sali e tabacchi",
+		 "RF06" => "Commercio fiammiferi",
+		 "RF07" => "Editoria",
+		 "RF08" => "Gestione servizi telefonia pubblica",
+		 "RF09" => "Rivendita documenti di trasporto pubblico e di sosta",
+		 "RF10" => "Intrattenimenti, giochi e altre attività di cui alla tariffa allegata al DPR 640/72",
+		 "RF11" => "Agenzie viaggi e turismo",
+		 "RF12" => "Agriturismo",
+		 "RF13" => "Vendite a domicilio",
+		 "RF14" => "Rivendita beni usati, oggetti d'arte, d'antiquariato o da collezione",
+		 "RF15" => "Agenzie di vendite all'asta di oggetti d'arte, antiquariato o da collezione",
+		 "RF16" => "IVA per cassa P.A.",
+		 "RF17" => "IVA per cassa",
+		 "RF18" => "Altro",
+		 "RF19" => "Regime forfettario",
+		);
+
+		reset($_TAX_REGIME);
+		while(list($k,$v) = each($_TAX_REGIME))
+		{
+		 echo "<option value='".$k."'".($_ACCOUNTING['tax_regime'] == $k ? " selected='selected'>" : ">").$v."</option>";
+		}
+		?>
+		</select></td></tr>
+
 </table>
 
 <hr/>
@@ -224,6 +261,7 @@ function formSubmit(close)
  var irVatQuarterly = document.getElementById('ir_vat_quarterly').value;
  var decimalsPricing = document.getElementById('decimals_pricing').value;
  var freqVatUsed = document.getElementById('freq_vat_used').value;
+ var taxRegime = document.getElementById('tax_regime').value;
 
  /* disattivati temporaneamente */
  /*var percTaxPayment = document.getElementById('perc_tax_payment').value;*/
@@ -262,6 +300,7 @@ function formSubmit(close)
  cmd+= " -ir-vat-quarterly `"+irVatQuarterly+"`";
  cmd+= " -decimals-pricing `"+decimalsPricing+"`";
  cmd+= " -freq-vat-used `"+freqVatUsed+"`";
+ cmd+= " -tax-regime `"+taxRegime+"`";
 
  /* disattivati temporaneamente */
  /*cmd+= " -perc-tax-payment `"+percTaxPayment+"`";*/

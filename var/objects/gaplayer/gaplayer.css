@@ -1,0 +1,26 @@
+div.gaplayer {
+ position: absolute;
+ top: 0px;
+ left: 0px;
+ z-index: 10000;
+ visibility: hidden;
+}
+
+div.gaplayer-gapup {
+ height: 10px;
+ background: url(img/gapup.png) center top no-repeat;
+ position: relative;
+ top: 1px;
+}
+
+
+div.gaplayer-container {
+ background: #ffffff;
+ -moz-box-shadow: 0px 0px 10px #cccccc;
+ -webkit-box-shadow: 0px 0px 10px #cccccc;
+ box-shadow: 0px 0px 10px #cccccc;
+ overflow: auto;
+ padding: 20px;
+ border: 1px solid #cccccc;
+ border-radius: 1px;
+}

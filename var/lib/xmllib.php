@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2011 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2015 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 22-08-2011
+ #DATE: 02-06-2015
  #PACKAGE: xml-lib
  #DESCRIPTION: XML library
- #VERSION: 2.0beta
- #CHANGELOG: 22-08-2011 - Bug fix in function array_to_xml
+ #VERSION: 2.1beta
+ #CHANGELOG: 02-06-2015 : Bug fix in GXMLNode if not is array.
+			 22-08-2011 - Bug fix in function array_to_xml
 			 26-02-2011 - Bug fix with special chars
 			 27-05-2011 - Ho modificato la funzione xml_purify levando via il \n dagli indici perchè dava fastidio sul parsering dei contenuti. 
 						  Convertiva in <br/> tutti i ritorni a capo, quindi produceva degli effetti indesiderati se all'interno del contenuto c'erano ad esempio dei tag <style></style>
@@ -169,7 +170,7 @@ class GXMLNode //--- CLASS FOR READ XML-DOM ---//
  {
   $this->Name = $name;
   $this->Attributes = $arr['attributes'];
-  if(!$arr)
+  if(!$arr || !is_array($arr))
    return;
   while(list($k,$v) = each($arr))
   {

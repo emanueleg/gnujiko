@@ -48,6 +48,18 @@ label {
 	color: #333333;
 }
 
+td {
+	font-family: arial, times;
+	font-size: 13px;
+	color: #222222;
+}
+
+p {
+	font-family: arial, times;
+	font-size: 13px;
+	color: #222222;
+}
+
 input.button-blue {
 	height: 27px;
 	border-radius: 2px;
@@ -192,6 +204,8 @@ input.edit {
     -moz-box-shadow: 0 1px 2px #ccc;
     -webkit-box-shadow: 0 1px 2px #ccc;
     box-shadow: 0 1px 2px #ccc;
+	font-family: arial, times;
+	font-size: 13px;
 }
 
 input.edit-error {
@@ -201,5 +215,65 @@ input.edit-error {
     -webkit-box-shadow: 0 1px 2px #ccc;
     box-shadow: 0 1px 2px #ccc;
 	background: #ff0000;
+	font-family: arial, times;
+	font-size: 13px;
+}
+
+/* FORM TABLE */
+table.formtable th {
+	height: 36px;
+	font-family: Arial, sans-serif;
+	font-size: 14px;
+	font-weight: bold;
+	color: #0169c9;
+	vertical-align: middle;
+	padding-left: 5px;
+	padding-right: 5px;
+	border-bottom: 1px solid #d4d4d4;
+	text-align: left;
+}
+
+table.formtable td {
+	height: 36px;
+	font-family: Arial, sans-serif;
+	font-size: 13px;
+	font-weight: bold;
+	color: #555555;
+	vertical-align: middle;
+	padding-left: 5px;
+	padding-right: 5px;
+	border-bottom: 1px solid #d4d4d4;
+}
+
+input.flatedit {
+	height: 21px;
+	border: 1px solid #d5e7f4;
+	font-family: arial, times;
+	font-size: 13px;
+	background: #f2f9ff;
+	color: #333333
+}
+
+input.flatedit:focus {
+	outline: none;
+	border: 1px solid #ff6600;
+	background: #ffd881;
+}
+
+input.flatedit-error {
+	height: 21px;
+	border: 1px solid #f31903;
+	background: #f31903;
+	font-family: arial, times;
+	font-size: 13px;
+}
+
+
+textarea.textarea {
+	border: 1px solid #d5e7f4;
+	font-family: arial, times;
+	font-size: 13px;
+	background: #f2f9ff;
+	color: #333333
 }
 

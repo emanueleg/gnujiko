@@ -1,16 +1,18 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 26-03-2013
+ #DATE: 05-12-2014
  #PACKAGE: dynarc-idoc-extension
  #DESCRIPTION: IDoc extension for Dynarc.
- #VERSION: 2.1beta
- #CHANGELOG: 26-03-2013 : Sistemate le funzioni import & export.
+ #VERSION: 2.3beta
+ #CHANGELOG: 05-12-2014 : Aggiunto parametro varlistmode su funzione itmpropget.
+			 10-06-2014 : Aggiunta funzione onarchiveempty
+			 26-03-2013 : Sistemate le funzioni import & export.
  #TODO:
  
 */
@@ -491,6 +493,8 @@ function dynarcextension_idoc_itmpropget($params, $sessid, $shellid, $extraParam
   return $ret;
  $archiveInfo = $ret['outarr'];
 
+ if(!$params['idocaid'] && !$params['idocap'])
+  $params['idocap'] = "idoc";
  if($params['idocap'])
  {
   $ret = GShell("dynarc archive-info -prefix `".$params['idocap']."`",$sessid,$shellid);
@@ -511,7 +515,16 @@ function dynarcextension_idoc_itmpropget($params, $sessid, $shellid, $extraParam
   $xmlContents = ltrim(rtrim($db->record['xmlret']));
   $xml = new GXML();
   if($xml->LoadFromString($xmlContents))
-   $outArr = $xml->toArray();
+  {
+   $xmldata = $xml->toArray();
+   if($params['varlistmode'])
+   {
+	for($c=0; $c < count($xmldata); $c++)
+	 $outArr[$xmldata[$c]['id']] = $xmldata[$c]['value'];
+   }
+   else
+    $outArr = $xmldata;
+  }
  }
  $db->Close();
 
@@ -778,6 +791,16 @@ function dynarcextension_idoc_oncopyitem($sessid, $shellid, $archiveInfo, $srcIn
 function dynarcextension_idoc_oncopycategory($sessid, $shellid, $archiveInfo, $srcInfo, $cloneInfo)
 {
  return $cloneInfo;
+}
+//-------------------------------------------------------------------------------------------------------------------//
+function dynarcextension_idoc_onarchiveempty($args, $sessid, $shellid, $archiveInfo)
+{
+ $db = new AlpaDatabase();
+ $db->RunQuery("TRUNCATE TABLE `dynarc_".$archiveInfo['prefix']."_idoccatprop`");
+ $db->RunQuery("TRUNCATE TABLE `dynarc_".$archiveInfo['prefix']."_idocitmprop`");
+ $db->Close();
+
+ return true;
 }
 //-------------------------------------------------------------------------------------------------------------------//
 function dynarcextension_idoc_export($sessid, $shellid, $archiveInfo, $itemInfo, $isCategory=false)

@@ -1,15 +1,35 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 03-10-2013
+ #DATE: 24-05-2016
  #PACKAGE: gmutable
  #DESCRIPTION: Gnujiko Multi Utility table
- #VERSION: 2.7beta
- #CHANGELOG: 03-10-2013 : Bug fix vari. Aggiunto ACTIVE_GMUTABLE per problemi con più tabelle.
+ #VERSION: 2.29beta
+ #CHANGELOG: 24-05-2016 : Bug fix.
+			 18-03-2016 : Aggiunta funzione autocalc.
+			 15-03-2016 : Abilitata funzione sortable.
+			 04-03-2016 : Bug fix dropdown e dimensioni celle.
+			 24-11-2015 : Sost. classe input.dropdown con gmutdropdown perchè interferisce con gnujiko-template.
+			 02-06-2015 : Bug fix in ExportToExcel.
+			 09-04-2015 : Aggiunta opzione orderable.
+			 31-03-2015 : Aggiunta funzione GetRowById.
+			 18-03-2015 : Bug fix su celle con colspan > 1.
+			 06-12-2014 : Aggiunto format checkbox.
+			 03-11-2014 : Aggiunto format dropdown per colonne tipo menu a tendina.
+			 27-10-2014 : Aggiunto minwidth alla riga 768
+			 08-10-2014 : Bug fix su date.
+			 26-05-2014 : Bug fix vari.
+			 05-03-2014 : Bug fix su set real value.
+			 19-02-2014 : Bug fix su setValue currency.
+			 14-02-2014 : Bug fix su setValue.
+			 12-02-2014 : Bug fix su arrotondamenti. Aggiunto realvalue a tale scopo.
+			 05-02-2014 : Bug fix on function injectRow
+			 19-12-2013 : Aggiunta funzione EmptyTable
+			 03-10-2013 : Bug fix vari. Aggiunto ACTIVE_GMUTABLE per problemi con più tabelle.
 			 04-09-2013 : Aggiunto funzione disableSearch su field.
 			 30-05-2013 : ClipBoard included.
 			 21-05-2013 : Aggiunto variabile gmutable all'elemento obj per piu facile integrazione.
@@ -32,13 +52,16 @@ function GMUTable(obj,options)
 {
  this.O = obj;
  this.O.gmutable = this;
+ obj.gmutable = this;
  this.Fields = new Array();
  this.FieldByName = new Array();
+ this.SUMFields = new Array();
 
  /* OPTIONS */
  this.Options = options ? options : {
 	 autoresize: true,
-	 autoaddrows : true
+	 autoaddrows : true,
+	 orderable : true
 	}
 
  /* PRIVATE */
@@ -55,9 +78,11 @@ function GMUTable(obj,options)
  this.OnDeleteRow = null;
  this.OnSelectRow = null;
  this.OnUnselectRow = null;
- this.OnBeforeCellEdit = null; /* OnBeforeCellEdit(rowObj, cellObj, value) */
- this.OnCellEdit = null; /* OnCellEdit(rowObj, cellObj, value) */
+ this.OnBeforeCellEdit = null; 	// function(rowObj, cellObj, value)
+ this.OnCellEdit = null; 		// function(rowObj, cellObj, value)
  this.OnRowMove = null;
+ this.OnExport = null; 			// function(data)
+ this.OnSort = null;			// function(string fieldId, string method[ASC/DESC])
 
  this.init();
 }
@@ -74,7 +99,10 @@ GMUTable.prototype.init = function()
    var field = {
 	 name:cell.id, 
 	 orderable: cell.getAttribute('orderable') ? true : false, 
+	 sortable: cell.getAttribute('sortable') ? true : false, 
 	 editable: cell.getAttribute('editable') ? true : false,
+	 format: cell.getAttribute('format') ? cell.getAttribute('format') : '',
+	 sum: cell.getAttribute('sum') ? cell.getAttribute('sum') : '',
 	 O:cell,
 	 enableSearch : function(startQry,endQry,retValField,retTxtField,retArrName,focus,outValField,onQueryResultsCallback){
 		 this.spSQ = startQry;
@@ -90,9 +118,43 @@ GMUTable.prototype.init = function()
 	 disableSearch : function(){
 		 this.searchEnabled = false;
 		}
-	}
+	};
    this.Fields.push(field);
    this.FieldByName[cell.id] = field;
+   if(field.sum && (field.sum != ""))
+	this.SUMFields.push(field);
+
+   cell.fieldH = field;
+   cell.GMUTable = this;
+
+   if(field.sortable)
+   {
+	cell.style.cursor = "pointer";
+	cell.onclick = function(){
+		 if(!this.GMUTable.OnSort) return;
+		 if(!this.fieldH.sortable) return;
+		 if((this.GMUTable._lastSortField == this.fieldH.name) && (this.GMUTable._lastSortMethod == "ASC"))
+		 {
+		  this.className = this.className.replace(" sortdesc", "") + " sortdesc";
+		  this.GMUTable._lastSortMethod = "DESC";
+		 }
+		 else
+		 {
+		  if(this.GMUTable._lastSortField)
+		  {
+		   var lastField = this.GMUTable.FieldByName[this.GMUTable._lastSortField];
+		   lastField.O.className = lastField.O.className.replace(" sortasc", "");
+		   lastField.O.className = lastField.O.className.replace(" sortdesc", "");
+		  }
+		  this.className = this.className.replace(" sortasc", "") + " sortasc";
+		  this.GMUTable._lastSortMethod = "ASC";
+		 }
+		 this.GMUTable._lastSortField = this.fieldH.name;
+		 this.GMUTable.OnSort(this.fieldH.name, this.GMUTable._lastSortMethod);
+		}
+
+   }
+
   }
 
   if(this.Options.autoresize)
@@ -100,22 +162,33 @@ GMUTable.prototype.init = function()
    if(cell.getAttribute('minwidth'))
    {
     var minWidth = parseFloat(cell.getAttribute('minwidth'));
-    if(cell.offsetWidth < minWidth)
+	cell.style.minWidth = minWidth+"px";
+    /*if(cell.offsetWidth < minWidth)
     {
 	 cell.style.width = minWidth;
-    }
+    }*/
    }
+   else if(cell.getAttribute('width'))
+	cell.style.minWidth = cell.getAttribute('width')+"px";
 
-   if(cell.getAttribute('width'))
+   if(cell.getAttribute('width') && (cell.colSpan==1))
    {
     var w = parseFloat(cell.getAttribute('width'));
     if(cell.offsetWidth > w)
     {
 	 for(var j=1; j < this.O.rows.length; j++)
 	 {
+	  if(!this.O.rows[j].cells[c])
+	   continue;
 	  var span = this.O.rows[j].cells[c].getElementsByTagName('SPAN');
 	  if(span.length)
 	   span[0].style.width = w-22;
+	  else
+	  {
+	   var div = this.O.rows[j].cells[c].getElementsByTagName('DIV');
+	   if(div.length)
+		div[0].style.width = w-22;
+	  }
 	 }
 	 cell.style.width = w;
     }
@@ -137,6 +210,21 @@ GMUTable.prototype.init = function()
  
  var oThis = this;
 
+ /* Per prima cosa nascondo tutte le righe di nota sennò possono far sbordare la tabella */
+ for(var i=1; i < this.O.rows.length; i++)
+ {
+  var r = this.O.rows[i];
+  for(var c=0; c < r.cells.length; c++)
+  {
+   if(r.cells[c].colSpan > 1)
+   {
+    var spanlist = r.cells[c].getElementsByTagName('SPAN');
+    if(spanlist.length) spanlist[0].style.display = "none";
+   }
+  }
+ }
+
+
  for(var c=1; c < this.O.rows.length; c++)
   this.injectRow(this.O.rows[c]);
 
@@ -149,57 +237,235 @@ GMUTable.prototype.init = function()
 	}
 }
 //-------------------------------------------------------------------------------------------------------------------//
+GMUTable.prototype.setActiveSortField = function(fieldName, sortMethod)
+{
+ var field = this.FieldByName[fieldName];
+ if(!field) return;
+ if(!field.sortable) return;
+ if(!sortMethod) sortMethod = "ASC";
+ 
+ field.O.className = field.O.className.replace(" sortasc", "");
+ field.O.className = field.O.className.replace(" sortdesc", "");
+
+ if(sortMethod.toUpperCase() == "DESC")
+  field.O.className = field.O.className + " sortdesc";
+ else
+  field.O.className = field.O.className + " sortasc";
+
+ this._lastSortMethod = sortMethod.toUpperCase();
+ this._lastSortField = fieldName;
+}
+//-------------------------------------------------------------------------------------------------------------------//
 GMUTable.prototype.injectRow = function(r)
 {
  var oThis = this;
  r.cell = new Array();
+
  for(var c=0; c < r.cells.length; c++)
  {
   r.cells[c].tag = this.O.rows[0].cells[c].id;
 
   r.cells[c].onclick = function(){oThis.editCell(this);}
 
-  r.cells[c].setValue = function(value){
+  r.cells[c].setValue = function(value, realvalue){
+	 this.oldValue = this.getValue();
+	 if(typeof(value) == 'undefined')
+	  value = "";
+	 if(value && (typeof(value.replace) == "function"))
+	  value = value.replace(/\xA0/,"")
+	 if(value && (typeof(value.replace) == "function"))
+	  value = value.replace(/\s+/," ");
+
 	 switch(oThis.O.rows[0].cells[this.cellIndex].getAttribute('format'))
 	 {
 	  case 'currency percentage' : {
-		 if((typeof(value) == "number") || (value.indexOf("%") < 0))
-		  value = formatCurrency(parseFloat(value), oThis.O.rows[0].cells[this.cellIndex].getAttribute('decimals') ? parseFloat(oThis.O.rows[0].cells[this.cellIndex].getAttribute('decimals')) : 2);
+		 if(value && (typeof(value.replace) == "function"))
+		  value = value.replace(/\u20ac/g, "");
+		 if(value && (typeof(value.replace) == "function"))
+		  value = value.replace(". ","");
+		 if(value == "&nbsp;")
+		 {
+		  value = "";
+		  this.realvalue = value;
+		  this.setAttribute('realvalue',value);
+		 }
+		 else if(!isNaN(value) && ((typeof(value) == "number") || (value.indexOf("%") < 0)))
+		 {
+		  this.realvalue = parseCurrency(value);
+		  this.setAttribute('realvalue',this.realvalue);
+		  value = formatCurrency(parseCurrency(value), oThis.O.rows[0].cells[this.cellIndex].getAttribute('decimals') ? parseCurrency(oThis.O.rows[0].cells[this.cellIndex].getAttribute('decimals')) : 2);
+		 }
+		 else
+		 {
+		  value = parseFloat(value)+"%";
+		  this.realvalue = value;
+		  this.setAttribute('realvalue',value);
+		 }
 		} break;
-	  case 'currency' : value = formatCurrency(parseCurrency(value), oThis.O.rows[0].cells[this.cellIndex].getAttribute('decimals') ? parseFloat(oThis.O.rows[0].cells[this.cellIndex].getAttribute('decimals')) : 2); break;
-	  case 'number' : value = formatNumber(parseFloat(value), oThis.O.rows[0].cells[this.cellIndex].getAttribute('decimals') ? parseFloat(oThis.O.rows[0].cells[this.cellIndex].getAttribute('decimals')) : 2); break;
-	  case 'percentage' : value = value ? parseFloat(value)+"%" : "0%"; break;
+	  case 'currency' : {
+		var val = (value && (typeof(value.replace) == "function")) ? value.replace(/\u20ac/g, "") : "";
+		val = val.replace("<em>&euro;</em>","");
+		this.realvalue = parseCurrency(val);
+		this.setAttribute('realvalue',this.realvalue);
+		value = formatCurrency(parseCurrency(val), oThis.O.rows[0].cells[this.cellIndex].getAttribute('decimals') ? parseCurrency(oThis.O.rows[0].cells[this.cellIndex].getAttribute('decimals')) : 2); 
+		} break;
+	  case 'number' : value = formatNumber(parseCurrency(value)); break;
+	  case 'percentage' : value = value ? parseCurrency(value)+"%" : "0%"; break;
 	  case 'date' : {
 		 if(value)
 		 {
 		  var tmpDate = new Date();
-		  tmpDate.setFromISO(strdatetime_to_iso(value));
+		  if(value.length < 3)
+		   tmpDate.setDate(value);
+		  else
+		   tmpDate.setFromISO(strdatetime_to_iso(value));
 		  value = tmpDate.printf('d/m/Y');
 		 }
 		} break;
-	 }
+	  case 'time' : {
+		 value = timelength_to_str(parse_timelength(value));
+		} break;
+
+	  case 'dropdown' : {
+		 /* TODO: da fare... */
+		} break;
+
+	  case 'checkbox' : {
+		 this.getElementsByTagName('INPUT')[0].checked = value ? true : false;
+		} break;
+	 } /* EOF - SWITCH */
+
+	 if(!isNaN(realvalue))
+	 {
+	  this.realvalue = realvalue;
+	  this.setAttribute('realvalue',realvalue);
+	 }	 
 
 	 if(oThis.O.rows[0].cells[this.cellIndex].getAttribute('autolink'))
 	  value = "<a href='#' onclick=\"GMUTableDynlaunch('"+oThis.O.rows[0].cells[this.cellIndex].getAttribute('autolink')+"','"+r.id+"')\">"+value+"</a>";
 
 	 if(this.getElementsByTagName('SPAN').length)
+	 {
+	  if(this.colSpan > 1)
+	   this.getElementsByTagName('SPAN')[0].style.width = (this.offsetWidth-20)+"px";
 	  this.getElementsByTagName('SPAN')[0].innerHTML = value;
+	 }
+	 else if(this.getElementsByTagName('INPUT').length)
+	  this.getElementsByTagName('INPUT')[0].checked = value ? true : false;
 	 else
 	  this.innerHTML = value;
 	 if((oThis._lastEditCell == this) && oThis._lastEditCellEDObj)
 	  oThis._lastEditCellEDObj.value = value;
-	}
+	} /* EOF - r.cells[c].setValue */
 
   r.cells[c].getValue = function(){
-	 if(this.getElementsByTagName('SPAN').length)
-	  return this.getElementsByTagName('SPAN')[0].innerHTML;
+	 if(this.getElementsByTagName('INPUT').length && (this.getElementsByTagName('INPUT')[0].type == "checkbox"))
+	  return (this.getElementsByTagName('INPUT')[0].checked == true) ? true : false;
+	 if(!isNaN(this.realvalue) || (typeof(this.realvalue) != "undefined"))
+	  return this.realvalue.toString();
+	 else if(this.getAttribute('realvalue'))
+	  return this.getAttribute('realvalue');
+	 else if(this.getElementsByTagName('SPAN').length)
+	  return (this.getElementsByTagName('SPAN')[0].innerHTML != "&nbsp;") ? this.getElementsByTagName('SPAN')[0].innerHTML : "";
 	 else
-	  return this.innerHTML;
+	  return (this.innerHTML != "&nbsp;") ? this.innerHTML : "";
 	}
+
+  r.cells[c].restoreOldValue = function(){this.setValue(this.oldValue);}
+
+  if(this.O.rows[0].cells[c].getAttribute('format') == "dropdown")
+  {
+   r.cells[c].setOptions = function(options){
+	 if(this.popupmenu && this.popupmenu.parentNode)
+	  this.popupmenu.parentNode.removeChild(this.popupmenu);
+	 this.popupmenu = document.createElement('UL');
+	 this.popupmenu.className = "gmut-popupmenu";
+	 this.popupmenu.onmouseover = function(){this.mouseover=true;}
+	 this.popupmenu.onmouseout = function(){this.mouseover=false;}
+
+	 switch(typeof(options))
+	 {
+	  case 'string' : {
+		 var list = options.split(",");
+		 for(var i=0; i < list.length; i++)
+		 {
+		  var opt = document.createElement('LI');
+		  opt.value = list[i];
+		  opt.innerHTML = list[i];
+		  this.popupmenu.appendChild(opt);
+		 }
+		} break;
+
+	  case 'array' : case 'object' : {
+		 for(var i=0; i < options.length; i++)
+		 {
+		  if((typeof(options[i]) == 'array') || (typeof(options[i]) == 'object'))
+		  {
+		   if(i > 0)
+		   {
+			// add separator
+			var opt = document.createElement('LI');
+			opt.className = "separator";
+			opt.innerHTML = "&nbsp;";
+			this.popupmenu.appendChild(opt);
+		   }
+		   var list = options[i];
+		   for(var j=0; j < list.length; j++)
+		   {
+		    var opt = document.createElement('LI');
+		    opt.value = list[j];
+		    opt.innerHTML = list[j];
+		    this.popupmenu.appendChild(opt);
+		   }
+		  }
+		  else
+		  {
+		   var opt = document.createElement('LI');
+		   opt.value = options[i];
+		   opt.innerHTML = options[i];
+		   this.popupmenu.appendChild(opt);
+		  }
+		 }
+		} break;
+
+	  default : {
+		 this.popupmenu = null;
+		} break;
+	 }
+	}
+  }
+
+  if(this.O.rows[0].cells[c].getAttribute('format') == "checkbox")
+  {
+   var cb = r.cells[c].getElementsByTagName('INPUT')[0];
+   if(cb)
+   {
+	cb.gmH = oThis;
+	cb.cellObj = r.cells[c];
+	cb.onchange = function(){
+	 	if(this.gmH.OnCellEdit)
+		{
+	  	 this.gmH.OnCellEdit(this.cellObj.parentNode, this.cellObj, this.checked);
+		 this.gmH.autocalc(this.cellObj.parentNode);
+		}
+	   }
+   }
+  }
 
   if(this.O.rows[0].cells[c].id)
    r.cell[this.O.rows[0].cells[c].id] = r.cells[c];
- }
+
+  if(r.cells[c].colSpan > 1)
+  {
+   /* Ripristino le righe di nota precedentemente nascoste */
+   if(r.cells[c].getElementsByTagName('SPAN').length > 0)
+   {
+    r.cells[c].getElementsByTagName('SPAN')[0].style.width = (r.cells[c].offsetWidth-20)+"px";
+	r.cells[c].getElementsByTagName('SPAN')[0].style.display = "";
+   }
+  }
+
+ } /* EOF - CYCLE C */
 
  if(r.cells[0].getElementsByTagName('INPUT').length)
   r.cells[0].getElementsByTagName('INPUT')[0].onchange = function(){this.parentNode.parentNode.select(this.checked);}
@@ -256,6 +522,16 @@ GMUTable.prototype.injectRow = function(r)
 	 return false;
 	}
 
+ r.moveUp = function(){
+	 if(this.rowIndex > 1)
+	  this.parentNode.insertBefore(this, this.previousSibling);
+	}
+
+ r.moveDown = function(){
+	 if(this.rowIndex < (this.parentNode.rows.length-1))
+	  this.parentNode.insertBefore(this, this.nextSibling);
+	}
+
  r.onmousedown = function(){
 	 this.className = this.className+" move";
 	 oThis.__moveableRow = this;
@@ -264,13 +540,16 @@ GMUTable.prototype.injectRow = function(r)
  r.onmouseup = function(){
 	 this.className = this.className.replace(" move","");
 	}
+
+ if(r.className == "selected")
+  r.selected = true;
 }
 //-------------------------------------------------------------------------------------------------------------------//
-GMUTable.prototype.OnKeyEvent = function(metakey,keyup)
+GMUTable.prototype.OnKeyEvent = function(metakey,keyup,event)
 {
  if(ACTIVE_GMUTABLE != this)
   return;
-
+ 
  switch(metakey)
  {
   case 'TAB' : {
@@ -396,6 +675,9 @@ GMUTable.prototype.OnMouseMove = function(event,ret)
  if(!this.O.rows.length)
   return;
 
+ if(!this.Options.orderable)
+  return;
+
  var y = 0;
  startAt = 0;
  this.__hintedRow = null;
@@ -478,7 +760,7 @@ GMUTable.prototype.autoResize = function()
    }
   }
  }
- this.O.style.width = tableWidth < this.O.parentNode.offsetWidth ? "100%" : tableWidth;
+ this.O.style.width = tableWidth < this.O.parentNode.offsetWidth ? "100%" : tableWidth+"px";
 }
 //-------------------------------------------------------------------------------------------------------------------//
 GMUTable.prototype.cellIsEditable = function(cellObj)
@@ -486,6 +768,8 @@ GMUTable.prototype.cellIsEditable = function(cellObj)
  if(!cellObj)
   return false;
  if(cellObj.style.display == "none")
+  return false;
+ if(this.O.rows[0].cells[cellObj.cellIndex].getAttribute('autolink'))
   return false;
  var fN = this.O.rows[0].cells[cellObj.cellIndex].id;
  if(!fN) return false;
@@ -498,8 +782,16 @@ GMUTable.prototype.editCell = function(cellObj)
  if(!this.cellIsEditable(cellObj))
   return;
 
+ var cellValue = 0;
+ if(!isNaN(cellObj.realvalue))
+  cellValue = cellObj.realvalue;
+ else if(cellObj.getAttribute('realvalue'))
+  cellValue = cellObj.getAttribute('realvalue');
+ else
+  cellValue = cellObj.getElementsByTagName('SPAN').length ? cellObj.getElementsByTagName('SPAN')[0].innerHTML : cellObj.innerHTML; 
+
  if(this.OnBeforeCellEdit)
-  this.OnBeforeCellEdit(cellObj.parentNode, cellObj, cellObj.getElementsByTagName('SPAN').length ? cellObj.getElementsByTagName('SPAN')[0].innerHTML : cellObj.innerHTML);
+  this.OnBeforeCellEdit(cellObj.parentNode, cellObj, cellValue);
 
  var oThis = this;
 
@@ -513,7 +805,7 @@ GMUTable.prototype.editCell = function(cellObj)
  var inp = document.createElement('INPUT');
  inp.type='text';
  inp.style.width = cellObj.offsetWidth-12;
- inp.value = cellObj.getElementsByTagName('SPAN').length ? cellObj.getElementsByTagName('SPAN')[0].innerHTML : cellObj.innerHTML;
+ inp.value = cellValue;
  if(inp.value == "&nbsp;")
   inp.value = "";
  inp.defaultValue = inp.value;
@@ -527,13 +819,118 @@ GMUTable.prototype.editCell = function(cellObj)
  ed.style.left = (cellObj.offsetLeft + Math.floor(cellObj.offsetWidth/2)) - Math.floor(ed.offsetWidth/2) - 2;
  ed.style.top = (cellObj.offsetTop + Math.floor(cellObj.offsetHeight/2)) - Math.floor(ed.offsetHeight/2) + 1;
  ed.style.visibility = "visible";
+
  inp.focus();
- inp.select();
+ if(field.format != 'dropdown')
+  inp.select();
  this.O.focused = true;
  this.O.editmode = true;
  ACTIVE_GMUTABLE = this;
 
- inp.onchange = function(event){
+ if((field.format == 'dropdown') && cellObj.popupmenu)
+ {
+  inp.className = "gmutdropdown";
+  inp.popupmenu = cellObj.popupmenu;
+  inp.readonly = true;
+  if(!cellObj.popupmenu.parentNode)
+   document.body.appendChild(cellObj.popupmenu);
+  cellObj.popupmenu.ed = inp;
+  cellObj.popupmenu.show = function(){
+		 var list = this.getElementsByTagName('LI');
+		 if(!list.length) return this.hide();
+		 var pos = oThis.getAbsPos(this.ed);
+		 var left = pos.x;
+		 var top = pos.y+this.ed.offsetHeight;
+		 var screenWidth = window.innerWidth ? window.innerWidth : document.body.clientWidth;
+		 var screenHeight = window.innerHeight ? window.innerHeight : document.body.clientHeight;
+
+		 var pn = oThis.O.parentNode;
+		 if(pn && pn.scrollLeft)
+		  left-= pn.scrollLeft;
+
+		 if(this.offsetWidth < this.ed.offsetWidth)
+		  this.style.width = (this.ed.offsetWidth-2)+"px";
+
+	     if((left+this.offsetWidth) > screenWidth)
+	      left = screenWidth - this.offsetWidth;
+		 if((top+this.offsetHeight) > screenHeight)
+		  top = pos.y-this.offsetHeight;
+
+		 this.style.left = left+"px";
+		 this.style.top = top+"px";
+		 this.style.visibility = "visible";
+
+		 for(var c=0; c < list.length; c++)
+		 {
+		  var li = list[c];
+		  if(li.className == "separator")
+		   continue;
+		  li.ed = this.ed;
+		  if(this.ed.getAttribute('retval') == (li.getAttribute('retval') ? li.getAttribute('retval') : li.getAttribute('value')))
+		   li.className = "selected";
+		  else
+		   li.className = "";
+		  if(!li.onclick)
+		   li.onclick = function(){
+			 this.ed.oldValue = this.ed.value;
+			 this.ed.oldRetVal = this.ed.getAttribute('retval');
+			 this.ed.value = this.textContent;
+			 this.ed.setAttribute('retval',this.getAttribute('retval') ? this.getAttribute('retval') : this.getAttribute('value'));
+			 this.ed.selectedItem = this;
+			 this.ed.close(true);
+			 this.ed.popupmenu.hide();
+			}
+		 }
+		}
+
+  cellObj.popupmenu.hide = function(){
+		 this.style.visibility="hidden";
+		 this.style.left = "0px";
+		 this.style.top = "0px";
+		}
+
+  inp.onclick = function(){this.popupmenu.show();}
+  inp.onkeydown = function(){this.popupmenu.hide();}
+  inp.popupmenu.show();
+  inp.close = function(save){
+	 oThis.O.editmode = false;
+	 if(this.closed) return;
+	 var value = this.value;
+	 var defaultValue = this.defaultValue;
+	 var m = this.parentNode.parentNode; 
+	 if(m && m.parentNode)
+	  m.parentNode.removeChild(m);
+	 this.closed = true;
+	 if(save == false)
+	  return;
+	 this.cellObj.setValue(value);
+	 if(oThis.OnCellEdit && (value != defaultValue))
+	  oThis.OnCellEdit(this.cellObj.parentNode, this.cellObj, value, this.data);
+	 oThis.autocalc(this.cellObj.parentNode);
+	}
+  inp.onblur = function(event){
+	 if(!this.popupmenu.mouseover)
+	 {
+	  this.close(true);
+	  this.popupmenu.hide();
+	 }
+	}
+  inp.onchange = function(event){
+	 if(this.closed) return;
+	 if(!event)
+	  return this.close();
+	 if(window.event) // IE
+	  var keynum = event.keyCode
+	 else if(event.which) // Netscape/Firefox/Opera
+	  var keynum = event.which;
+	 if(keynum == 27)
+	  this.close(false);
+	 this.close();
+	}
+ }
+ else
+ {
+  inp.onchange = function(event){
 	 if(this.closed) return;
 	 if(!event)
 	  return this.close();
@@ -552,13 +949,15 @@ GMUTable.prototype.editCell = function(cellObj)
 	 var value = this.value;
 	 var defaultValue = this.defaultValue;
 	 var m = this.parentNode.parentNode; 
-	 m.parentNode.removeChild(m);
+	 if(m && m.parentNode)
+	  m.parentNode.removeChild(m);
 	 this.closed = true;
 	 if(save == false)
 	  return;
 	 this.cellObj.setValue(value);
 	 if(oThis.OnCellEdit && (value != defaultValue))
 	  oThis.OnCellEdit(this.cellObj.parentNode, this.cellObj, value, this.data);
+	 oThis.autocalc(this.cellObj.parentNode);
 	}
 
  inp.onblur = function(event){
@@ -573,10 +972,32 @@ GMUTable.prototype.editCell = function(cellObj)
 	  this.close(false);
 	 this.close();
 	}
+ }
 
  if(field.searchEnabled)
  {
   EditSearch.init(inp,field.spSQ,field.spEQ,field.spRVF,field.spRTF,field.spRAN,field.spFoc,field.spOVF,field.spOQRC);
+  inp.OnShowResults = function(resO, O, xy){
+	 var screenWidth = window.innerWidth ? window.innerWidth : document.body.clientWidth;
+	 var screenHeight = window.innerHeight ? window.innerHeight : document.body.clientHeight;
+	 var left = parseFloat(resO.style.left);
+	 var top = parseFloat(resO.style.top);
+	 var oldTop = top;
+	 var pn = oThis.O.parentNode;
+	 if(pn && pn.scrollLeft)
+	  left-= pn.scrollLeft;
+
+	 if((left+resO.offsetWidth) > screenWidth)
+	  left = screenWidth - resO.offsetWidth;
+	 if((top+resO.offsetHeight) > screenHeight)
+	  top = top-resO.offsetHeight;
+
+	 if(top < 0)
+	  top = xy['y']+O.offsetHeight;
+
+     resO.style.left = left+"px";
+     resO.style.top = top+"px";	 	 
+	}
   this._lockUpDown = true;
  }
  else
@@ -586,11 +1007,44 @@ GMUTable.prototype.editCell = function(cellObj)
  this._lastEditCellEDObj = inp;
 }
 //-------------------------------------------------------------------------------------------------------------------//
+GMUTable.prototype.autocalc = function(r)
+{
+ if(!this.SUMFields.length) return;
+ for(var c=0; c < this.SUMFields.length; c++)
+ {
+  var field = this.SUMFields[c];
+  var value = this.makecalc(r, field.sum);
+  r.cell[field.name].setValue(value);
+ }
+}
+//-------------------------------------------------------------------------------------------------------------------//
+GMUTable.prototype.makecalc = function(r, sum)
+{
+ var str = sum;
+ for(var c=0; c < this.Fields.length; c++)
+  str = str.replace(new RegExp(this.Fields[c].name, 'g'), r.cell[this.Fields[c].name].getValue());
+
+ if(!this.FieldByName['sqrt']) 	str = str.replace(new RegExp('sqrt', 'ig'), 'Math.sqrt');
+ if(!this.FieldByName['floor']) str = str.replace(new RegExp("floor", 'ig'), "Math.floor");
+ if(!this.FieldByName['ceil']) 	str = str.replace(new RegExp("ceil", 'ig'), "Math.ceil");
+ if(!this.FieldByName['round']) str = str.replace(new RegExp("round", 'ig'), "roundup");
+
+ return eval(str);
+}
+//-------------------------------------------------------------------------------------------------------------------//
 GMUTable.prototype.selectAll = function(bool)
 {
  for(var c=1; c < this.O.rows.length; c++)
  {
   this.O.rows[c].select(bool);
+ }
+}
+//-------------------------------------------------------------------------------------------------------------------//
+GMUTable.prototype.unselectAll = function()
+{
+ for(var c=1; c < this.O.rows.length; c++)
+ {
+  this.O.rows[c].select(false);
  }
 }
 //-------------------------------------------------------------------------------------------------------------------//
@@ -603,6 +1057,15 @@ GMUTable.prototype.GetSelectedRows = function()
    ret.push(this.O.rows[c]);
  }
  return ret;
+}
+//-------------------------------------------------------------------------------------------------------------------//
+GMUTable.prototype.GetRowById = function(id)
+{
+ for(var c=1; c < this.O.rows.length; c++)
+ {
+  if(this.O.rows[c].id == id)
+   return this.O.rows[c];
+ }
 }
 //-------------------------------------------------------------------------------------------------------------------//
 GMUTable.prototype.AddRow = function(idx)
@@ -624,6 +1087,15 @@ GMUTable.prototype.AddRow = function(idx)
  if(this.OnAddRow)
   this.OnAddRow(r);
  return r;
+}
+//-------------------------------------------------------------------------------------------------------------------//
+GMUTable.prototype.DeleteSelectedRows = function()
+{
+ var list = this.GetSelectedRows();
+ if(!list.length)
+  return;
+ for(var c=0; c < list.length; c++)
+  this.DeleteRow(list[c].rowIndex);
 }
 //-------------------------------------------------------------------------------------------------------------------//
 GMUTable.prototype.DeleteRow = function(idx)
@@ -665,6 +1137,8 @@ GMUTable.prototype.AddField = function(fieldID, fieldTitle, opt)
  TH.setAttribute('decimals',fieldOptions.decimals);
  TH.setAttribute('width',fieldOptions.width);
  TH.setAttribute('minwidth',fieldOptions.minwidth);
+ if(fieldOptions.minwidth)
+  TH.style.minWidth = fieldOptions.minwidth+"px";
  TH.setAttribute('autolink',fieldOptions.autolink);
  if(fieldOptions.hidden)
   TH.style.display = "none";
@@ -723,5 +1197,176 @@ GMUTable.prototype.DeleteField = function(fieldID)
  this.FieldByName[fieldID] = null;
 }
 //-------------------------------------------------------------------------------------------------------------------//
+GMUTable.prototype.EmptyTable = function()
+{
+ while(this.O.rows.length > 1)
+ {
+  this.DeleteRow(1);
+ }
+}
+//-------------------------------------------------------------------------------------------------------------------//
+GMUTable.prototype.getAbsPos = function(e)
+{
+ var left = e.offsetLeft;
+ var top  = e.offsetTop;
+ var obj = e;
+ while(e = e.offsetParent)
+ {
+  left+= e.offsetLeft-e.scrollLeft;
+  top+= e.offsetTop-e.scrollTop;
+ }
 
+ while(obj = obj.parentNode)
+ {
+  left+= obj.scrollLeft ? obj.scrollLeft : 0;
+  top+= obj.scrollTop ? obj.scrollTop : 0;
+ }
+
+ return {x:left, y:top};
+}
+//-------------------------------------------------------------------------------------------------------------------//
+GMUTable.prototype.saveAsHTMLTable = function()
+{
+ var html = "<table><tr>";
+ for(var c=0; c < this.O.rows[0].cells.length; c++)
+ {
+  var cell = this.O.rows[0].cells[c];
+  html+= "<th"+(cell.getAttribute('width') ? " width="+cell.getAttribute('width') : '')+">";
+  html+= (cell.textContent ? cell.textContent : "&nbsp;")+"</th>";
+ }
+ html+= "</tr>";
+
+ for(var c=1; c < this.O.rows.length; c++)
+ {
+  var r = this.O.rows[c];
+  html+= "<tr>";
+  for(var i=0; i < r.cells.length; i++)
+  {
+   var cell = r.cells[i];
+   var value = cell.getValue();
+   html+= "<td"+((cell.colSpan > 1) ? " colspan='"+cell.colSpan+"'>" : ">");
+   html+= value ? value : "&nbsp;";
+   html+= "</td>";
+  }
+  html+= "</tr>";
+ }
+ html+= "</table>";
+ return html;
+}
+//-------------------------------------------------------------------------------------------------------------------//
+GMUTable.prototype.loadFromHTMLTable = function(html)
+{
+ this.EmptyTable();
+ while(this.Fields.length)
+  this.DeleteField(this.Fields[0].name);
+
+ var div = document.createElement('DIV');
+ div.style.position = "absolute";
+ div.style.width = "300px";
+ div.style.height = "200px";
+ div.style.overflow = "hidden";
+ div.style.visibility = "hidden";
+ div.style.left = "1px";
+ div.style.top = "1px";
+
+ document.body.appendChild(div);
+ div.innerHTML = html;
+
+ var tblist = div.getElementsByTagName('TABLE');
+ if(!tblist[0]) return;
+
+ var tb = tblist[0];
+ if(!tb.rows.length) return;
+
+ for(var c=0; c < tb.rows[0].cells.length; c++)
+ {
+  var cell = tb.rows[0].cells[c];
+  this.AddField("column-"+c, cell.textContent, {width:cell.getAttribute('width')});
+ }
+
+ for(var c=1; c < tb.rows.length; c++)
+ {
+  var r = tb.rows[c];
+  var _r = this.AddRow();
+  for(var i=0; i < r.cells.length; i++)
+  {
+   var cell = r.cells[i];
+   if(cell.colSpan > 1)
+	_r.cells[i].colSpan = cell.colSpan;
+   _r.cells[i].setValue(cell.textContent);
+  }
+ }
+
+}
+//-------------------------------------------------------------------------------------------------------------------//
+GMUTable.prototype.ExportToExcel = function(title, fields, callback)
+{
+ var oThis = this;
+ var fileName = "";
+ for(var c=0; c < title.length; c++)
+ {
+  switch(title.charAt(c))
+  {
+   case "/" : case "\\" : case " " : case "." : case "?" : case "#" : case "'" : case '"' : case "`" : case "~" : case ">" : case "<" : case "@" : case "&" : case "%" : case "+" : case "*" : fileName+= "-"; break;
+   default : fileName+= title.charAt(c); break;
+  }
+  if(fileName)
+   fileName = fileName.replace("--","");
+ }
+ fileName = fileName.toLowerCase();
+ //---------------------------------------------//
+ if(!fields)
+ {
+  var fields = "";
+  for(var c=0; c < this.O.rows[0].cells.length; c++)
+  {
+   var cell = this.O.rows[0].cells[c];
+   if(cell.hasAttribute('xlsexport') && (cell.getAttribute('xlsexport') == "false"))
+	continue;
+   if(cell.id)
+	fields+= ","+cell.id;
+  }
+  if(fields)
+   fields = fields.substr(1);
+ }
+ //----------------------------------------------//
+ var fieldList = fields.split(",");
+ 
+ var htmlTable = "<table>";
+ htmlTable+= "<tr>";
+ for(var c=0; c < fieldList.length; c++)
+ {
+  var th = this.FieldByName[fieldList[c]].O;
+  htmlTable+= "<th";
+  switch(th.format)
+  {
+   case 'currency' : case 'number' : case 'percentage' : case 'date' : htmlTable+= " format='"+th.format+"'";
+  }
+  htmlTable+= ">"+th.textContent+"</th>";
+ }
+ htmlTable+= "</tr>";
+
+ for(var c=1; c < this.O.rows.length; c++)
+ {
+  htmlTable+= "<tr>";
+  for(var i=0; i < fieldList.length; i++)
+   htmlTable+= "<td>"+this.O.rows[c].cell[fieldList[i]].getValue()+"</td>";
+  htmlTable+= "</tr>";
+ }
+ 
+ htmlTable+= "</table>";
+ //------------------------------------------------//
+ var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
+ sh.OnOutput = function(o,a){
+	 if(callback)
+	  callback(a);
+	 else if(oThis.OnExport)
+	  oThis.OnExport(a);
+	 //document.location.href = ABSOLUTE_URL+"getfile.php?file="+a['filename'];
+	}
+ sh.sendCommand("gframe -f excel/export -title `"+title+"` -params `file="+fileName+".xlsx` --use-cache-contents -contents `"+htmlTable+"`");
+
+}
+//-------------------------------------------------------------------------------------------------------------------//
 

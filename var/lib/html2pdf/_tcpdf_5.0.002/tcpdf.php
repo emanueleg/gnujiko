@@ -2500,7 +2500,7 @@ if (!class_exists('TCPDF', false)) {
 			// unset all class variables
 			$this->_destroy(true);
 			// exit program and print error
-			die('<strong>TCPDF ERROR: </strong>'.$msg);
+			//die('<strong>TCPDF ERROR: </strong>'.$msg); Rimosso per problemi di shell request error
 		}
 
 		/**

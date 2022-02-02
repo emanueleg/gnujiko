@@ -61,7 +61,7 @@ div.docopt-item span.spangray {
 div.docopt-item div.convdocthumb {
 	width: 40px;
 	float: left;
-	margin: 5px;
+	margin: 3px;
 	text-align: center;
 	cursor: pointer;
 }
@@ -84,6 +84,18 @@ div.convdocthumb span {
 div.convdocthumb img {
 	border: 0px;
 	height: 22px;
+}
+
+div.docopt-other {
+ 	width: 20px;
+	height: 40px;
+	padding: 0px;
+	text-align: center;
+	float: right;
+	font-family: arial, sans-serif;
+	font-size: 22px;
+	color: #333;
+	cursor: pointer;
 }
 
 div.docopt-status-div {

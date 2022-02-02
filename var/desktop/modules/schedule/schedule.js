@@ -1,15 +1,16 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 27-02-2013
+ #DATE: 24-05-2014
  #PACKAGE: schedule-module
  #DESCRIPTION: Schedule module for Gnujiko Desktop.
- #VERSION: 2.0beta
- #CHANGELOG:
+ #VERSION: 2.2beta
+ #CHANGELOG: 24-05-2014 : Bug fix.
+			 09-11-2013 : Aggiornato con le nuove disposizioni
  #TODO:
  
 */
@@ -52,7 +53,7 @@ function schedulemodule_update(date,modId)
 	 document.getElementById(modId+"-date").setAttribute('date',date.printf('Y-m-01'));
 
 	 var container = document.getElementById(modId+"-container");
-	 if(!a)
+	 if(!a['results'])
 	 {
 	  container.innerHTML = "&nbsp;";
 	  document.getElementById(modId+"-ndocs").innerHTML = "0";
@@ -62,9 +63,9 @@ function schedulemodule_update(date,modId)
 
 	 
 	 var html = "";
-	 for(var c=0; c < a.length; c++)
+	 for(var c=0; c < a['results'].length; c++)
 	 {
-	  var item = a[c];
+	  var item = a['results'][c];
 	  html+= "<div class='schedule-item'><div class='schedule-item-header'>";
 	  tmpdate.setFromISO(item['expire_date'])
 	  html+= "<span style='color:"+(tmpdate.getTime() < today.getTime() ? "#b50000" : "#013397")+"'>"+tmpdate.printf('d/m/Y')+"</span>";
@@ -80,9 +81,9 @@ function schedulemodule_update(date,modId)
 	  totIncomes+= amount;
 	 }
 	 container.innerHTML = html ? html : "&nbsp;";	 
-	 document.getElementById(modId+"-ndocs").innerHTML = a.length;
+	 document.getElementById(modId+"-ndocs").innerHTML = a['results'].length;
 	 document.getElementById(modId+"-totamount").innerHTML = "&euro; "+formatCurrency(totIncomes,2);
 	}
- sh.sendCommand("mmr schedule -from `"+date.printf('Y-m')+"-01`");
+ sh.sendCommand("mmr schedule --only-invoices -from `"+date.printf('Y-m')+"-01`");
 }
 

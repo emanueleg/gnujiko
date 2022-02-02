@@ -216,6 +216,17 @@ table.itemlist td span.status-green {
 	text-align: center;
 }
 
+table.itemlist td span.status-orange {
+	height: 21px;
+	display: block;
+	background: #f46100;
+	font-family: Arial, serif;
+	font-size: 13px;
+	color: #ffffff;
+	line-height: 21px;
+	text-align: center;
+}
+
 table.itemlist td span.status-open {
 	height: 21px;
 	display: block;

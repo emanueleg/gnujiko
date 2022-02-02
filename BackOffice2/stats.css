@@ -1,0 +1,91 @@
+table.macrosectrend th {
+	font-family: Arial, Helvetica, sans-serif;	
+	font-size: 12px;
+	color: #333333;
+	text-align: left;
+}
+
+span.bigvalue {
+
+	display: block;
+	float: left;
+	font-family: Helvetica, Arial, sans-serif;
+	font-size: 18px;
+	font-weight: bold;
+	color: #333333;
+}
+
+em.rateup {
+	margin-left: 5px;
+	margin-top: 2px;
+	display: block;
+	float: left;
+	height: 20px;
+	border: 0px;
+	border-radius: 3px;
+	background: #66b142 url(img/whitearrow-up.png) top left no-repeat;
+	font-family: arial,sans-serif;
+	font-size: 11px;
+	color: #ffffff;
+	font-weight: bold;
+	line-height: 20px;
+	padding-left: 17px;
+	padding-right: 5px;
+}
+
+em.ratedown {
+	margin-left: 5px;
+	margin-top: 2px;
+	display: block;
+	float: left;
+	height: 20px;
+	border: 0px;
+	border-radius: 3px;
+	background: #c32f16 url(img/whitearrow-down.png) top left no-repeat;
+	font-family: arial,sans-serif;
+	font-size: 11px;
+	color: #ffffff;
+	font-weight: bold;
+	line-height: 20px;
+	padding-left: 17px;
+	padding-right: 5px;
+}
+ 
+
+table.standardtable th {
+	height: 30px;
+	vertical-align: middle;
+	font-family: arial, sans-serif;
+	font-size: 12px;
+	color: #000000;
+	border-bottom: 2px solid #333333;
+}
+
+table.standardtable td {
+	height: 30px;
+	vertical-align: middle;
+	border-bottom: 1px solid #dadada;
+	font-family: arial, sans-serif;
+	font-size: 12px;
+	color: #000000;
+	padding-right: 15px;
+	white-space: nowrap;
+}
+
+table.smallheadertable td {
+	font-family: arial, times;
+	font-size: 12px;
+	color: #222222;
+	vertical-align: middle;
+}
+
+div.chart-container {
+	width: 800px;
+	height: 280px;
+	border: 1px solid #d8d8d8;
+	font-family: arial, sans-serif;
+	font-size: 24px;
+	color: #f31903;
+	text-align: center;
+}
+

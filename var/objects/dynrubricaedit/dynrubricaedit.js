@@ -1,21 +1,23 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 28-11-2012
+ #DATE: 03-03-2014
  #PACKAGE: dynrubricaedit
  #DESCRIPTION: Basic edit object with rubrica property
- #VERSION: 2.0beta
- #CHANGELOG: 05-07-2012 : Some bug fixed.
+ #VERSION: 2.2beta
+ #CHANGELOG: 03-02-2014 : Aggiunto refid
+			 13-10-2014 : Possibilità di ricerca anche per codice.
+			 05-07-2012 : Some bug fixed.
 			 13-06-2012 : Gbox deprecated bug fix.
  #TODO:
  
 */
 
-function DynRubricaEdit(obj, ct, ap)
+function DynRubricaEdit(obj, ct, ap, extraQry)
 {
  var archivePrefix = ap ? ap : "rubrica";
  var catTag = ct;
@@ -23,13 +25,20 @@ function DynRubricaEdit(obj, ct, ap)
  obj.valueChanged = obj.onchange;
 
  var mE = EditSearch.init(obj,
-	"dynarc item-find -ap `"+archivePrefix+"`"+(catTag ? " -ct `"+catTag+"`" : "")+" -field name `","` -limit 10 --order-by 'name ASC'",
-	"id","name","items",true);
+	"dynarc search -ap `"+archivePrefix+"`"+(catTag ? " -ct `"+catTag+"`" : "")+" -fields name,code_str `","` -limit 10 --order-by 'name ASC'"+(extraQry ? " "+extraQry : ""),
+	"id","name","items",true,"name",function(items,resArr,retVal){
+		 for(var c=0; c < items.length; c++)
+		 {
+		  resArr.push(items[c]['code_str']+" - "+items[c]['name']);
+		  retVal.push(items[c]['id']);
+		 } 
+		});
 
  mE.ap = archivePrefix;
  mE.ct = catTag;
  mE.infoButton.ap = archivePrefix;
  mE.infoButton.ct = catTag;
+ mE.oldValue = mE.value;
 
  mE.onchange = function(){
 	 if(!this.value) return;
@@ -100,7 +109,10 @@ function DynRubricaEdit(obj, ct, ap)
 	 	 mE.infoButton.style.display = "";
 		}
 
-	  sh.sendCommand("dynarc item-info -ap `"+ap+"` -name `"+this.value+"`");
+	  if((this.oldValue == this.value) && this.getAttribute('refid'))
+	   sh.sendCommand("dynarc item-info -ap `"+ap+"` -id `"+this.getAttribute('refid')+"`");
+	  else
+	   sh.sendCommand("dynarc item-info -ap `"+ap+"` -name `"+this.value+"`");
 	 }
 	 if(this.valueChanged)
 	  this.valueChanged();

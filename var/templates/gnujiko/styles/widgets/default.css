@@ -1,0 +1,177 @@
+div.gnujiko-template-frame-body {
+ padding: 10px;
+ background: transparent;
+}
+
+div.gnujiko-template-widget-body {
+ background: #ffffff;
+ -moz-box-shadow: 0px 0px 8px #777777;
+ -webkit-box-shadow: 0px 0px 8px #777777;
+ box-shadow: 0px 0px 8px #777777;
+}
+
+div.widget-header {
+ height: 36px;
+ background: #404040;
+ color: #ffffff;
+ line-height: 36px;
+ font-family: arial;
+ font-size: 13px;
+ padding-left: 10px;
+}
+
+input.widget-button-close {margin-right: 5px;margin-top:5px;}
+
+div.widget-section {
+ background: #ffffff;
+ padding: 10px;
+ border-bottom: 1px solid #cfcfcf;
+}
+
+div.widget-footer {
+ padding: 10px;
+ background: #f5f5f5;
+}
+
+label {
+ font-family: arial;
+ font-size: 12px;
+ color: #666666;
+}
+
+ul.footer-menu {
+ margin: 0px;
+ padding: 0px;
+ list-style-type: none;
+ float: right;
+}
+
+ul.footer-menu li {
+ float: left;
+ height: 30px;
+ padding-left: 6px;
+ padding-right: 6px;
+}
+
+ul.footer-menu li.separator {
+ width: 1px;
+ background: url(img/footer-menu-separator) center left no-repeat;
+ padding-left: 0px;
+ padding-right: 0px;
+}
+
+/* TABLE FORM */
+table.form td {
+ height: 42px;
+ border-bottom: 1px solid #cfcfcf;
+ vertical-align: middle;
+ padding-left: 10px;
+ padding-right: 10px;
+ font-family: sans-serif;
+ font-size: 12px;
+}
+
+table.form td.full {
+ padding-top: 12px;
+ padding-bottom: 12px;
+}
+
+table.form tr.noborder td {border-bottom:0px;}
+
+
+/* TABLE BIGFORM */
+table.bigform td {
+ height: 60px;
+ border-bottom: 1px solid #cfcfcf;
+ vertical-align: middle;
+ padding-left: 10px;
+ padding-right: 10px;
+ font-family: sans-serif;
+ font-size: 14px;
+}
+
+table.bigform td.full {
+ padding-top: 12px;
+ padding-bottom: 12px;
+}
+
+table.bigform label {
+ font-size: 14px;
+ color: #333333;
+}
+
+table.bigform tr.noborder td {border-bottom:0px;}
+
+/* TABLE SMALLFORM */
+table.smallform td {
+ height: 30px;
+ border-bottom: 1px solid #cfcfcf;
+ vertical-align: middle;
+ padding-left: 10px;
+ padding-right: 10px;
+ font-family: sans-serif;
+ font-size: 12px;
+}
+
+table.smallform td.full {
+ padding-top: 12px;
+ padding-bottom: 12px;
+}
+
+table.smallform label {
+ font-size: 12px;
+ color: #333333;
+}
+
+table.smallform tr.noborder td {border-bottom:0px;}
+
+table.smallform input.edit {
+ font-size: 10px;
+ height: 24px;
+ padding-left: 2px;
+ padding-right: 2px;
+}
+
+
+/* MESSAGES */
+div.message-header {
+ height: 30px;
+ background: transparent;
+}
+
+div.message-section {
+ background: #ffffff;
+ padding: 10px;
+ padding-left: 40px;
+ padding-right: 40px;
+}
+
+div.message-section h1 {
+ font-family: arial;
+ font-size: 16px;
+ color: #000000;
+ margin: 0px;
+ padding: 0px;
+ margin-bottom: 12px;
+}
+
+div.message-section label {
+ height: 29px;
+ line-height: 29px;
+ font-family: arial;
+ font-size: 13px;
+ color: #000000;
+}
+
+div.message-section div.form-section {
+ margin-bottom: 10px;
+}
+
+div.message-footer {
+ padding: 10px;
+ background: transparent;
+ padding-left: 40px;
+ padding-right: 40px;
+ padding-bottom: 25px;
+}
+

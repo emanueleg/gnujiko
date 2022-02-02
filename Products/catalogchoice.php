@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2017 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 13-04-2013
+ #DATE: 29-04-2017
  #PACKAGE: gmart
  #DESCRIPTION: Catalog choice form
- #VERSION: 2.2beta
- #CHANGELOG: 13-04-2013 : Bug fix nella creazione di nuovi cataloghi.
+ #VERSION: 2.3beta
+ #CHANGELOG: 29-04-2017 : Aggiornata funzione newCatalog.
+			 13-04-2013 : Bug fix nella creazione di nuovi cataloghi.
 			 04-02-2013 : Possibilità di creare nuovi cataloghi.
  #TODO: Da fare il multi-lingua.
  
@@ -89,8 +90,9 @@ function newCatalog()
   return;
 
  var sh = new GShell();
- sh.OnFinish = function(){document.location.reload();}
- sh.sendSudoCommand("dynarc archive-list -type gmart -a --ret-count || dynarc new-archive -name `"+_name+"` -prefix 'gmart_'+*.count -group gmart -type gmart --default-cat-perms 660 --default-item-perms 660 -inherit gmart --hidden");
+ sh.OnError = function(err){alert(err);}
+ sh.OnOutput = function(){document.location.reload();}
+ sh.sendSudoCommand("dynarc new-archive -name `"+_name+"` -autoprefix gmart -group gmart -type gmart --default-cat-perms 660 --default-item-perms 660 -inherit gmart --hidden");
 }
 </script>
 </body></html>

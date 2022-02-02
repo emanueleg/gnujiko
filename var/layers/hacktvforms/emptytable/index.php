@@ -6,11 +6,11 @@
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 04-06-2013
+ #DATE: 19-12-2013
  #PACKAGE: hacktvsearch-common 
  #DESCRIPTION: 
- #VERSION: 2.0beta
- #CHANGELOG: 
+ #VERSION: 2.1beta
+ #CHANGELOG: 19-12-2013 : Aggiunta funzione per importare da tabella HTML
  #TODO:
  
 */
@@ -39,6 +39,9 @@ $_TOTALS_COLUMNS = array();
 	 <li onclick="hacktvform_emptytable_addRow(<?php echo $_REQUEST['layerid']; ?>)">
 		<img src="<?php echo $_ABSOLUTE_URL; ?>var/layers/hacktvforms/emptytable/img/add_small.png"/> Aggiungi nuova riga</li>
 
+	 <li onclick="hacktvform_emptytable_importFromCommand(<?php echo $_REQUEST['layerid']; ?>)">
+		<img src="<?php echo $_ABSOLUTE_URL; ?>var/layers/hacktvforms/emptytable/img/add_small.png"/> Importa da comando GShell</li>
+
 	 <li class="separator">&nbsp;</li>
 
 
@@ -48,6 +51,7 @@ $_TOTALS_COLUMNS = array();
 	 <li class="separator">&nbsp;</li>
 
 	 <!-- <li onclick="hacktvform_emptytable_printPreview(<?php echo $_REQUEST['layerid']; ?>)"><img src="<?php echo $_ABSOLUTE_URL; ?>var/layers/hacktvforms/emptytable/img/print.gif"/> Stampa</li> -->
+	 <li onclick="hacktvform_emptytable_htmlTableImport(<?php echo $_REQUEST['layerid'].',\''.$_REQUEST['hacktvformid'].'\''; ?>)"><img src="<?php echo $_ABSOLUTE_URL; ?>var/layers/hacktvforms/emptytable/img/html.png"/> Importa da tabella HTML</li>
 	 <li onclick="hacktvform_emptytable_excelImport(<?php echo $_REQUEST['layerid'].',\''.$_REQUEST['hacktvformid'].'\''; ?>)"><img src="<?php echo $_ABSOLUTE_URL; ?>var/layers/hacktvforms/emptytable/img/excel.png"/> Importa da Excel</li>
 	 <li onclick="hacktvform_emptytable_excelExport(<?php echo $_REQUEST['layerid'].',\''.$_REQUEST['hacktvformid'].'\''; ?>)"><img src="<?php echo $_ABSOLUTE_URL; ?>var/layers/hacktvforms/emptytable/img/excel.png"/> Esporta in Excel</li>
 	 <li onclick="hacktvform_emptytable_sendEmail(<?php echo $_REQUEST['layerid'].',\''.$_REQUEST['hacktvformid'].'\''; ?>)"><img src="<?php echo $_ABSOLUTE_URL; ?>var/layers/hacktvforms/emptytable/img/sendmail.png"/> Invia per email</li>
@@ -97,7 +101,8 @@ $_TOTALS_COLUMNS = array();
 	<?php
 	for($c=0; $c < $_REQUEST['fieldcount']; $c++)
 	{
-	 echo "<th style='padding-left:5px;padding-right:5px;".($_REQUEST["f".$c."hidden"] ? "display:none;" : "")."' editable='true'";
+	 echo "<th style='padding-left:5px;padding-right:5px;".($_REQUEST["f".$c."hidden"] ? "display:none;" : "")."'";
+	 if($_REQUEST["f".$c."editable"]) echo " editable='".$_REQUEST["f".$c."editable"]."'";
 	 if($_REQUEST["f".$c."id"]) echo " id='".$_REQUEST["f".$c."id"]."'";
 	 if($_REQUEST["f".$c."width"]) echo " width='".$_REQUEST["f".$c."width"]."'";
 	 if($_REQUEST["f".$c."autolink"]) echo " autolink='".$_REQUEST["f".$c."autolink"]."'";

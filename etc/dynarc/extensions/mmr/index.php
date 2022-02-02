@@ -1,17 +1,22 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 03-12-2012
+ #DATE: 24-10-2016
  #PACKAGE: dynarc-mmr-extension
  #DESCRIPTION: Money Movements Reports, extension for Dynarc,
- #VERSION: 2.0beta
- #CHANGELOG: 03-12-2012 : Completamento delle funzioni principali.
- #TODO:Rifare funzione import & export e completare funzioni syncimport & syncexport.
+ #VERSION: 2.5beta
+ #CHANGELOG: 24-10-2016 : MySQLi integration.
+			 20-04-2014 : Aggiunto setallpaid su funzione set.
+			 14-02-2014 : Float fix.
+			 05-02-2014 : Aggiunto data documento.
+			 31-01-2014 : Aggiunto riba.
+			 03-12-2012 : Completamento delle funzioni principali.
+ #TODO:
  
 */
 
@@ -24,16 +29,26 @@ function dynarcextension_mmr_install($params, $sessid, $shellid=0, $archiveInfo=
  $db->RunQuery("CREATE TABLE IF NOT EXISTS `dynarc_".$archiveInfo['prefix']."_mmr` (
 `id` INT( 11 ) NOT NULL AUTO_INCREMENT PRIMARY KEY ,
 `item_id` INT( 11 ) NOT NULL ,
+`doc_date` DATE NOT NULL ,
 `op_time` DATETIME NOT NULL ,
 `description` VARCHAR( 128 ) NOT NULL ,
-`incomes` FLOAT NOT NULL ,
-`expenses` FLOAT NOT NULL ,
+`incomes` DECIMAL(10,4) NOT NULL ,
+`expenses` DECIMAL(10,4) NOT NULL ,
 `expire_date` DATE NOT NULL ,
 `payment_date` DATE NOT NULL ,
 `subject_id` INT( 11 ) NOT NULL ,
 `subject_name` VARCHAR( 64 ) NOT NULL ,
 `res_id` INT( 11 ) NOT NULL ,
-INDEX ( `item_id` , `op_time` , `expire_date` , `payment_date` , `subject_id` , `res_id` )
+`riba_id` INT( 11 ) NOT NULL ,
+`doc_type` VARCHAR( 32 ) NOT NULL ,
+`doc_num` INT( 11 ) NOT NULL ,
+`doc_num_ext` VARCHAR( 8 ) NOT NULL ,
+`doc_name` VARCHAR( 64 ) NOT NULL ,
+`doc_tag` VARCHAR( 32 ) NOT NULL ,
+`doc_bank` INT( 11 ) NOT NULL ,
+`payment_type` VARCHAR( 8 ) NOT NULL ,
+`payment_mode` INT( 11 ) NOT NULL ,
+INDEX ( `item_id` , `op_time` , `expire_date` , `payment_date` , `subject_id` , `res_id` , `riba_id` , `doc_date` , `doc_type`)
 )");
  $db->Close();
  return array("message"=>"MMR extension has been installed into archive ".$archiveInfo['name']."\n");
@@ -57,6 +72,15 @@ function dynarcextension_mmr_set($args, $sessid, $shellid, $archiveInfo, $itemIn
   switch($args[$c])
   {
    case 'id' : {$id=$args[$c+1]; $c++;} break;
+   case 'docdate' : {$docDate=$args[$c+1]; $c++;} break;
+   case 'doctype' : {$docType=$args[$c+1]; $c++;} break;
+   case 'docnum' : {$docNum=$args[$c+1]; $c++;} break;
+   case 'docnumext' : {$docNumExt=$args[$c+1]; $c++;} break;
+   case 'docname' : {$docName=$args[$c+1]; $c++;} break;
+   case 'doctag' : {$docTag=$args[$c+1]; $c++;} break;
+   case 'docbank' : {$docBankId=$args[$c+1]; $c++;} break;
+   case 'paymenttype' : {$paymentType=$args[$c+1]; $c++;} break;
+   case 'paymentmode' : {$paymentMode=$args[$c+1]; $c++;} break;
    case 'date' : case 'time' : case 'optime' : {$opTime=strtotime($args[$c+1]); $c++;} break;
    case 'desc' : case 'description' : {$description=$args[$c+1]; $c++;} break;
    case 'in' : case 'incomes' : {$incomes=$args[$c+1]; $c++;} break;
@@ -66,12 +90,23 @@ function dynarcextension_mmr_set($args, $sessid, $shellid, $archiveInfo, $itemIn
    case 'subjectid' : {$subjectID=$args[$c+1]; $c++;} break;
    case 'subject' : {$subjectName=$args[$c+1]; $c++;} break;
    case 'resource' : case 'resid' : case 'resourceid' : {$resourceId=$args[$c+1]; $c++;} break;
+   case 'riba' : case 'ribaid' : {$ribaId=$args[$c+1]; $c++;} break;
+   case 'setallpaid' : {$setAllPaid=$args[$c+1]; $c++;} ; break;
   }
 
- $db = new AlpaDatabase();
- if($id)
+ if($setAllPaid)
  {
+  $db = new AlpaDatabase();
+  $db->RunQuery("UPDATE dynarc_".$archiveInfo['prefix']."_mmr SET payment_date='"
+	.date('Y-m-d',$paymentDate ? strtotime($paymentDate) : time())."' WHERE item_id='".$itemInfo['id']."' AND payment_date='0000-00-00'");
+  $db->Close();
+ }
+ else if($id)
+ {
+  $db = new AlpaDatabase();
   $q = "";
+  if($docDate)
+   $q.= ",doc_date='".$docDate."'";
   if($opTime)
    $q.= ",op_time='".date('Y-m-d H:i',$opTime)."'";
   if($description)
@@ -90,17 +125,70 @@ function dynarcextension_mmr_set($args, $sessid, $shellid, $archiveInfo, $itemIn
    $q.= ",subject_name='".$db->Purify($subjectName)."'";
   if(isset($resourceId))
    $q.= ",res_id='".$resourceId."'";
+  if(isset($ribaId))
+   $q.= ",riba_id='".$ribaId."'";
+  if(isset($docType))
+   $q.= ",doc_type='".$docType."'";
+  if(isset($docNum))
+   $q.= ",doc_num='".$docNum."'";
+  if(isset($docNumExt))
+   $q.= ",doc_num_ext='".$docNumExt."'";
+  if(isset($docName))
+   $q.= ",doc_name='".$db->Purify($docName)."'";
+  if(isset($docTag))
+   $q.= ",doc_tag='".$docTag."'";
+  if(isset($paymentType))
+   $q.= ",payment_type='".$paymentType."'";
+  if(isset($paymentMode))
+   $q.= ",payment_mode='".$paymentMode."'";
   
   $db->RunQuery("UPDATE dynarc_".$archiveInfo['prefix']."_mmr SET ".ltrim($q,",")." WHERE id='$id'");
   $db->Close();
  }
  else
  {
-  $db->RunQuery("INSERT INTO dynarc_".$archiveInfo['prefix']."_mmr(item_id,op_time,description,incomes,expenses,expire_date,payment_date,
-	subject_id,subject_name,res_id) VALUES('".$itemInfo['id']."','".date('Y-m-d H:i',$opTime ? $opTime : time())."','".$db->Purify($description)."','"
-	.$incomes."','".$expenses."','".($expireDate ? date('Y-m-d',strtotime($expireDate)) : "")."','"
-	.($paymentDate ? date('Y-m-d',strtotime($paymentDate)) : "")."','".$subjectID."','".$db->Purify($subjectName)."','".$resourceId."')");
-  $id = mysql_insert_id();
+  if(!$docDate)
+   $docDate = date("Y-m-d",$itemInfo['ctime']);
+  // get other info about document //
+  $db2 = new AlpaDatabase();
+  $db2->RunQuery("SELECT code_num,code_ext,tag,payment_mode,bank_support,subject_name FROM dynarc_commercialdocs_items WHERE id='".$itemInfo['id']."'");
+  $db2->Read();
+  $itemInfo['code_num'] = $db2->record['code_num'];
+  $itemInfo['code_ext'] = $db2->record['code_ext'];
+  $itemInfo['tag'] = $db2->record['tag'];
+  $itemInfo['payment_mode'] = $db2->record['payment_mode'];
+  $itemInfo['bank_support'] = $db2->record['bank_support'];
+  if(!$subjectName)
+   $subjectName = $db2->record['subject_name'];
+
+  // get cat tag //
+  $docType = "";
+  $db2->RunQuery("SELECT tag,parent_id FROM dynarc_commercialdocs_categories WHERE id='".$itemInfo['cat_id']."'");
+  $db2->Read();
+  if($db2->record['parent_id'])
+  {
+   $db2->RunQuery("SELECT tag FROM dynarc_commercialdocs_categories WHERE id='".$db2->record['parent_id']."'");
+   $db2->Read();
+   $docType = $db2->record['tag'];
+  }
+  else
+   $docType = $db2->record['tag'];
+
+  // get payment type //
+  $db2->RunQuery("SELECT type FROM payment_modes WHERE id='".$itemInfo['payment_mode']."'");
+  $db2->Read();
+  $paymentType = $db2->record['type'];
+  $db2->Close();
+
+  $db = new AlpaDatabase();
+  $db->RunQuery("INSERT INTO dynarc_".$archiveInfo['prefix']."_mmr(item_id,doc_date,op_time,description,incomes,expenses,expire_date,payment_date,
+	subject_id,subject_name,res_id,riba_id,doc_type,doc_num,doc_num_ext,doc_name,doc_tag,doc_bank,payment_type,payment_mode) VALUES('"
+	.$itemInfo['id']."','".$docDate."','".date('Y-m-d H:i',$opTime ? $opTime : time())."','".$db->Purify($description)."','".$incomes."','"
+	.$expenses."','".($expireDate ? date('Y-m-d',strtotime($expireDate)) : "")."','"
+	.($paymentDate ? date('Y-m-d',strtotime($paymentDate)) : "")."','".$subjectID."','".$db->Purify($subjectName)."','".$resourceId."','"
+	.$ribaId."','".$docType."','".$itemInfo['code_num']."','".$itemInfo['code_ext']."','".$db->Purify($itemInfo['name'])."','"
+	.$itemInfo['tag']."','".$itemInfo['bank_support']."','".$paymentType."','".$itemInfo['payment_mode']."')");
+  $id = $db->GetInsertId();
   $itemInfo['last_mmr_id'] = $id;
   $db->Close();
  }
@@ -133,6 +221,7 @@ function dynarcextension_mmr_get($args, $sessid, $shellid, $archiveInfo, $itemIn
  while($db->Read())
  {
   $a = array('id'=>$db->record['id']);
+  $a['docdate'] = $db->record['doc_date'];
   $a['date'] = $db->record['op_time'];
   $a['description'] = $db->record['description'];
   $a['incomes'] = $db->record['incomes'];
@@ -142,6 +231,7 @@ function dynarcextension_mmr_get($args, $sessid, $shellid, $archiveInfo, $itemIn
   $a['subjectid'] = $db->record['subject_id'];
   $a['subject'] = $db->record['subject_name'];
   $a['res_id'] = $db->record['res_id'];
+  $a['riba_id'] = $db->record['riba_id'];
   $itemInfo['mmr'][] = $a;
  }
  $db->Close();

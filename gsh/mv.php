@@ -1,17 +1,18 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2015 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 28-11-2012
+ #DATE: 05-12-2015
  #PACKAGE: gnujiko-base
  #DESCRIPTION: Move or rename directory and files
- #VERSION: 2.1beta
+ #VERSION: 2.2beta
  #TODO:
- #CHANGELOG: 28-11-2012 : Bug fix.
+ #CHANGELOG: 05-12-2015 : Bug fix.
+			 28-11-2012 : Bug fix.
  
 */
 
@@ -66,6 +67,9 @@ function shell_mv($args, $sessid, $shellid=0)
   $destDir = rtrim($dst,"/")."/";
  else
   $destDir = substr($dst, 0, -strlen(basename($dst)));
+ if(strpos($destDir, $basepath) == 0)
+  $destDir = str_replace($basepath, "", $destDir);
+
  if(!is_dir($basepath.$destDir))
  {
   $ret = GShell("mkdir `".$destDir."`",$sessid,$shellid);
@@ -76,12 +80,19 @@ function shell_mv($args, $sessid, $shellid=0)
  for($c=0; $c < count($sources); $c++)
  {
   $src = $sources[$c];
+  if(strpos($src, $basepath) == 0)
+   $src = str_replace($basepath, "", $src);
   if(!file_exists($basepath.$src))
    return array('message'=>"Source not found. $src does not exists.",'error'=>"SRC_DOES_NOT_EXISTS");
+
   $dest = $dst;
-  if(is_dir($basepath.$dst))
-   $dest = rtrim($dst,"/")."/".basename($src);
+  if(strpos($dest, $basepath) == 0)
+   $dest = str_replace($basepath, "", $dest);
+  if(is_dir($basepath.$dest))
+   $dest = rtrim($dest,"/")."/".basename($src);
+
   @rename($basepath.$src,$basepath.$dest);
+
   if(!file_exists($basepath.$dest))
    return array('message'=>"Unable to move/rename $src with $dest.",'error'=>"MOVE_FAILED");
  }

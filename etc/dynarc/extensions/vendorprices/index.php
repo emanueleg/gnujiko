@@ -1,17 +1,21 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 07-07-2012
+ #DATE: 24-10-2016
  #PACKAGE: dynarc-vendorprices-extension
  #DESCRIPTION: 
- #VERSION: 2.0beta
- #CHANGELOG:
- #TODO:Rifare funzione import & export e completare funzioni syncimport & syncexport.
+ #VERSION: 2.5beta
+ #CHANGELOG: 24-10-2016 : MySQLi integration.
+			 24-07-2014 : Sostituito alcuni float con decimal 10,4
+			 10-06-2014 : Aggiunta funzione onarchiveempty
+			 23-05-2014 : Bug fix vari
+			 18-02-2014 : sviluppate funzioni import export.
+ #TODO:
  
 */
 
@@ -27,8 +31,8 @@ function dynarcextension_vendorprices_install($params, $sessid, $shellid=0, $arc
 `code` VARCHAR( 64 ) NOT NULL ,
 `vendor_id` INT( 11 ) NOT NULL ,
 `vendor_name` VARCHAR( 64 ) NOT NULL ,
-`ship_costs` FLOAT NOT NULL ,
-`price` FLOAT NOT NULL ,
+`ship_costs` DECIMAL(10,4) NOT NULL ,
+`price` DECIMAL(10,4) NOT NULL ,
 `vatrate` FLOAT NOT NULL ,
 INDEX ( `item_id` , `code` )
 )");
@@ -79,6 +83,31 @@ function dynarcextension_vendorprices_set($args, $sessid, $shellid, $archiveInfo
 
  $sessInfo = sessionInfo($sessid);
 
+ if($vendorName && !isset($vendorId))
+ {
+  // check for vendor
+  $ret = GShell("dynarc item-info -ap rubrica -name `".$vendorName."`",$sessid,$shellid);
+  if(!$ret['error'])
+   $vendorId = $ret['outarr']['id'];
+  else
+  {
+   // registra il fornitore in rubrica
+   $ret = GShell("dynarc new-item -ap rubrica -ct vendors -name `".$vendorName."`",$sessid,$shellid);
+   if(!$ret['error'])
+	$vendorId = $ret['outarr']['id'];
+  }
+ }
+
+ if(!$id && $vendorId)
+ {
+  // get if already exists
+  $db = new AlpaDatabase();
+  $db->RunQuery("SELECT id FROM dynarc_".$archiveInfo['prefix']."_vendorprices WHERE item_id='".$itemInfo['id']."' AND vendor_id='".$vendorId."'");
+  if($db->Read())
+   $id = $db->record['id'];
+  $db->Close();
+ }
+
  if($id)
  {
   $db = new AlpaDatabase();
@@ -105,7 +134,7 @@ function dynarcextension_vendorprices_set($args, $sessid, $shellid, $archiveInfo
   $db = new AlpaDatabase();
   $db->RunQuery("INSERT INTO dynarc_".$archiveInfo['prefix']."_vendorprices(item_id,code,vendor_id,vendor_name,ship_costs,price,vatrate) VALUES('"
 	.$itemInfo['id']."','".$code."','".$vendorId."','".$db->Purify($vendorName)."','".$shipCosts."','".$price."','".$vatRate."')");
-  $id = mysql_insert_id();
+  $id = $db->GetInsertId();
   $db->Close();
  }
 
@@ -191,8 +220,6 @@ function dynarcextension_vendorprices_oneditcategory($args, $sessid, $shellid, $
  return true;
 }
 //-------------------------------------------------------------------------------------------------------------------//
-
-//-------------------------------------------------------------------------------------------------------------------//
 function dynarcextension_vendorprices_ontrashitem($args, $sessid, $shellid, $archiveInfo, $itemInfo)
 {
  return true;
@@ -233,14 +260,56 @@ function dynarcextension_vendorprices_oncopycategory($sessid, $shellid, $archive
  return $cloneInfo;
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function dynarcextension_vendorprices_export($sessid, $shellid, $archiveInfo, $itemInfo)
+function dynarcextension_vendorprices_onarchiveempty($args, $sessid, $shellid, $archiveInfo)
 {
- $xml = "";
+ $db = new AlpaDatabase();
+ $db->RunQuery("TRUNCATE TABLE `dynarc_".$archiveInfo['prefix']."_vendorprices`");
+ $db->Close();
+ return true;
+}
+//-------------------------------------------------------------------------------------------------------------------//
+function dynarcextension_vendorprices_export($sessid, $shellid, $archiveInfo, $itemInfo, $isCategory=false)
+{
+ if($isCategory)
+  return;
+
+ $xml = "<vendorprices>";
+ $db = new AlpaDatabase();
+ $db->RunQuery("SELECT * FROM dynarc_".$archiveInfo['prefix']."_vendorprices WHERE item_id='".$itemInfo['id']."' ORDER BY id ASC");
+ while($db->Read())
+ {
+  $xml.= "<vendorprice code='".$db->record['code']."' vendor_name='".$db->record['vendor_name']."' vendor_id='"
+	.$db->record['vendor_id']."' ship_costs='".$db->record['ship_costs']."' price='".$db->record['price']."' vatrate='".$db->record['vatrate']."'/>";
+ }
+ $xml.= "</vendorprices>";
+ $db->Close();
+
+
  return array('xml'=>$xml);
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function dynarcextension_vendorprices_import($sessid, $shellid, $archiveInfo, $itemInfo, $node)
+function dynarcextension_vendorprices_import($sessid, $shellid, $archiveInfo, $itemInfo, $node, $isCategory=false)
 {
+ if($isCategory)
+  return;
+
+ $list = $node->GetElementsByTagName("vendorprice");
+ for($c=0; $c < count($list); $c++)
+ {
+  $node = $list[$c];
+  $code = $node->getString('code');
+  $vendorId = $node->getString('vendor_id');
+  $vendorName = $node->getString('vendor_name');
+  $shipCosts = $node->getString('ship_costs');
+  $price = $node->getString('price');
+  $vatRate = $node->getString('vatrate');
+
+  $db = new AlpaDatabase();
+  $db->RunQuery("INSERT INTO dynarc_".$archiveInfo['prefix']."_vendorprices(item_id,code,vendor_id,vendor_name,ship_costs,price,vatrate) VALUES('"
+	.$itemInfo['id']."','".$code."','".$vendorId."','".$db->Purify($vendorName)."','".$shipCosts."','".$price."','".$vatRate."')");
+  $db->Close();
+ }
+
  return true;
 }
 //-------------------------------------------------------------------------------------------------------------------//

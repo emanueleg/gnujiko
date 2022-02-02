@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 29-07-2013
+ #DATE: 11-05-2016
  #PACKAGE: gnujiko-accounts
  #DESCRIPTION: Edit user
- #VERSION: 2.3beta
- #CHANGELOG: 29-07-2013 : Alcuni bug fix.
+ #VERSION: 2.4beta
+ #CHANGELOG: 11-05-2016 : Integrato con Rubrica.
+			 29-07-2013 : Alcuni bug fix.
 			 10-04-2013 : Aggiunto parametri --insert-into-groups e --remove-from-groups.
 			 05-01-2012 : Aggiunto parametro per abilitare/disabilitare account, e parametro per impostare i privilegi.
  #TODO:
@@ -46,6 +47,8 @@ function shell_usermod($args, $sessid)
    case '-privileges' : {$privileges=$args[$c+1]; $c++; } break;
    case '--insert-into-groups' : {$insertIntoGroups=$args[$c+1]; $c++;} break;
    case '--remove-from-groups' : {$removeFromGroups=$args[$c+1]; $c++;} break;
+   case '--set-rubrica-id' : {$setRubricaId=$args[$c+1]; $c++;} break;
+   case '--insert-into-rubrica' : {$insertIntoRubricaCat=$args[$c+1]; $c++;} break;
    default : if(!$userName) $userName = $args[$c]; break;
   }
 
@@ -61,6 +64,8 @@ function shell_usermod($args, $sessid)
   return array("message"=>"Only root can change group ID","error"=>"PERMISSION_DENIED");
  if(($disableAccount || $enableAccount) && ($sessInfo['uname'] != "root"))
   return array("message"=>"Only root can enable/disable accounts","error"=>"PERMISSION_DENIED");
+ if(isset($setRubricaId) && ($sessInfo['uname'] != "root"))
+  return array("message"=>"Only root can link user to rubrica","error"=>"PERMISSION_DENIED");
 
 
  if($gid)
@@ -131,10 +136,22 @@ function shell_usermod($args, $sessid)
   }
  }
 
- if($enableShell)
-  $q.= ",enableshell='1'";
- else if($disableShell)
-  $q.= ",enableshell='0'";
+
+ if($insertIntoRubricaCat && !$userInfo['rubrica_id'])
+ {
+  // Registra l'utente in rubrica.
+  $ret = GShell("dynarc new-item -ap rubrica -group rubrica -name `".$userInfo['fullname']."`"
+	.(is_numeric($insertIntoRubricaCat) ? " -cat '".$insertIntoRubricaCat."'" : " -ct '".$insertIntoRubricaCat."'")
+	." -extset `rubricainfo.userid='".$userInfo['id']."',login='".$userInfo['username']."'`", $sessid, $shellid);
+  if($ret['error']) return array('message'=>"Unable to register user into rubrica.\n".$ret['message'], 'error'=>$ret['error']);
+  $setRubricaId = $ret['outarr']['id'];
+ }
+
+
+ $db = new AlpaDatabase();
+
+ if($enableShell)  			$q.= ",enableshell='1'";
+ else if($disableShell)  	$q.= ",enableshell='0'";
  if($gid)
  {
   $q.= ",group_id='".$gid."'";
@@ -145,20 +162,15 @@ function shell_usermod($args, $sessid)
   $q.= ",username='".$name."'";
   $userInfo['username'] = $name;
  }
- if(isset($password))
-  $q.= ",password='".md5($password.$userInfo['regtime'])."'";
- else if($disabledPassword)
-  $q.= ",password='!";
- if(isset($fullname))
-  $q.= ",fullname='$fullname'";
- if(isset($email))
-  $q.= ",email='$email'";
- if($disableAccount)
-  $q.= ",disabled='1'";
- else if($enableAccount)
-  $q.= ",disabled='0'";
+ if(isset($password))		$q.= ",password='".md5($password.$userInfo['regtime'])."'";
+ else if($disabledPassword) $q.= ",password='!";
+ if(isset($fullname))		$q.= ",fullname='".$db->Purify($fullname)."'";
+ if(isset($email))			$q.= ",email='".$email."'";
+ if($disableAccount)		$q.= ",disabled='1'";
+ else if($enableAccount)	$q.= ",disabled='0'";
+ if(isset($setRubricaId))	$q.= ",rubrica_id='".$setRubricaId."'";
  
- $db = new AlpaDatabase();
+ 
  $db->RunQuery("UPDATE gnujiko_users SET ".ltrim($q,",")." WHERE id='".$userInfo['id']."'");
  $db->Close();
 

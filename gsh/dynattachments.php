@@ -1,16 +1,19 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 20-11-2012
+ #DATE: 24-10-2016
  #PACKAGE: dynarc-attachments-extension
  #DESCRIPTION: Attachments support for categories and items into archives managed by Dynarc.
- #VERSION: 2.0beta
- #CHANGELOG:
+ #VERSION: 2.4beta
+ #CHANGELOG: 24-10-2016 : MySQLi integration.
+			 22-02-2016 : Aggiornata funzione delete.
+			 03-12-2015 : Aggiunto parametro xml su funzione add.
+			 15-09-2015 : Aggiunta funzione empty.
  #TODO:
  
 */
@@ -32,6 +35,9 @@ function shell_dynattachments($args, $sessid, $shellid=null)
   case 'delete' : return shell_dynattachments_delete($args, $sessid, $shellid); break;
   case 'info' : return shell_dynattachments_info($args, $sessid, $shellid); break;
   case 'list' : return shell_dynattachments_list($args, $sessid, $shellid); break;
+
+  case 'empty' : return shell_dynattachments_empty($args, $sessid, $shellid); break;
+
   default : return shell_dynattachments_invalidArguments(); break;
  }
 }
@@ -72,6 +78,11 @@ function shell_dynattachments_new($args, $sessid=null, $shellid=null, $extraVar=
    case '-tag' : {$tag=$args[$c+1]; $c++;} break;
    case '-tbtag' : {$tbtag=$args[$c+1]; $c++;} break;
    case '-publish' : $publish=true; break;
+
+   case '-xml' : {$xmlData=$args[$c+1]; $c++;} break;
+
+   case '--move-from' : {$moveFromDir=$args[$c+1]; $c++;} break;
+   case '--move-to' : {$moveToDir=$args[$c+1]; $c++;} break;
   }
 
  $out = "";
@@ -106,6 +117,104 @@ function shell_dynattachments_new($args, $sessid=null, $shellid=null, $extraVar=
   }
  }
 
+ $uid = $sessInfo['uid'];
+ $gid = $sessInfo['gid'];
+ $mod = "644";
+ $now = date('Y-m-d H:i');
+
+ /* SAVE FROM XML-DATA */
+ if($xmlData)
+ {
+  $xml = new GXML();
+  $xmlData = ltrim(rtrim($xmlData));
+  if(!$xml->LoadFromString("<xml>".$xmlData."</xml>"))
+   return array('message'=>"Unable to save attachments from xml data.", "error"=>"XML_DATA_ERROR");
+  $list = $xml->GetElementsByTagName("item");
+  for($c=0; $c < count($list); $c++)
+  {
+   $item = $list[$c]->toArray();
+   if($archiveId && ($refid || $catId))
+   {
+	$name = $item['name'];
+	$desc = $item['description'] ? $item['description'] : ($item['desc'] ? $item['desc'] : "");
+	$keywords = $item['keywords'] ? $item['keywords'] : "";
+	$url = $item['url'] ? $item['url'] : "";
+	if(!$item['type'])
+	{
+	 /* Detect file type */
+     $ext = strtolower(substr($url, strrpos($url, '.')+1));
+     if(file_exists($_BASE_PATH."etc/mimetypes.php"))
+     {
+      include_once($_BASE_PATH."etc/mimetypes.php");
+      if($mimetypes[$ext])
+	   $type = $mimetypes[$ext];
+      else
+      {
+	   // detect if is a external web link //
+	   if(preg_match('|^http(s)?://[a-z0-9-]+(.[a-z0-9-]+)*(:[0-9]+)?(/.*)?$|i', $url))
+	    $type = "WEB";
+      }
+     }
+	}
+	else 
+	 $type = $item['type'];
+
+	if(($type != "WEB") && $moveFromDir && $moveToDir)
+    {
+	 if(strpos($url, $moveFromDir) !== false)
+	 {
+	  $src = $url;
+	  $dest = str_replace($moveFromDir, $moveToDir, $src);
+	  $ret = GShell("mv -source '".$src."' -dest '".$dest."'",$sessid,$shellid);
+	  if($ret['error']) return $ret;
+	  $url = $dest;
+	 }
+	}
+
+	
+	$db = new AlpaDatabase();
+	$db->RunQuery("INSERT INTO dynattachments(uid,gid,_mod,archive_id,item_id,cat_id,tag,tbtag,name,description,keywords,linktype,url,ctime,published) VALUES('".$uid."','".$gid."','".$mod."','".$archiveId."','".$refid."','".$catId."','".$tag."','".$tbtag."','".$db->Purify($name)."','".$db->Purify($desc)."','".$db->Purify($keywords)."','".$type."','".$url."','".$now."','".$publish."')");
+	$id = $db->GetInsertId();
+	$db->Close();
+
+    $a = array('id'=>$id,'uid'=>$uid,'gid'=>$gid,'mod'=>$mod,'type'=>$type,'refid'=>$refid,'catid'=>$catId,'tag'=>$tag,'tbtag'=>$tbtag,'name'=>$name,'url'=>$url,'ctime'=>strtotime($now),'description'=>$desc,'keywords'=>$keywords,'published'=>$publish);
+
+    if($type != "WEB")
+ 	{
+  	 // detect file size //
+  	 if(file_exists($_BASE_PATH.$url))
+ 	 {
+  	  $siz = $fileSize = filesize($_BASE_PATH.$url);
+ 	  $sar = array('bytes','kB','MB','GB','TB');
+ 	  $sx = 0;
+ 	  while($siz > 1024)
+ 	  {
+ 	   $siz = $siz/1024;
+ 	   $sx++;
+ 	   if($sx == 4)
+ 	    break;
+ 	  }
+ 	  $humanSize = str_replace('.00','',sprintf("%.2f",$siz))." ".$sar[$sx];
+	 }
+	}
+    $a['size'] = $fileSize;
+    $a['humansize'] = $humanSize;
+
+	// detect mimetype icon //
+	if(file_exists($_BASE_PATH."etc/mimetypes.php"))
+ 	{
+   	 include_once($_BASE_PATH."etc/mimetypes.php");
+   	 $a['icons'] = getMimetypeIcons($type);
+ 	}
+
+	$outArr[] = $a;
+   }
+  } // EOF - for
+  $out.= "done! ".count($outArr)." attachments has been saved!";
+  return array('message'=>$out, 'outarr'=>$outArr);
+ }
+ /* EOF - SAVE FROM XML-DATA */
+
  if(!$type)
  {
   $ext = strtolower(substr($url, strrpos($url, '.')+1));
@@ -123,17 +232,17 @@ function shell_dynattachments_new($args, $sessid=null, $shellid=null, $extraVar=
   }
  }
 
- $uid = $sessInfo['uid'];
- $gid = $sessInfo['gid'];
- $mod = "644";
- $now = date('Y-m-d H:i');
 
- $db = new AlpaDatabase();
- $db->RunQuery("INSERT INTO dynattachments(uid,gid,_mod,archive_id,item_id,cat_id,tag,tbtag,name,description,keywords,linktype,url,ctime,published) VALUES('".$uid."','$gid','$mod','$archiveId','$refid','$catId','$tag','$tbtag','$name','$desc','$keywords','$type','$url','$now','$publish')");
- $id = mysql_insert_id();
- $db->Close();
+ if($archiveId && ($refid || $catId))
+ {
+  $db = new AlpaDatabase();
+  $db->RunQuery("INSERT INTO dynattachments(uid,gid,_mod,archive_id,item_id,cat_id,tag,tbtag,name,description,keywords,linktype,url,ctime,published) VALUES('".$uid."','$gid','$mod','$archiveId','$refid','$catId','$tag','$tbtag','$name','$desc','$keywords','$type','$url','$now','$publish')");
+  $id = $db->GetInsertId();
+  $db->Close();
 
- $out.= "Attachment $name has been created! (id=$id)\n";
+  $out.= "Attachment $name has been created! (id=$id)\n";
+ }
+
  $a = array('id'=>$id,'uid'=>$uid,'gid'=>$gid,'mod'=>$mod,'type'=>$type,'refid'=>$refid,'catid'=>$catId,'tag'=>$tag,'tbtag'=>$tbtag,'name'=>$name,'url'=>$url,'ctime'=>strtotime($now),'description'=>$desc,'keywords'=>$keywords,'published'=>$publish);
 
  if($type != "WEB")
@@ -279,14 +388,41 @@ function shell_dynattachments_delete($args, $sessid=null, $shellid=null, $extraV
   {
    case '-id' : {$ids[]=$args[$c+1]; $c++;} break;
    case '-r' : $delete=true; break;
+
+   case '-refap' : {$refAP=$args[$c+1]; $c++;} break;
+   case '-refid' : {$refID=$args[$c+1]; $c++;} break; // rimuove tutti gli allegati di questo doc.
+   case '--bypass-errors' : $bypassErrors=true; break;
   }
 
  if(count($ids) == 0)
  {
-  $err = "INVALID_ATTACHMENT_ID";
-  $out = "You must specify attachment (with -id attachment_id)\n";
-  return false;
+  if(!$refAP || !$refID)
+  {
+   $err = "INVALID_ATTACHMENT_ID";
+   $out = "You must specify attachment (with -id attachment_id)\n";
+   return array('message'=>$out, 'error'=>$err);
+  }
  }
+
+ if(!count($ids) && $refAP && $refID)
+ {
+  // get archive id
+  $db = new AlpaDatabase();
+  $db->RunQuery("SELECT id FROM dynarc_archives WHERE tb_prefix='".$refAP."'");
+  $db->Read();
+  $aid = $db->record['id'];
+  $db->Close();
+
+  // get all attachments ids
+  $db = new AlpaDatabase();
+  $db->RunQuery("SELECT id FROM dynattachments WHERE archive_id='".$aid."' AND item_id='".$refID."'");
+  while($db->Read())
+  {
+   $ids[] = $db->record['id'];
+  }
+  $db->Close();
+ }
+
 
  for($c=0; $c < count($ids); $c++)
  {
@@ -294,21 +430,29 @@ function shell_dynattachments_delete($args, $sessid=null, $shellid=null, $extraV
   $id = $ids[$c];
   $db->RunQuery("SELECT * FROM dynattachments WHERE id='$id'");
   if(!$db->Read())
+  {
+   if($bypassErrors)
+	continue;
    return array('message'=>'Attachment #$id does not exists!','error'=>'ATTACHMENT_DOES_NOT_EXISTS');
+  }
   if(($db->record['uid'] != $sessInfo['uid']) && ($sessInfo['uname'] != 'root'))
-   return array('message'=>'Only the owner can delete this attachment id:#$id','error'=>'PERMISSION_DENIED');
+  {
+   if($bypassErrors)
+	continue;
+   return array('message'=>'Only the owner can delete this attachment!','error'=>'PERMISSION_DENIED');
+  }
 
   // verify if another record link to this url //
   if($delete && ($db->record['linktype'] != 'WEB'))
   {
    $db2 = new AlpaDatabase();
-   $db2->RunQuery("SELECT id FROM dynattachments WHERE url='$url' AND id!='$id' LIMIT 1");
+   $db2->RunQuery("SELECT id FROM dynattachments WHERE url='".$url."' AND id!='".$id."' LIMIT 1");
    if(!$db2->Read())
     @unlink($_BASE_PATH.$db->record['url']);
    $db2->Close();
   }
-  $db->RunQuery("DELETE FROM dynattachments WHERE id='$id'");
-  $out.= "Attachment #$id has been removed\n";
+  $db->RunQuery("DELETE FROM dynattachments WHERE id='".$id."'");
+  $out.= "Attachment #".$id." has been removed\n";
   $outArr['removed_attachments'][] = array('id'=>$db->record['id']);
   $db->Close();
  }
@@ -515,5 +659,67 @@ function shell_dynattachments_list($args, $sessid=null, $shellid=null, $extraVar
  return array('message'=>$out,'outarr'=>$outArr); 
 }
 //-------------------------------------------------------------------------------------------------------------------//
+function shell_dynattachments_empty($args, $sessid=null, $shellid=null, $extraVar=null)
+{
+ global $_BASE_PATH;
 
+ $sessInfo = sessionInfo($sessid);
+ if($sessInfo['uname'] != "root")
+  return array("message"=>"You must be root", "error"=>"YOU_MUST_BE_ROOT");
+
+ $out = "";
+
+ for($c=1; $c < count($args); $c++)
+  switch($args[$c])
+  {
+   case '-a' : case '-archive' : {$archive=$args[$c+1]; $c++;} break;
+   case '-aid' : {$archiveId=$args[$c+1]; $c++;} break;
+   case '-ap' : case '--archive-prefix' : {$archivePrefix=$args[$c+1]; $c++;} break;
+
+   case '-cat' : {$catId=$args[$c+1]; $c++;} break;
+
+   case '-url' : {$url=$args[$c+1]; $c++;} break;
+
+   case '-tag' : {$tag=$args[$c+1]; $c++;} break;
+   case '-tbtag' : {$tbtag=$args[$c+1]; $c++;} break;
+
+  }
+
+ if($archivePrefix || $archive)
+ {
+  $db = new AlpaDatabase();
+  $db->RunQuery("SELECT id FROM dynarc_archives WHERE ".($archivePrefix ? "tb_prefix='".$archivePrefix."'" : "name='".$archive."'"));
+  if($db->Read())
+   $archiveId = $db->record['id'];
+  else if($db->Error)
+   return array('message'=>"Unable to empty attachments!\nMySQL Error:".$db->Error, 'error'=>'MYSQL_ERROR');
+  else
+   return array('message'=>"Unable to empty attachments!\nArchive ".($archivePrefix ? "with prefix '".$archivePrefix."'" : "'".$archive."'")." does not exists!", 'error'=>'ARCHIVE_DOES_NOT_EXISTS');
+  $db->Close();
+ }
+
+ $where = "";
+ if($archiveId)			$where.= " AND archive_id='".$archiveId."'";
+ if($catId)
+ {
+  if(!$archiveId) return array('message'=>"Unable to empty attachments!\nYou must specify the archive.", 'error'=>"INVALID_ARCHIVE");
+  $where.= " AND cat_id='".$catId."'";
+ }
+ if($url)				$where.= " AND url='".$url."'";
+ if($tag)				$where.= " AND tag='".$tag."'";
+ if($tbtag)				$where.= " AND tbtag='".$tbtag."'";
+
+ $query = "DELETE FROM dynattachments WHERE ".ltrim($where, " AND ");
+
+ $out.= "Empty attachments...";
+ $db = new AlpaDatabase();
+ $db->RunQuery($query);
+ if($db->Error) return array('message'=>$out."failed!\nMySQL Error: ".$db->Error, 'error'=>"MYSQL_ERROR");
+ $db->Close();
+ $out.= "done!\n";
+
+
+ return array('message'=>$out); 
+}
+//-------------------------------------------------------------------------------------------------------------------//
 

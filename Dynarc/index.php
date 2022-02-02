@@ -1,16 +1,16 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 17-01-2012 
+ #DATE: 27-08-2014 
  #PACKAGE: dynarc-gui
  #DESCRIPTION: Main file
- #VERSION: 2.0beta
- #CHANGELOG:
+ #VERSION: 2.1beta
+ #CHANGELOG: 27-08-2014 : Restricted access integration.
  #TODO: 
  
 */
@@ -26,6 +26,9 @@ LoadLanguage("dynarc");
 
 $_DESKTOP_SHOW_TOOLBAR = false;
 $_DESKTOP_TITLE = i18n("Archive manager");
+
+if(!restrictedAccess("dynarc"))
+ exit();
 
 ?>
 <html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8"><title><?php echo $_SOFTWARE_NAME; ?></title></head>

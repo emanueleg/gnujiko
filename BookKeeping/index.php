@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 23-07-2012
+ #DATE: 27-08-2014
  #PACKAGE: bookkeeping
  #DESCRIPTION: Book Keeping and Petty Cash Book manager.
- #VERSION: 2.0beta
- #CHANGELOG:
+ #VERSION: 2.2beta
+ #CHANGELOG: 27-08-2014 : restricted access integration.
+			 08-04-2014 : Aggiunto registro corrispettivi
  #TODO:
  
 */
@@ -27,6 +28,9 @@ define("VALID-GNUJIKO",1);
 include($_BASE_PATH.'init/init1.php');
 include($_BASE_PATH.'include/session.php');
 include_once($_BASE_PATH."include/gshell.php");
+
+if(!restrictedAccess("bookkeeping"))
+ exit();
 
 ?>
 <html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8"><title><?php echo $_DESKTOP_TITLE; ?></title></head>
@@ -69,6 +73,7 @@ else
 	  <ul class='basicmenu'>
 	   <li <?php if(!$_REQUEST['show'] || ($_REQUEST['show'] == "purchasesregister")) echo "class='selected'"; ?>><a href='?page=vatbook&show=purchasesregister'>Registro IVA acquisti</a></li>
 	   <li <?php if($_REQUEST['show'] == "salesregister") echo "class='selected'"; ?>><a href='?page=vatbook&show=salesregister'>Registro IVA vendite</a></li>
+	   <li <?php if($_REQUEST['show'] == "receiptregister") echo "class='selected'"; ?>><a href='?page=vatbook&show=receiptregister'>Registro corrispettivi</a></li>
 	   <!-- <li <?php if($_REQUEST['show'] == "summary") echo "class='selected'"; ?>><a href='?page=vatbook&show=summary'>Versamenti</a></li> -->
 	  </ul>
 	 </div>

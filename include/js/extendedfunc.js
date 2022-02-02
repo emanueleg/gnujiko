@@ -1,15 +1,26 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 20-10-2013
+ #DATE: 05-03-2016
  #PACKAGE: gnujiko-base
  #DESCRIPTION: Extended JavaScript functions
- #VERSION: 2.6beta
- #CHANGELOG: 20-10-2013 : Ho messo il linguaggio italiano su funzione printf. Da fare multi-linguaggio.
+ #VERSION: 2.17beta
+ #CHANGELOG: 05-03-2016 : Aggiunta funzione br2nl
+			 28-12-2015 : Aggiunta funzione array_to_xml.
+			 03-10-2015 : Aggiunto accento sx su funzione E_QUOT.
+			 27-01-2015 : Aggiunta funzione nl2br.
+			 17-12-2014 : Aggiunta funzione xml_purify.
+			 16-04-2014 : Aggiunto F su date.printf (fulltext month)
+			 26-02-2014 : Aggiunta funzione nl2br
+			 14-02-2014 : Aggiunta funzione roundup che arrotonda alla cifra decimale desiderata.
+			 10-02-2014 : Aggiunta funzione striptags
+			 24-12-2013 : Aggiunto separatore (.) punto sulle date, su funzione strdatetime_to_iso.
+			 19-12-2013 : Modificata funzione implode.
+			 20-10-2013 : Ho messo il linguaggio italiano su funzione printf. Da fare multi-linguaggio.
 			 18-06-2013 : Aggiunto funzione Math.arctan (restituisce l'arcotangente in gradi anzichè radianti)
 			 23-04-2013 : Aggiunto millisecondi alla funzione printf.
 			 25-01-2013 : Bug fix in setFromISO.
@@ -88,6 +99,7 @@ Date.prototype.printf = function(fmt) //--- print a formatted date time ---//
  /* ITALIAN */
  var days = new Array('Dom','Lun','Mar','Mer','Gio','Ven','Sab');
  var months = new Array('Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic');
+ var fullmonths = new Array('Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre');
 
  for(var c=0; c < fmt.length; c++)
  {
@@ -108,6 +120,9 @@ Date.prototype.printf = function(fmt) //--- print a formatted date time ---//
 		};break;
    case 'M' : { //--- A textual representation of a month, three letters (Jan to Dec) ---//
 		 ret+= months[this.getMonth()];
+		};break;
+   case 'F' : { //--- A textual representation of a month, fulltext (January to December) ---//
+		 ret+= fullmonths[this.getMonth()];
 		};break;
    case 'y' : { //--- A two digit representation of a year (Examples: 99 or 03) ---//
 		 ret+= this.getYear();
@@ -182,6 +197,12 @@ function timelength_to_str(seconds)
 //-------------------------------------------------------------------------------------------------------------------//
 function parse_timelength(tl)
 {
+ if(!tl)
+  return 0;
+
+ if(tl.indexOf(":")<0)
+  tl = tl+":00";
+
  var tl = tl.split(":");
  if(!isNaN(parseFloat(tl[0])) && !isNaN(parseFloat(tl[1])))
   return ((parseFloat(tl[0])*60)+parseFloat(tl[1]))*60; // return seconds
@@ -194,7 +215,8 @@ String.prototype.E_QUOT = function()
  var t = this.replace(/\'/g,'&rsquo;');
  t = t.replace(/‘/g,'&lsquo;');
  t = t.replace(/’/g,'&rsquo;');
- return (t = t.replace(/\"/g,'&ldquo;'));
+ t = t.replace(/`/g,'&lsquo;');
+ return (t = t.replace(/\"/g,'&quot;'));
 }
 //-------------------------------------------------------------------------------------------------------------------//
 String.prototype.ltrim = function()
@@ -237,6 +259,21 @@ String.prototype.ucfirst = function()
  return t+this.substr(1);
 }
 //-------------------------------------------------------------------------------------------------------------------//
+String.prototype.striptags = function(bool)
+{
+ var ret = this;
+ if(bool)
+  ret = ret.replace(/<br\/>/ig,"\n");
+ return ret.replace(/(<([^>]+)>)/ig,"");
+}
+//-------------------------------------------------------------------------------------------------------------------//
+String.prototype.nl2br = function(breakTag)
+{
+ var ret = this;
+ if(!breakTag) breakTag = "<br/>";
+ return ret.replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1' + breakTag + '$2');
+}
+//-------------------------------------------------------------------------------------------------------------------//
 
 /* ETC */
 //-------------------------------------------------------------------------------------------------------------------//
@@ -262,6 +299,45 @@ function array_key_get(arr,idx)
 {
  var k = array_keys(arr);
  return k[idx];
+}
+//-------------------------------------------------------------------------------------------------------------------//
+function array_to_xml(arr, root)
+{
+ if(!root)
+  var root = "xml";
+ if((typeof(root) == "number") || isFinite(root))
+  var root = "item";
+ 
+ var ret = "<"+root;
+ var keys = array_keys(arr);
+ var sub = new Array();
+ for(var c=0; c < keys.length; c++)
+ {
+  var key = keys[c];
+  var value = arr[key];
+  switch(typeof(value))
+  {
+   case 'number' : ret+= " "+key+"=\""+value+"\""; break;
+   case 'string' : ret+= " "+key+"=\""+xml_purify(value)+"\""; break;
+   case 'boolean' : ret+= " "+key+"=\""+(value ? '1' : '0')+"\""; break;
+   case 'object' : sub.push(key); break;
+  }
+ }
+ 
+ if(sub.length)
+ {
+  ret+= ">";
+  for(var c=0; c < sub.length; c++)
+  {
+   var key = sub[c];
+   ret+= array_to_xml(arr[key], key);
+  }
+  ret+= "</"+root+">";
+ }
+ else
+  ret+= "/>";
+
+ return ret;
 }
 //-------------------------------------------------------------------------------------------------------------------//
 function get_html_translation_table (table, quote_style) 
@@ -692,6 +768,8 @@ function strdatetime_to_iso(str)
   var sign = "/";
   if(x[0].indexOf('-') > -1)
    sign = "-";
+  else if(x[0].indexOf('.') > -1)
+   sign = ".";
   var xd = x[0].split(sign);
   if(xd.length < 2)
    return false;
@@ -729,12 +807,14 @@ function gshSecureString(str)
  return str;
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function implode(sep,arr)
+function implode(sep,arr,len)
 {
  if(!sep || !arr)
   return;
  var ret = "";
- for(var c=0; c < arr.length; c++)
+ if(!len)
+  var len = arr.length;
+ for(var c=0; c < len; c++)
   ret+= (c>0 ? sep : "")+arr[c];
  return ret;
 }
@@ -773,6 +853,54 @@ Math.rad2deg = function(n)
 Math.deg2rad = function(n)
 {
  return n * (Math.PI/180);
+}
+//-------------------------------------------------------------------------------------------------------------------//
+function roundup(num,dec)
+{
+ if(typeof(num) == "string")
+  num = parseFloat(num);
+ if(!dec)
+  dec = 2;
+ if(!num)
+  return 0;
+ var div = Math.pow(10,dec);
+ return parseFloat((Math.round(num*div)/div).toFixed(dec));
+}
+//-------------------------------------------------------------------------------------------------------------------//
+function nl2br (str, is_xhtml) 
+{
+  // From: http://phpjs.org/functions
+  // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+  // +   improved by: Philip Peterson
+  // +   improved by: Onno Marsman
+  // +   improved by: Atli Þór
+  // +   bugfixed by: Onno Marsman
+  // +      input by: Brett Zamir (http://brett-zamir.me)
+  // +   bugfixed by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+  // +   improved by: Brett Zamir (http://brett-zamir.me)
+  // +   improved by: Maximusya
+  // *     example 1: nl2br('Kevin\nvan\nZonneveld');
+  // *     returns 1: 'Kevin<br />\nvan<br />\nZonneveld'
+  // *     example 2: nl2br("\nOne\nTwo\n\nThree\n", false);
+  // *     returns 2: '<br>\nOne<br>\nTwo<br>\n<br>\nThree<br>\n'
+  // *     example 3: nl2br("\nOne\nTwo\n\nThree\n", true);
+  // *     returns 3: '<br />\nOne<br />\nTwo<br />\n<br />\nThree<br />\n'
+  var breakTag = (is_xhtml || typeof is_xhtml === 'undefined') ? '<br ' + '/>' : '<br>'; // Adjust comment to avoid issue on phpjs.org display
+
+  return (str + '').replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1' + breakTag + '$2');
+}
+//-------------------------------------------------------------------------------------------------------------------//
+function br2nl(str)
+{
+ if(!str) return str;
+ str = str.replace(/<br\/>/g, '\n');
+ return str;
+}
+//-------------------------------------------------------------------------------------------------------------------//
+function xml_purify(string)
+{
+ var ret = string.replace(/&/g, '&amp;');
+ return ret;
 }
 //-------------------------------------------------------------------------------------------------------------------//
 

@@ -1,17 +1,18 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 22-01-2012
+ #DATE: 24-10-2014
  #PACKAGE: gnujiko-base
  #DESCRIPTION: Gnujiko official shell
- #VERSION: 2.0beta
- #CHANGELOG: 22-01-2012: Aggiunto SESSION_ID come variabile javascript.
-			 02-01-2012: Fatto il multilingua
+ #VERSION: 2.1beta
+ #CHANGELOG: 24-10-2014 : Aggiunto CSS per GShell.
+			 22-01-2012 : Aggiunto SESSION_ID come variabile javascript.
+			 02-01-2012 : Fatto il multilingua
  #TODO:
  
 */
@@ -40,5 +41,6 @@ var GSHLANG_OK = "<?php echo i18n('OK'); ?>";
 </script>
 <script language="JavaScript" src="<?php echo $_ABSOLUTE_URL; ?>include/js/extendedfunc.js" type="text/javascript"></script>
 <script language="JavaScript" src="<?php echo $_ABSOLUTE_URL; ?>include/js/gshell.js" type="text/javascript"></script>
+<link rel="stylesheet" href="<?php echo $_ABSOLUTE_URL; ?>include/gshell.css" type="text/css" />
 <?php
 

@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 21-01-2012
+ #DATE: 24-10-2016
  #PACKAGE: gnujiko-accounts
  #DESCRIPTION: Add groups
- #VERSION: 2.0beta
- #CHANGELOG: 21-01-2012 : Parameter --first-user added.
+ #VERSION: 2.1beta
+ #CHANGELOG: 24-10-2016 : MySQLi integration.
+			 21-01-2012 : Parameter --first-user added.
  #TODO:
  
 */
@@ -72,7 +73,7 @@ function shell_groupadd($args, $sessid)
    else
    {
     $db2->RunQuery("INSERT INTO gnujiko_groups(name) VALUES('$group')");
-    $gid = mysql_insert_id();
+    $gid = $db2->GetInsertId();
    }
    $db2->Close();
   }

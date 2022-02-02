@@ -1,16 +1,16 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 08-01-2012
+ #DATE: 24-10-2016
  #PACKAGE: gnujiko-accounts
  #DESCRIPTION:
- #VERSION: 2.0beta
- #CHANGELOG:
+ #VERSION: 2.1beta
+ #CHANGELOG: 24-10-2016 : Sostituita funzione mysql escape string con funzione db->EscapeString() per integrazione con mysqli.
  #DEPENDS:
  #TODO:
  
@@ -33,9 +33,11 @@ if(!isLogged())
 
 if($_POST['action'] == "changepassword")
 {
- $oldPassword = mysql_escape_string(trim($_POST['oldpasswd']));
- $newPassword = mysql_escape_string(trim($_POST['newpasswd']));
  $db = new AlpaDatabase();
+
+ $oldPassword = $db->EscapeString(trim($_POST['oldpasswd']));
+ $newPassword = $db->EscapeString(trim($_POST['newpasswd']));
+ 
  $db->RunQuery("SELECT password,regtime FROM gnujiko_users WHERE id='".$_SESSION['UID']."'");
  $db->Read();
  $cryptpass = md5($oldPassword.$db->record['regtime']);

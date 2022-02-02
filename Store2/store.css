@@ -1,0 +1,15 @@
+table.gmutable th {
+ background: #3364c3;
+ color: #ffffff;
+}
+
+table.gmutable td {
+ font-family: arial, sans-serif;
+ font-size: 12px;
+}
+
+div.gmutable {
+ border-top: 0px;
+ border-bottom: 0px;
+}
+

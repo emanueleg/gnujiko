@@ -194,3 +194,144 @@ span.buttonblue {
 	margin-right: 10px;
 }
 
+div.firm {
+	height: 100px;
+	overflow: auto;
+	border: 1px solid #d8d8d8;
+	margin-top: 5px;
+	font-size: 12px;
+}
+
+span.smalltext {
+	font-family: arial, sans-serif;
+	font-size: 10px;
+}
+
+/* POPUP MENU */
+ul.popupmenu {
+ list-style: none;
+ border: 1px solid #cccccc;
+ margin: 0px;
+ padding: 0px;
+ position: absolute;
+ background: #fff;
+ visibility: hidden;
+ -moz-box-shadow: 0px 2px 5px #cccccc;
+ -webkit-box-shadow: 0px 2px 5px #cccccc;
+ box-shadow: 0px 2px 5px #cccccc;
+ top: 0px;
+ left: 0px;
+ z-index: 10000;
+ padding-top: 6px;
+ padding-bottom: 6px;
+}
+
+ul.popupmenu a {
+ text-decoration: none;
+ font-family: "Helvetica Neue","HelveticaNeue",Helvetica,sans-serif;
+ font-size: 10px;
+ color: #000000;
+}
+
+ul.popupmenu li {
+ height: 19px;
+ font-family: "Helvetica Neue","HelveticaNeue",Helvetica,sans-serif;
+ font-size: 10px;
+ text-align: left;
+ background-color: #fff;
+ line-height: 19px;
+ padding-right: 5px;
+ padding-left: 10px;
+ cursor: pointer;
+ white-space: nowrap;
+ -moz-user-select:none;
+ -webkit-user-select: none;
+}
+
+ul.popupmenu li.separator {
+ height: 6px;
+ border-bottom: 1px solid #ebebeb;
+ margin-bottom: 6px;
+ cursor: default;
+}
+
+ul.popupmenu li.subitem {
+ background: url(icons/dropright-gray.png) 96% center no-repeat;
+}
+
+ul.popupmenu li.checklist {
+ height: auto;
+ cursor: default;
+}
+
+ul.popupmenu li.label {
+ padding-left: 9px; 
+ cursor: default;
+}
+
+ul.popupmenu li.edit { 
+ height: 30px;
+ padding-left: 9px; 
+ padding-right: 9px;
+ cursor: default;
+}
+ul.popupmenu li.edit input.edit {
+ height:21px;
+ padding-left: 3px;
+ padding-right: 3px;
+ font-size: 12px;
+}
+
+ul.popupmenu li:hover {background:#eeeeee;}
+ul.popupmenu li.selected {background:#eeeeee;}
+ul.popupmenu li.label:hover {background:transparent;}
+ul.popupmenu li.edit:hover {background:transparent;}
+ul.popupmenu li.checklist:hover {background:transparent;}
+ul.popupmenu li.separator:hover {background:transparent;}
+ul.popupmenu li.subitem:hover { background: #eeeeee url(icons/dropright-black.png) 96% center no-repeat;}
+
+ul.popupmenu img.icon {
+ float: left;
+ vertical-align: top;
+ margin-left: 6px;
+ margin-right: 8px;
+ width: 16px;
+ height: 16px;
+}
+
+div.popupmenu-checklist {
+ overflow: auto;
+}
+
+ul.popupmenu-checklist {
+ list-style-type: none;
+ margin: 0px;
+ padding: 0px;
+}
+
+ul.popupmenu-checklist li {
+ height: 19px;
+ font-family: sans-serif;
+ font-size: 12px;
+ color: #000000;
+ line-height: 13px;
+ overflow: hidden;
+ white-space: nowrap;
+ cursor: default;
+}
+
+ul.popupmenu-checklist li:hover {background: transparent;}
+
+ul.popupmenu-checklist input {
+ margin-left: 4px;
+ margin-right: 13px;
+}
+
+/* EDIT */
+input.dropdown {
+ background: url(img/dropdown-gray.png) right center no-repeat;
+}
+
+input.dropdown:focus {outline: none;}
+input.dropdown:hover {background: url(img/dropdown-black.png) right center no-repeat;}
+

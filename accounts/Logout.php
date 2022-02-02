@@ -1,16 +1,16 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2010 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 01-04-2011
+ #DATE: 05-02-2016
  #PACKAGE: gnujiko-accounts
  #DESCRIPTION: Logout procedure
- #VERSION: 2.1beta
- #CHANGELOG:
+ #VERSION: 2.2beta
+ #CHANGELOG: 05-02-2016 : resettato cookie username e passwd quando si fa logout.
  #TODO:
  
 */
@@ -22,24 +22,35 @@ $_BASE_PATH = "../";
 include($_BASE_PATH."init/init1.php");
 include_once($_BASE_PATH."include/filesfunc.php");
 
+$halfHourAgo = time()-1800;
+
+setcookie("username",null,strtotime("+1 week"), "/");
+setcookie("password",null,strtotime("+1 week"), "/");
+
 session_name("Gnujiko-$_DATABASE_NAME");
 session_start();
 
 $db = new AlpaDatabase();
-$db->RunQuery("DELETE FROM gnujiko_session WHERE session_id='".$_SESSION['SESSID']."'");
+$db->RunQuery("SELECT dev,devid FROM gnujiko_session WHERE session_id='".$_SESSION['SESSID']."'");
+if($db->Read())
+{
+ rmdirr($_BASE_PATH."tmp/session-".$_SESSION['SESSID']);
+ rmdirr($_BASE_PATH."tmp/".$db->record['dev']."-".$db->record['devid']);
+ $db->RunQuery("DELETE FROM gnujiko_session WHERE session_id='".$_SESSION['SESSID']."'");
+}
 $db->Close();
 
-/* Remove all active shell sessions */
+/* Remove some of active shell sessions */
 if($_SESSION['UID'])
 {
  $db = new AlpaDatabase();
- $db->RunQuery("SELECT * FROM gnujiko_session WHERE uid='".$_SESSION['UID']."'");
+ $db->RunQuery("SELECT * FROM gnujiko_session WHERE uid='".$_SESSION['UID']."' AND time < '".$halfHourAgo."'");
  while($db->Read())
  {
   rmdirr($_BASE_PATH."tmp/session-".$db->record['session_id']);
   rmdirr($_BASE_PATH."tmp/".$db->record['dev']."-".$db->record['devid']);
  }
- $db->RunQuery("DELETE FROM gnujiko_session WHERE uid='".$_SESSION['UID']."'");
+ $db->RunQuery("DELETE FROM gnujiko_session WHERE uid='".$_SESSION['UID']."' AND time < '".$halfHourAgo."'");
  $db->Close();
 }
  

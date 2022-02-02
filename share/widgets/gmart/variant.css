@@ -1,6 +1,6 @@
 div.variant-page {
 	background: url(img/variant-sheet-bg.png) top left no-repeat;
-	width: 590px;
+	width: 690px;
 	height: 360px;
 	padding: 0px;
 }
@@ -32,6 +32,10 @@ ul#variant-menu li {
 ul#variant-menu li.selected {
 	background: url(img/variant-menu.png) bottom left no-repeat;
 	color: #ffffff;	
+}
+
+ul#variant-menu li.separator {
+	background: transparent;
 }
 
 span.smallgray {
@@ -303,4 +307,24 @@ div.variant-other-footer {
 	height: 20px;
 	margin-top: 5px;
 }
+
+
+/* BASICLIST TABLE */
+table.basiclist th {
+	font-family: arial, sans-serif;
+	font-size: 10px;
+	height: 22px;
+	line-height: 22px;
+	border-bottom: 1px solid #777777;
+}
+
+table.basiclist td {
+	font-family: arial, sans-serif;
+	font-size: 10px;
+	height: 28px;
+	vertical-align: middle;
+	border-bottom: 1px solid #777777;
+}
+
+
 

@@ -1,16 +1,27 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2017 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 17-09-2013
+ #DATE: 23-05-2017
  #PACKAGE: dynarc
  #DESCRIPTION: Category functions for Dynarc
- #VERSION: 2.13beta
- #CHANGELOG: 17-09-2013 : Aggiunto parent-id and parent-tag nella funzione cat-info.
+ #VERSION: 2.24beta
+ #CHANGELOG: 23-05-2017 : Bug fix sharing.
+			 24-10-2016 : MySQLi integration.
+			 01-03-2016 : Aggiornata funzione delete category ed aggiornata funzione categoryTree
+			 07-12-2015 : Aggiunto parametro --get-count su funzione categoryList.
+			 25-07-2014 : Bug fix vari.
+			 01-07-2014 : Bug fix e aggiunto paramentro -linkap -linkid su funzione deleteCategory
+			 20-06-2014 : Aggiunto parametro --if-not-exists e --update-if-exists su funzione new-cat.
+			 16-06-2014 : Aggiunti parametri linkap e linkid su funzione newCategory
+			 23-05-2014 : Aggiunta funzione getRootCategory
+			 01-05-2014 : Aggiunta la possibilità di ricercare una categoria per codice.
+			 30-01-2014 : Aggiunta la possibilità di forzare l'ID su comando new-cat
+			 17-09-2013 : Aggiunto parent-id and parent-tag nella funzione cat-info.
 			 29-07-2013 : Bug fix on new category.
 			 27-03-2013 : Aggiunto parametro -get su funzione cat-tree. Manca da aggiungere parametro -extget.
 			 14-12-2012 : Bug fix in new-category with code-num.
@@ -28,15 +39,21 @@
 global $_BASE_PATH;
 include_once($_BASE_PATH."etc/dynarc/archives.php");
 
-function dynarc_newCategory($args, $sessid, $shellid=null, $extraVar=null)
+function dynarc_newCategory($args, $sessid, $shellid, $extraVar=null)
 {
  global $_BASE_PATH;
+
+ $_IF_NOT_EXISTS = false;
+ $_UPDATE_IF_EXISTS = false;
+ $_INHERIT_PARENT_SHARING = false;
+
  for($c=1; $c < count($args); $c++)
   switch($args[$c])
   {
    case '-a' : case '-archive' : {$archive=$args[$c+1]; $c++;} break;
    case '-aid' : {$archiveId=$args[$c+1]; $c++;} break;
    case '-ap' : case '--archive-prefix' : {$archivePrefix=$args[$c+1]; $c++;} break;
+   case '-id' : case '--force-id' : {$forceId=$args[$c+1]; $c++;} break;
    case '-parent' : {$parentId=$args[$c+1]; $c++;} break;
    case '-pt' : case '--parent-tag' : {$parentTag=$args[$c+1]; $c++;} break;
    case '-tag' : {$tag=$args[$c+1]; $c++;} break;
@@ -49,16 +66,27 @@ function dynarc_newCategory($args, $sessid, $shellid=null, $extraVar=null)
    case '-perms' : {$perms=$args[$c+1]; $c++;} break;
    case '--publish' : case '-publish' : $published=true; break;
    case '-ctime' : {$ctime=strtotime($args[$c+1]); $c++;} break;
+   case '-alias' : case '-aliasname' : {$aliasname=$args[$c+1]; $c++;} break;
 
    /* Default key ordering */
    case '--def-order-field' : {$setOrderKey=$args[$c+1]; $c++;} break;
    case '--def-order-method' : {$setOrderMethod=strtoupper($args[$c+1]); $c++;} break;
+
+   /* Link arguments */
+   case '-linkap' : {$linkAP=$args[$c+1]; $c++;} break;
+   case '-linkaid' : {$linkAID=$args[$c+1]; $c++;} break;
+   case '-linkid' : {$linkID=$args[$c+1]; $c++;} break;
 
    case '-set' : {$set=$args[$c+1]; $c++;} break;
    case '-extset' : {$extset=$args[$c+1]; $c++;} break;
 
    case '-before' : {$beforeId=$args[$c+1]; $c++;} break; // <-- Insert category before this node */
    case '-after' : {$afterId=$args[$c+1]; $c++;} break; // <-- Insert category after this node */
+
+   case '--if-not-exists' : $_IF_NOT_EXISTS=true; break;	// Instead of returning the error returns the details of the category if it already exists.
+   case '--update-if-exists' : $_UPDATE_IF_EXISTS=true; break;	// for use with --if-not-exists, update category info if it already exists.
+
+   case '--inherit-parent-sharing' : $_INHERIT_PARENT_SHARING = true; break;
 
    /* PRIVATE */
    case '-syncid' : {$syncid=$args[$c+1]; $c++;} break;
@@ -73,13 +101,14 @@ function dynarc_newCategory($args, $sessid, $shellid=null, $extraVar=null)
   $archiveInfo = $extraVar;
  else
  {
-  $ret = dynarc_checkForArchive($args,$sessid,$shellid);
+  $ret = dynarc_checkForArchive($args,$sessid,$shellid,$extraVar);
   if($ret['error'])
    return $ret;
   $archiveInfo = $ret['outarr'];
  }
 
- if(!$name)
+
+ if(!isset($name))
  {
   $out.= "You must specify category name. (with: -name cat_name)\n";
   return array("message"=>$out,"error"=>"INVALID_CAT_NAME");
@@ -141,8 +170,24 @@ function dynarc_newCategory($args, $sessid, $shellid=null, $extraVar=null)
   }
  }
 
- if($group)
-  $groupId = _getGID($group);
+ if($linkID)
+ {
+  if($linkAP)
+  {
+   if($linkAP == $archiveInfo['prefix'])
+	$linkAID = $archiveInfo['id'];
+   else
+   {
+	$db = new AlpaDatabase();
+	$db->RunQuery("SELECT id FROM dynarc_archives WHERE tb_prefix='".$db->Purify($linkAP)."'");
+	if($db->Read())
+	 $linkAID = $db->record['id'];
+	$db->Close();
+   }
+  }
+  else if(!$linkAID)
+   $linkAID = $archiveInfo['id'];
+ }
 
  if($group)
   $groupId = _getGID($group);
@@ -193,13 +238,62 @@ function dynarc_newCategory($args, $sessid, $shellid=null, $extraVar=null)
   $db->Close();
  }
 
+ if($_IF_NOT_EXISTS)
+ {
+  /* CHECK IF CATEGORY ALREADY EXISTS */
+  $cmd = "dynarc cat-info -ap '".$archiveInfo['prefix']."'";
+  if($parentInfo)	$cmd.= " -parent `".$parentInfo['id']."`";
+  if($tag)			$cmd.= " -tag `".$tag."`";
+  else if($code)	$cmd.= " -code `".$code."`";
+  $ret = GShell($cmd,$sessid,$shellid);
+  if(!$ret['error'])
+  {
+   $out.= "category already exists! ID=".$ret['outarr']['id']."\n";
+   $ret['message'] = $out;
+   if($_UPDATE_IF_EXISTS)
+   {
+	$args[] = "-id";
+	$args[] = $ret['outarr']['id'];
+	return dynarc_editCategory($args, $sessid, $shellid, $extraVar ? $extraVar : $archiveInfo);
+   }
+   else
+    return $ret;
+  }
+ }
+
+
  $out.= "Creating category...";
  $db = new AlpaDatabase();
- $db->RunQuery("INSERT INTO dynarc_".$archiveInfo['prefix']."_categories(uid,gid,_mod,parent_id,tag,code,
-	name,description,ordering,ctime,published,hierarchy,defordfield,defordasc) VALUES('$uid','$gid','$mod','"
-	.($parentInfo ? $parentInfo['id'] : 0)."','$tag','$code','".$db->Purify($name)."','".$db->Purify($desc)."','$ord','".date('Y-m-d H:i:s',$now)."','$published','"
-	.($parentInfo ? $parentInfo['hierarchy'].$parentInfo['id']."," : ",")."','".$setOrderKey."','".$setOrderMethod."')");
- $id = mysql_insert_id();
+
+ $qry = "INSERT INTO dynarc_".$archiveInfo['prefix']."_categories(";
+ if($forceId)					$qry.= "id,";
+ $qry.= "uid,gid,_mod,parent_id,lnk_id,lnkarc_id,tag,code,name,description,ordering,ctime,published,hierarchy,defordfield,defordasc";
+ if(isset($aliasname))			$qry.= ",aliasname";
+ if($_INHERIT_PARENT_SHARING && $parentInfo && ($parentInfo['shgrps'] || $parentInfo['shusrs']))
+  $qry.= ",shgrps,shusrs";
+
+ $qry.= ") VALUES(";
+
+ if($forceId)					$qry.= "'".$forceId."',";
+ $qry.= "'".$uid."','".$gid."','".$mod."','".($parentInfo ? $parentInfo['id'] : 0)."','"
+	.$linkID."','".$linkAID."','".$tag."','".$code."','".$db->Purify($name)."','".$db->Purify($desc)."','".$ord."','"
+	.date('Y-m-d H:i:s',$now)."','".$published."','".($parentInfo ? $parentInfo['hierarchy'].$parentInfo['id']."," : ",")."','"
+	.$setOrderKey."','".$setOrderMethod."'";
+ if(isset($aliasname))			$qry.= ",'".$db->Purify($aliasname)."'";
+ if($_INHERIT_PARENT_SHARING && $parentInfo && ($parentInfo['shgrps'] || $parentInfo['shusrs']))
+  $qry.= ",'".$parentInfo['shgrps']."','".$parentInfo['shusrs']."'";
+ $qry.= ")";
+ 
+
+ /*$db->RunQuery("INSERT INTO dynarc_".$archiveInfo['prefix']."_categories(".($forceId ? "id," : "")."uid,gid,_mod,parent_id,lnk_id,lnkarc_id,tag,code,
+	name,description,ordering,ctime,published,hierarchy,defordfield,defordasc".(isset($aliasname) ? ",aliasname" : "").") VALUES("
+	.($forceId ? "'".$forceId."'," : "")."'".$uid."','".$gid."','".$mod."','".($parentInfo ? $parentInfo['id'] : 0)."','"
+	.$linkID."','".$linkAID."','".$tag."','".$code."','".$db->Purify($name)."','".$db->Purify($desc)."','".$ord."','"
+	.date('Y-m-d H:i:s',$now)."','".$published."','".($parentInfo ? $parentInfo['hierarchy'].$parentInfo['id']."," : ",")."','"
+	.$setOrderKey."','".$setOrderMethod."'".(isset($aliasname) ? ",'".$db->Purify($aliasname)."'" : "").")");*/
+ $db->RunQuery($qry);
+ if($db->Error) return array('message'=>$out."failed!\nMySQL Error: ".$db->Error."\nQRY: ".$db->lastQuery, 'error'=>'MYSQL_ERROR');
+ $id = $db->GetInsertId();
 
  if($archiveInfo['sync_enabled'])
  {
@@ -223,9 +317,20 @@ function dynarc_newCategory($args, $sessid, $shellid=null, $extraVar=null)
 
  $outArr = $a;
 
- // call oncreatecategory function inherited if exists //
- if($archiveInfo['inherit'])
+ // call oncreatecategory function if exists //
+ if($archiveInfo['functionsfile'] && file_exists($_BASE_PATH.$archiveInfo['functionsfile']))
  {
+  include_once($_BASE_PATH.$archiveInfo['functionsfile']);
+  if(is_callable("dynarcfunction_".$archiveInfo['prefix']."_oncreatecategory",true))
+  {
+   $ret = call_user_func("dynarcfunction_".$archiveInfo['prefix']."_oncreatecategory", $args, $sessid, $shellid, $archiveInfo, $a);
+   if(is_array($ret) && $ret['error']) return $ret;
+   else if(is_array($ret) && $ret['outarr']) $outArr = $ret['outarr'];
+  }
+ }
+ else if($archiveInfo['inherit'])
+ {
+  // call oncreatecategory function inherited if exists //
   $db = new AlpaDatabase();
   $db->RunQuery("SELECT fun_file FROM dynarc_archives WHERE tb_prefix='".$archiveInfo['inherit']."' AND trash=0 LIMIT 1");
   $db->Read();
@@ -235,29 +340,12 @@ function dynarc_newCategory($args, $sessid, $shellid=null, $extraVar=null)
    if(is_callable("dynarcfunction_".$archiveInfo['inherit']."_oncreatecategory",true))
    {
     $ret = call_user_func("dynarcfunction_".$archiveInfo['inherit']."_oncreatecategory", $args, $sessid, $shellid, $archiveInfo, $a);
-    if($ret['error'])
-	 return $ret;
-    else if($ret['outarr'])
-	 $outArr = $ret['outarr'];
+    if(is_array($ret) && $ret['error']) return $ret;
+    else if(is_array($ret) && $ret['outarr']) $outArr = $ret['outarr'];
    }
   }
   $db->Close();
  }
-
- // call oncreatecategory function if exists //
- if($archiveInfo['functionsfile'] && file_exists($_BASE_PATH.$archiveInfo['functionsfile']))
- {
-  include_once($_BASE_PATH.$archiveInfo['functionsfile']);
-  if(is_callable("dynarcfunction_".$archiveInfo['prefix']."_oncreatecategory",true))
-  {
-   $ret = call_user_func("dynarcfunction_".$archiveInfo['prefix']."_oncreatecategory", $args, $sessid, $shellid, $archiveInfo, $a);
-   if($ret['error'])
-	return $ret;
-   else if($ret['outarr'])
-	$outArr = $ret['outarr'];
-  }
- }
-
  // call oncreatecategory function from all installed extensions //
  $db = new AlpaDatabase();
  $db->RunQuery("SELECT extension_name FROM dynarc_archive_extensions WHERE archive_id='".$archiveInfo['id']."'");
@@ -268,8 +356,7 @@ function dynarc_newCategory($args, $sessid, $shellid=null, $extraVar=null)
   if(is_callable("dynarcextension_".$db->record['extension_name']."_oncreatecategory",true))
   {
    $ret = call_user_func("dynarcextension_".$db->record['extension_name']."_oncreatecategory", $args, $sessid, $shellid, $archiveInfo, $a);
-   if($ret['error'])
-    return $ret;
+   if(is_array($ret) && $ret['error']) return $ret;
   }
  }
  $db->Close();
@@ -277,9 +364,11 @@ function dynarc_newCategory($args, $sessid, $shellid=null, $extraVar=null)
  return array("message"=>$out,"outarr"=>$outArr);
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function dynarc_editCategory($args, $sessid, $shellid=null, $extraVar=null)
+function dynarc_editCategory($args, $sessid, $shellid, $extraVar=null)
 {
  global $_BASE_PATH;
+ $shareSetRecursive=false;
+
  for($c=1; $c < count($args); $c++)
   switch($args[$c])
   {
@@ -300,10 +389,18 @@ function dynarc_editCategory($args, $sessid, $shellid=null, $extraVar=null)
    case '-perms' : {$perms=$args[$c+1]; $c++;} break;
    case '--publish' : case '-publish' : $published=true; break;
    case '--unpublish' : case '-unpublish' : $published=false; break;
+   case '-alias' : case '-aliasname' : {$aliasname=$args[$c+1]; $c++;} break;
 
    /* Default key ordering */
    case '--def-order-field' : {$setOrderKey=$args[$c+1]; $c++;} break;
    case '--def-order-method' : {$setOrderMethod=strtoupper($args[$c+1]); $c++;} break;
+
+   /* SHARING */
+   case '--share-add-group' : {$shGroups[]=$args[$c+1]; $c++;} break; // divide group and perms with(:) example: --share-add-group mygroup:6
+   case '--share-add-user' : {$shUsers[]=$args[$c+1]; $c++;} break; // divide user and perms with(:) example: --share-add-user alex:4
+   case '--unshare-group' : {$unshGroups[]=$args[$c+1]; $c++;} break;
+   case '--unshare-user' : {$unshUsers[]=$args[$c+1]; $c++;} break;
+   case '--share-set-recursive' : $shareSetRecursive=true; break;
 
    // variables //
    case '-set' : {$set=$args[$c+1]; $c++;} break;
@@ -319,7 +416,7 @@ function dynarc_editCategory($args, $sessid, $shellid=null, $extraVar=null)
   $archiveInfo = $extraVar;
  else
  {
-  $ret = dynarc_checkForArchive($args,$sessid,$shellid);
+  $ret = dynarc_checkForArchive($args,$sessid,$shellid,$extraVar);
   if($ret['error'])
    return $ret;
   $archiveInfo = $ret['outarr'];
@@ -353,9 +450,95 @@ function dynarc_editCategory($args, $sessid, $shellid=null, $extraVar=null)
  }
  if($parentInfo)
  {
+  if($parentInfo['id'] == $catInfo['id'])
+   return array("message"=>"You cannot insert this category in the same category.", "error"=>"INVALID_PARENT_ID");
   /* CHECK FOR PERMISSIONS */
   if(!$parentInfo['modinfo']['can_write'])
    return array("message"=>"Permission denied!, you have not permission to insert sub-categories into this category.","error"=>"CATEGORY_PERMISSION_DENIED");
+ }
+
+ /* UPDATE GROUPS SHARE INFO */
+ $shareGroups = array();
+ $shgrps = "";
+ $shusrs = "";
+ if(count($shGroups) || count($shUsers) || count($unshGroups) || count($unshUsers))
+ {
+  // Get category sharing info.
+  $db = new AlpaDatabase();
+  $db->RunQuery("SELECT shgrps,shusrs FROM dynarc_".$archiveInfo['prefix']."_categories WHERE id='".$catInfo['id']."'");
+  if($db->Read())
+  {
+   $catInfo['shgrps'] = $db->record['shgrps'];
+   $catInfo['shusrs'] = $db->record['shusrs'];
+  }
+  $db->Close();
+ }
+ if(count($shGroups))
+ {
+  for($c=0; $c < count($shGroups); $c++)
+  {
+   $p = strrpos($shGroups[$c],":");
+   $shMOD = substr($archiveInfo['def_cat_perms'],1,1);
+   if($p === false)	$shGID = is_numeric($shGroups[$c]) ? $shGroups[$c] : _getGID($shGroups[$c]);
+   else { $tmp = substr($shGroups[$c],0,$p); $shGID = is_numeric($tmp) ? $tmp : _getGID($tmp); $shMOD = substr($shGroups[$c],$p+1); }
+   $shareGroups[$shGID] = $shMOD;
+  }
+ }
+ $unshareGroups = array();
+ if(count($unshGroups))
+ {
+  for($c=0; $c < count($unshGroups); $c++)
+   $unshareGroups[] = is_numeric($unshGroups[$c]) ? $unshGroups[$c] : _getGID($unshGroups[$c]);
+ }
+ if(count($shareGroups) || count($unshareGroups))
+ {
+  $m = new GMOD(null,null,null,$catInfo['shgrps']);
+  for($c=0; $c < count($unshareGroups); $c++)
+  {
+   if($m->SHGROUPS[$unshareGroups[$c]])
+	unset($m->SHGROUPS[$unshareGroups[$c]]);
+  }
+  reset($shareGroups);
+  while(list($k,$v) = each($shareGroups)) { $m->SHGROUPS[$k] = $v; }
+  $shgrps = "#,";
+  reset($m->SHGROUPS);
+  while(list($k,$v) = each($m->SHGROUPS)) { $shgrps.= $k."=".$v.","; }
+  $shgrps.= "#";
+ }
+
+ /* UPDATE USERS SHARE INFO */
+ $shareUsers = array();
+ if(count($shUsers))
+ {
+  for($c=0; $c < count($shUsers); $c++)
+  {
+   $p = strrpos($shUsers[$c],":");
+   $shMOD = substr($archiveInfo['def_cat_perms'],0,1);
+   if($p === false) $shUID = is_numeric($shUsers[$c]) ? $shUsers[$c] : _getUID($shUsers[$c]);
+   else { $tmp = substr($shUsers[$c],0,$p); $shUID = is_numeric($tmp) ? $tmp : _getUID($tmp); $shMOD = substr($shUsers[$c],$p+1); }
+   $shareUsers[$shUID] = $shMOD;
+  }
+ }
+ $unshareUsers = array();
+ if(count($unshUsers))
+ {
+  for($c=0; $c < count($unshUsers); $c++)
+   $unshareUsers[] = is_numeric($unshUsers[$c]) ? $unshUsers[$c] : _getUID($unshUsers[$c]);
+ }
+ if(count($shareUsers) || count($unshareUsers))
+ {
+  $m = new GMOD(null,null,null,null,$catInfo['shusrs']);
+  for($c=0; $c < count($unshareUsers); $c++)
+  {
+   if($m->SHUSERS[$unshareUsers[$c]])
+	unset($m->SHUSERS[$unshareUsers[$c]]);
+  }
+  reset($shareUsers);
+  while(list($k,$v) = each($shareUsers)) { $m->SHUSERS[$k] = $v; }
+  $shusrs = "#,";
+  reset($m->SHUSERS);
+  while(list($k,$v) = each($m->SHUSERS)) { $shusrs.= $k."=".$v.","; }
+  $shusrs.= "#";
  }
 
  $db = new AlpaDatabase();
@@ -378,6 +561,13 @@ function dynarc_editCategory($args, $sessid, $shellid=null, $extraVar=null)
   if($catInfo['parent_id'] != $parentInfo['id'])
    $a['old_parent_id'] = $catInfo['parent_id'];
  }
+ else if(isset($parentId) && ($parentId == 0))
+ {
+  $q.= ",parent_id='0',hierarchy=','";
+  $a['parent_id'] = 0;
+  if($catInfo['parent_id'] != 0)
+   $a['old_parent_id'] = $catInfo['parent_id'];
+ }
  if(isset($tag)){
   $q.= ",tag='$tag'"; $a['tag']=$tag;}
  if(isset($perms))
@@ -389,6 +579,8 @@ function dynarc_editCategory($args, $sessid, $shellid=null, $extraVar=null)
   $q.= ",defordfield='".$setOrderKey."'";
  if(isset($setOrderMethod))
   $q.= ",defordasc='".(($setOrderMethod == "ASC") ? 1 : 0)."'";
+ if(isset($aliasname))
+  $q.= ",aliasname='".$db->Purify($aliasname)."'";
 
  if($group)
   $groupId = _getGID($group);
@@ -399,8 +591,12 @@ function dynarc_editCategory($args, $sessid, $shellid=null, $extraVar=null)
    $q.= ",gid='$groupId'";
  }
 
+ if($shgrps) $q.= ",shgrps='".$shgrps."'";
+ if($shusrs) $q.= ",shusrs='".$shusrs."'";
+
  $db = new AlpaDatabase();
  $db->RunQuery("UPDATE dynarc_".$archiveInfo['prefix']."_categories SET ".ltrim($q,",")." WHERE id='".$catInfo['id']."'");
+ if($db->Error) return array('message'=>$out."failed!\nMySQL Error: ".$db->Error."\nQRY: ".$db->lastQuery, 'error'=>'MYSQL_ERROR');
  $db->Close();
  $out.= "done!\n";
 
@@ -441,9 +637,21 @@ function dynarc_editCategory($args, $sessid, $shellid=null, $extraVar=null)
 
  $outArr = $a;
 
- // call oneditcategory function inherited if exists //
- if($archiveInfo['inherit'])
+ // call oneditcategory function if exists //
+ if($archiveInfo['functionsfile'] && file_exists($_BASE_PATH.$archiveInfo['functionsfile']))
  {
+  include_once($_BASE_PATH.$archiveInfo['functionsfile']);
+  if(is_callable("dynarcfunction_".$archiveInfo['prefix']."_oneditcategory",true))
+  {
+   $ret = call_user_func("dynarcfunction_".$archiveInfo['prefix']."_oneditcategory", $args, $sessid, $shellid, $archiveInfo, $a);
+   if(is_array($ret) && $ret['error']) return $ret;
+   else if(is_array($ret) && $ret['outarr']) $outArr = $ret['outarr'];
+   else if(is_array($ret)) $outArr = $ret;
+  }
+ }
+ else if($archiveInfo['inherit'])
+ {
+  // call oneditcategory function inherited if exists //
   $db = new AlpaDatabase();
   $db->RunQuery("SELECT fun_file FROM dynarc_archives WHERE tb_prefix='".$archiveInfo['inherit']."' AND trash=0 LIMIT 1");
   $db->Read();
@@ -453,29 +661,13 @@ function dynarc_editCategory($args, $sessid, $shellid=null, $extraVar=null)
    if(is_callable("dynarcfunction_".$archiveInfo['inherit']."_oneditcategory",true))
    {
     $ret = call_user_func("dynarcfunction_".$archiveInfo['inherit']."_oneditcategory", $args, $sessid, $shellid, $archiveInfo, $a);
-    if($ret['error'])
-	 return $ret;
-    else if($ret['outarr'])
-	 $outArr = $ret['outarr'];
+    if(is_array($ret) && $ret['error']) return $ret;
+    else if(is_array($ret) && $ret['outarr']) $outArr = $ret['outarr'];
+    else if(is_array($ret)) $outArr = $ret;
    }
   }
   $db->Close();
  }
-
- // call oneditcategory function if exists //
- if($archiveInfo['functionsfile'] && file_exists($_BASE_PATH.$archiveInfo['functionsfile']))
- {
-  include_once($_BASE_PATH.$archiveInfo['functionsfile']);
-  if(is_callable("dynarcfunction_".$archiveInfo['prefix']."_oneditcategory",true))
-  {
-   $ret = call_user_func("dynarcfunction_".$archiveInfo['prefix']."_oneditcategory", $args, $sessid, $shellid, $archiveInfo, $a);
-   if($ret['error'])
-	return $ret;
-   else if($ret['outarr'])
-	$outArr = $ret['outarr'];
-  }
- }
-
  // call oneditcategory function from all installed extensions //
  $db = new AlpaDatabase();
  $db->RunQuery("SELECT extension_name FROM dynarc_archive_extensions WHERE archive_id='".$archiveInfo['id']."'");
@@ -486,17 +678,29 @@ function dynarc_editCategory($args, $sessid, $shellid=null, $extraVar=null)
   if(is_callable("dynarcextension_".$db->record['extension_name']."_oneditcategory",true))
   {
    $ret = call_user_func("dynarcextension_".$db->record['extension_name']."_oneditcategory", $args, $sessid, $shellid, $archiveInfo, $a);
-   if($ret['error'])
-    return $ret;
+   if(is_array($ret) && $ret['error']) return $ret;
   }
  }
  $db->Close();
 
+ // SHARE SET RECURSIVE
+ if($shareSetRecursive)
+ {
+  $ret = GShell("dynarc cat-tree -ap '".$archiveInfo['prefix']."' -cat '".$catInfo['id']."' --serialize-only", $sessid, $shellid);
+  if(!$ret['error'] && $ret['outarr']['serialize'])
+  {
+   $ser = explode(",",$ret['outarr']['serialize']);
+   $db = new AlpaDatabase();
+   for($c=0; $c < count($ser); $c++)
+	$db->RunQuery("UPDATE dynarc_".$archiveInfo['prefix']."_categories SET shgrps='".$shgrps."',shusrs='".$shusrs."' WHERE id='".$ser[$c]."'");
+   $db->Close();
+  }
+ }
 
  return array("message"=>$out,"outarr"=>$outArr);
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function dynarc_deleteCategory($args, $sessid, $shellid=null, $extraVar=null)
+function dynarc_deleteCategory($args, $sessid, $shellid, $extraVar=null)
 {
  global $_BASE_PATH;
  $ids = array();
@@ -507,6 +711,9 @@ function dynarc_deleteCategory($args, $sessid, $shellid=null, $extraVar=null)
    case '-ap' : case '--archive-prefix' : {$archivePrefix=$args[$c+1]; $c++;} break;
    case '-aid' : {$archiveId=$args[$c+1]; $c++;} break;
    case '-id' : case '-cat' : {$ids[]=$args[$c+1]; $c++;} break;
+   case '-linkap' : {$linkAP=$args[$c+1]; $c++;} break;
+   case '-linkaid' : {$linkAID=$args[$c+1]; $c++;} break;
+   case '-linkid' : {$linkID=$args[$c+1]; $c++;} break;
    case '-tag' : {$tag=$args[$c+1]; $c++;} break;
    case '-r' : $delete=true; break;
    case '--return-cat-info' : $returnCatInfo=true; break;
@@ -522,7 +729,7 @@ function dynarc_deleteCategory($args, $sessid, $shellid=null, $extraVar=null)
   $archiveInfo = $extraVar;
  else
  {
-  $ret = dynarc_checkForArchive($args,$sessid,$shellid);
+  $ret = dynarc_checkForArchive($args,$sessid,$shellid,$extraVar);
   if($ret['error'])
    return $ret;
   $archiveInfo = $ret['outarr'];
@@ -531,6 +738,17 @@ function dynarc_deleteCategory($args, $sessid, $shellid=null, $extraVar=null)
  if($tag)
  {
   $ret = GShell("dynarc cat-info -tag '$tag' -ap '".$archiveInfo['prefix']."'",$sessid,$shellid,$archiveInfo);
+  if($ret['error'])
+  {
+   if($forceTrue) $ret['error'] = null;
+   return $ret;
+  }
+  $categories[] = $ret['outarr'];
+ }
+ else if($linkID && ($linkAP || $linkAID))
+ {
+  $ret = GShell("dynarc cat-info -ap '".$archiveInfo['prefix']."' -linkid '".$linkID."'"
+	.($linkAP ? " -linkap '".$linkAP."'" : " -linkaid '".$linkAID."'"),$sessid,$shellid,$archiveInfo);
   if($ret['error'])
   {
    if($forceTrue) $ret['error'] = null;
@@ -591,53 +809,6 @@ function dynarc_deleteCategory($args, $sessid, $shellid=null, $extraVar=null)
 
   if($delete) // REMOVE ALL SUB-CATEGORIES AND ITEMS //
   {
-   // call ondeletecategory function inherited if exists //
-   if($archiveInfo['inherit'])
-   {
-    $db = new AlpaDatabase();
-    $db->RunQuery("SELECT fun_file FROM dynarc_archives WHERE tb_prefix='".$archiveInfo['inherit']."' AND trash=0 LIMIT 1");
-    $db->Read();
-    if($db->record['fun_file'] && file_exists($_BASE_PATH.$db->record['fun_file']))
-    {
-     include_once($_BASE_PATH.$db->record['fun_file']);
-     if(is_callable("dynarcfunction_".$archiveInfo['inherit']."_ondeletecategory",true))
-     {
-      $ret = call_user_func("dynarcfunction_".$archiveInfo['inherit']."_ondeletecategory", $args, $sessid, $shellid, $archiveInfo, $catInfo);
-      if($ret['error'])
-	   return $ret;
-     }
-    }
-    $db->Close();
-   }
-
-   // call ondeletecategory function if exists //
-   if($archiveInfo['functionsfile'] && file_exists($_BASE_PATH.$archiveInfo['functionsfile']))
-   {
-    include_once($_BASE_PATH.$archiveInfo['functionsfile']);
-    if(is_callable("dynarcfunction_".$archiveInfo['prefix']."_ondeletecategory",true))
-    {
-	 $ret = call_user_func("dynarcfunction_".$archiveInfo['prefix']."_ondeletecategory", $args, $sessid, $shellid, $archiveInfo, $catInfo);
-	 if($ret['error'])
-	  return $ret;
-    }
-   }
-
-   // call ondeletecategory function from all installed extensions //
-   $db = new AlpaDatabase();
-   $db->RunQuery("SELECT extension_name FROM dynarc_archive_extensions WHERE archive_id='".$archiveInfo['id']."'");
-   while($db->Read())
-   {
-	/* EXECUTE FUNCTION */
-	include_once($_BASE_PATH."etc/dynarc/extensions/".$db->record['extension_name']."/index.php");
-	if(is_callable("dynarcextension_".$db->record['extension_name']."_ondeletecategory",true))
-	{
-	 $ret = call_user_func("dynarcextension_".$db->record['extension_name']."_ondeletecategory", $args, $sessid, $shellid, $archiveInfo, $catInfo);
-	 if($ret['error'])
-	  return $ret;
-	}
-   }
-   $db->Close();
-
    /* REMOVE FROM DATABASE */
    $db = new AlpaDatabase();
    $db->RunQuery("DELETE FROM dynarc_".$archiveInfo['prefix']."_categories WHERE id='".$catInfo['id']."'");
@@ -650,59 +821,55 @@ function dynarc_deleteCategory($args, $sessid, $shellid=null, $extraVar=null)
     $db->Close();
    }
 
-   $out.= "category #".$catInfo['id']." has been removed!\n";
-   if($returnCatInfo)
-	$outArr['removed'][] = $catInfo;
-  }
-  else
-  {
-   // call ontrashcategory function inherited if exists //
-   if($archiveInfo['inherit'])
+   // call ondeletecategory function if exists //
+   if($archiveInfo['functionsfile'] && file_exists($_BASE_PATH.$archiveInfo['functionsfile']))
    {
+    include_once($_BASE_PATH.$archiveInfo['functionsfile']);
+    if(is_callable("dynarcfunction_".$archiveInfo['prefix']."_ondeletecategory",true))
+    {
+	 $ret = call_user_func("dynarcfunction_".$archiveInfo['prefix']."_ondeletecategory", $args, $sessid, $shellid, $archiveInfo, $catInfo);
+	 if(is_array($ret) && $ret['error']) return $ret;
+    }
+   }
+   else if($archiveInfo['inherit'])
+   {
+    // call ondeletecategory function inherited if exists //
     $db = new AlpaDatabase();
     $db->RunQuery("SELECT fun_file FROM dynarc_archives WHERE tb_prefix='".$archiveInfo['inherit']."' AND trash=0 LIMIT 1");
     $db->Read();
     if($db->record['fun_file'] && file_exists($_BASE_PATH.$db->record['fun_file']))
     {
      include_once($_BASE_PATH.$db->record['fun_file']);
-     if(is_callable("dynarcfunction_".$archiveInfo['inherit']."_ontrashcategory",true))
+     if(is_callable("dynarcfunction_".$archiveInfo['inherit']."_ondeletecategory",true))
      {
-      $ret = call_user_func("dynarcfunction_".$archiveInfo['inherit']."_ontrashcategory", $args, $sessid, $shellid, $archiveInfo, $catInfo);
-      if($ret['error'])
-	   return $ret;
+      $ret = call_user_func("dynarcfunction_".$archiveInfo['inherit']."_ondeletecategory", $args, $sessid, $shellid, $archiveInfo, $catInfo);
+      if(is_array($ret) && $ret['error']) return $ret;
      }
     }
     $db->Close();
    }
-
-   // call ontrashcategory function if exists //
-   if($archiveInfo['functionsfile'] && file_exists($_BASE_PATH.$archiveInfo['functionsfile']))
-   {
-    include_once($_BASE_PATH.$archiveInfo['functionsfile']);
-    if(is_callable("dynarcfunction_".$archiveInfo['prefix']."_ontrashcategory",true))
-    {
-	 $ret = call_user_func("dynarcfunction_".$archiveInfo['prefix']."_ontrashcategory", $args, $sessid, $shellid, $archiveInfo, $catInfo);
-	 if($ret['error'])
-	  return $ret;
-    }
-   }
-
-   // call ontrashcategory function from all installed extensions //
+   // call ondeletecategory function from all installed extensions //
    $db = new AlpaDatabase();
    $db->RunQuery("SELECT extension_name FROM dynarc_archive_extensions WHERE archive_id='".$archiveInfo['id']."'");
    while($db->Read())
    {
 	/* EXECUTE FUNCTION */
 	include_once($_BASE_PATH."etc/dynarc/extensions/".$db->record['extension_name']."/index.php");
-	if(is_callable("dynarcextension_".$db->record['extension_name']."_ontrashcategory",true))
+	if(is_callable("dynarcextension_".$db->record['extension_name']."_ondeletecategory",true))
 	{
-	 $ret = call_user_func("dynarcextension_".$db->record['extension_name']."_ontrashcategory", $args, $sessid, $shellid, $archiveInfo, $catInfo);
-	 if($ret['error'])
-	  return $ret;
+	 $ret = call_user_func("dynarcextension_".$db->record['extension_name']."_ondeletecategory", $args, $sessid, $shellid, $archiveInfo, $catInfo);
+	 if(is_array($ret) && $ret['error']) return $ret;
 	}
    }
    $db->Close();
 
+
+   $out.= "category #".$catInfo['id']." has been removed!\n";
+   if($returnCatInfo)
+	$outArr['removed'][] = $catInfo;
+  }
+  else
+  {
    // TRASH ONLY //
    $db = new AlpaDatabase();
    $db->RunQuery("UPDATE dynarc_".$archiveInfo['prefix']."_categories SET trash='1' WHERE id='".$catInfo['id']."'");
@@ -716,6 +883,48 @@ function dynarc_deleteCategory($args, $sessid, $shellid=null, $extraVar=null)
     $db->Close();
    }
 
+   // call ontrashcategory function if exists //
+   if($archiveInfo['functionsfile'] && file_exists($_BASE_PATH.$archiveInfo['functionsfile']))
+   {
+    include_once($_BASE_PATH.$archiveInfo['functionsfile']);
+    if(is_callable("dynarcfunction_".$archiveInfo['prefix']."_ontrashcategory",true))
+    {
+	 $ret = call_user_func("dynarcfunction_".$archiveInfo['prefix']."_ontrashcategory", $args, $sessid, $shellid, $archiveInfo, $catInfo);
+	 if(is_array($ret) && $ret['error']) return $ret;
+    }
+   }
+   else if($archiveInfo['inherit'])
+   {
+    // call ontrashcategory function inherited if exists //
+    $db = new AlpaDatabase();
+    $db->RunQuery("SELECT fun_file FROM dynarc_archives WHERE tb_prefix='".$archiveInfo['inherit']."' AND trash=0 LIMIT 1");
+    $db->Read();
+    if($db->record['fun_file'] && file_exists($_BASE_PATH.$db->record['fun_file']))
+    {
+     include_once($_BASE_PATH.$db->record['fun_file']);
+     if(is_callable("dynarcfunction_".$archiveInfo['inherit']."_ontrashcategory",true))
+     {
+      $ret = call_user_func("dynarcfunction_".$archiveInfo['inherit']."_ontrashcategory", $args, $sessid, $shellid, $archiveInfo, $catInfo);
+      if(is_array($ret) && $ret['error']) return $ret;
+     }
+    }
+    $db->Close();
+   }
+   // call ontrashcategory function from all installed extensions //
+   $db = new AlpaDatabase();
+   $db->RunQuery("SELECT extension_name FROM dynarc_archive_extensions WHERE archive_id='".$archiveInfo['id']."'");
+   while($db->Read())
+   {
+	/* EXECUTE FUNCTION */
+	include_once($_BASE_PATH."etc/dynarc/extensions/".$db->record['extension_name']."/index.php");
+	if(is_callable("dynarcextension_".$db->record['extension_name']."_ontrashcategory",true))
+	{
+	 $ret = call_user_func("dynarcextension_".$db->record['extension_name']."_ontrashcategory", $args, $sessid, $shellid, $archiveInfo, $catInfo);
+	 if(is_array($ret) && $ret['error']) return $ret;
+	}
+   }
+   $db->Close();
+
    $out.= "category #".$catInfo['id']." has ben trashed!\n";
    if($returnCatInfo)
 	$outArr['trashed'][] = $catInfo;
@@ -724,7 +933,7 @@ function dynarc_deleteCategory($args, $sessid, $shellid=null, $extraVar=null)
  return array("message"=>$out,"outarr"=>$outArr);
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function dynarc_categoryList($args, $sessid, $shellid=null, $extraVar=null)
+function dynarc_categoryList($args, $sessid, $shellid, $extraVar=null)
 {
  global $_BASE_PATH;
  $parentId = 0;
@@ -744,6 +953,7 @@ function dynarc_categoryList($args, $sessid, $shellid=null, $extraVar=null)
    case '-get' : {$get=$args[$c+1]; $c++;} break;
    case '-extget' : {$extget=$args[$c+1]; $c++;} break;
    case '--check-if-has-items' : $checkIfHasItems=true; break;
+   case '--get-count' : $getCount=true; break;	// Get count of categories
    case '--get-items-count' : $getItemsCount=true; break; // Get count of items into this category.
    case '--get-total-items-count' : $getTotalItemsCount=true; break; // Get count of all items into all tree of this category.
   }
@@ -753,7 +963,7 @@ function dynarc_categoryList($args, $sessid, $shellid=null, $extraVar=null)
   $archiveInfo = $extraVar;
  else
  {
-  $ret = dynarc_checkForArchive($args,$sessid,$shellid);
+  $ret = dynarc_checkForArchive($args,$sessid,$shellid,$extraVar);
   if($ret['error'])
    return $ret;
   $archiveInfo = $ret['outarr'];
@@ -778,13 +988,15 @@ function dynarc_categoryList($args, $sessid, $shellid=null, $extraVar=null)
 
  $out = "";
  $outArr = array();
+ if($getCount)
+  $outArr = array('count'=>0, 'categories'=>array());
 
  $m = new GMOD();
  $uQry = $m->userQuery($sessid,null,"dynarc_".$archiveInfo['prefix']."_categories");
 
  $db = new AlpaDatabase();
 
- $qry = "SELECT id FROM dynarc_".$archiveInfo['prefix']."_categories WHERE ($uQry)";
+ $qry = "(".$uQry.")";
  if($parentId)
  {
   $qry.= " AND parent_id='".$parentId."'";
@@ -799,6 +1011,13 @@ function dynarc_categoryList($args, $sessid, $shellid=null, $extraVar=null)
   $qry.= " AND (".$where.")";
  $qry.= " AND trash='0'";
 
+ if($getCount)
+ {
+  $db->RunQuery("SELECT COUNT(*) FROM dynarc_".$archiveInfo['prefix']."_categories WHERE ".$qry);
+  $db->Read();
+  $outArr['count'] = $db->record[0];
+ }
+
  if(!$orderBy)
   $orderBy = "ordering ASC";
  $qry.= " ORDER BY ".$orderBy;
@@ -807,7 +1026,7 @@ function dynarc_categoryList($args, $sessid, $shellid=null, $extraVar=null)
   $qry.= " LIMIT ".$limit;
 
 
- $db->RunQuery($qry);
+ $db->RunQuery("SELECT id FROM dynarc_".$archiveInfo['prefix']."_categories WHERE ".$qry);
  while($db->Read())
  {
   $ret = GShell("dynarc cat-info --archive-prefix '".$archiveInfo['prefix']."' -id ".$db->record['id'].($get ? " -get \"".$get."\"" : "").($extget ? " -extget \"".$extget."\"" : ""),$sessid,$shellid,$archiveInfo);
@@ -841,16 +1060,21 @@ function dynarc_categoryList($args, $sessid, $shellid=null, $extraVar=null)
    $db2->Close();
   }
 
-  $outArr[] = $ret['outarr'];
+  if($getCount)
+   $outArr['categories'][] = $ret['outarr'];
+  else
+   $outArr[] = $ret['outarr'];
+
   if($shellid != null)
    $out.= "#".$ret['outarr']['id'].". ".$ret['outarr']['name']."\n";
  }
  $db->Close();
- $out.= count($outArr)." categories found.\n";
+ $out.= ($getCount ? $outArr['count'] : count($outArr))." categories found.\n";
+
  return array("message"=>$out,"outarr"=>$outArr);
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function dynarc_categoryFind($args, $sessid, $shellid=null, $extraVar=null)
+function dynarc_categoryFind($args, $sessid, $shellid, $extraVar=null)
 {
  global $_BASE_PATH;
  $field = "name";
@@ -881,7 +1105,7 @@ function dynarc_categoryFind($args, $sessid, $shellid=null, $extraVar=null)
   $archiveInfo = $extraVar;
  else
  {
-  $ret = dynarc_checkForArchive($args,$sessid,$shellid);
+  $ret = dynarc_checkForArchive($args,$sessid,$shellid,$extraVar);
   if($ret['error'])
    return $ret;
   $archiveInfo = $ret['outarr'];
@@ -983,7 +1207,7 @@ function dynarc_categoryFind($args, $sessid, $shellid=null, $extraVar=null)
  return array("message"=>$out,"outarr"=>$outArr);
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function dynarc_categoryInfo($args, $sessid, $shellid=null, $extraVar=null)
+function dynarc_categoryInfo($args, $sessid, $shellid, $extraVar=null)
 {
  global $_BASE_PATH;
  $archives = array(); // <--- for links
@@ -996,9 +1220,13 @@ function dynarc_categoryInfo($args, $sessid, $shellid=null, $extraVar=null)
    case '-ap' : case '--archive-prefix' : {$archivePrefix=$args[$c+1]; $c++;} break;
    case '-id' : {$id = $args[$c+1]; $c++;} break;
    case '-tag' : {$tag = $args[$c+1]; $c++;} break;
+   case '-code' : {$code=$args[$c+1]; $c++;} break;
    case '-parent' : {$parentId=$args[$c+1]; $c++;} break;
    case '-pt' : case '--parent-tag' : {$parentTag=$args[$c+1]; $c++;} break;
    case '-into' : {$into=$args[$c+1]; $c++;} break;
+   case '-linkap' : {$linkAP=$args[$c+1]; $c++;} break;
+   case '-linkaid' : {$linkAID=$args[$c+1]; $c++;} break;
+   case '-linkid' : {$linkID=$args[$c+1]; $c++;} break;
    case '-get' : {$get=$args[$c+1]; $c++;} break;
    case '-extget' : {$extget=$args[$c+1]; $c++;} break;
    case '--include-path' : $includePathway=true; break;
@@ -1013,7 +1241,7 @@ function dynarc_categoryInfo($args, $sessid, $shellid=null, $extraVar=null)
   $archiveInfo = $extraVar;
  else
  {
-  $ret = dynarc_checkForArchive($args,$sessid,$shellid);
+  $ret = dynarc_checkForArchive($args,$sessid,$shellid,$extraVar);
   if($ret['error'])
    return $ret;
   $archiveInfo = $ret['outarr'];
@@ -1050,11 +1278,27 @@ function dynarc_categoryInfo($args, $sessid, $shellid=null, $extraVar=null)
   }
  }
 
+ if($linkID && $linkAP)
+ {
+  // get link archive id //
+  $db = new AlpaDatabase();
+  $db->RunQuery("SELECT id FROM dynarc_archives WHERE tb_prefix='".$linkAP."' AND trash='0'");
+  if($db->Read())
+   $linkAID = $db->record['id'];
+  $db->Close();
+ }
+
  $db = new AlpaDatabase();
  if($tag) // retrieve the first category in the archive with tag $tag //
   $db->RunQuery("SELECT * FROM dynarc_".$archiveInfo['prefix']."_categories WHERE tag='".$tag."'"
 	.($parentId ? " AND parent_id='".$parentId."'" : ($intoId ? " AND hierarchy LIKE '%,".$intoId.",%'" : ""))
 	." AND trash='0' ORDER BY parent_id ASC LIMIT 1");
+ else if($code) // retrieve the first category in the archive with code $code
+  $db->RunQuery("SELECT * FROM dynarc_".$archiveInfo['prefix']."_categories WHERE code='".$code."'"
+	.($parentId ? " AND parent_id='".$parentId."'" : ($intoId ? " AND hierarchy LIKE '%,".$intoId.",%'" : ""))
+	." AND trash='0' ORDER BY parent_id ASC LIMIT 1");
+ else if($linkAID && $linkID)
+  $db->RunQuery("SELECT * FROM dynarc_".$archiveInfo['prefix']."_categories WHERE lnk_id='".$linkID."' AND lnkarc_id='".$linkAID."' AND trash='0' LIMIT 1");
  else
   $db->RunQuery("SELECT * FROM dynarc_".$archiveInfo['prefix']."_categories WHERE id='$id'");
  if(!$db->Read())
@@ -1062,14 +1306,16 @@ function dynarc_categoryInfo($args, $sessid, $shellid=null, $extraVar=null)
 
  /* CHECK PERMISSION TO READ */
  $sessInfo = sessionInfo($sessid);
- $m = new GMOD($db->record['_mod'],$db->record['uid'],$db->record['gid']);
+ $m = new GMOD($db->record['_mod'],$db->record['uid'],$db->record['gid'],$db->record['shgrps'],$db->record['shusrs']);
  if($sessInfo['uname'] != "root" && !$m->canRead($sessInfo['uid']))
   return array("message"=>"Permission denied!\n","error"=>"PERMISSION_DENIED");
 
  /* OUTPUT */
  $a = array('id'=>$db->record['id'],'parent_id'=>$db->record['parent_id'],'name'=>$db->record['name'],
 	'desc'=>$db->record['description'],'ctime'=>strtotime($db->record['ctime']),'ordering'=>$db->record['ordering'],
-	'trash'=>$db->record['trash'],'published'=>$db->record['published'],'tag'=>$db->record['tag'],'def_order_field'=>$db->record['defordfield'],'def_order_method'=>($db->record['defordasc'] ? "ASC" : "DESC"),'hierarchy'=>$db->record['hierarchy']);
+	'trash'=>$db->record['trash'],'published'=>$db->record['published'],'tag'=>$db->record['tag'],
+	'def_order_field'=>$db->record['defordfield'],'def_order_method'=>($db->record['defordasc'] ? "ASC" : "DESC"),
+	'hierarchy'=>$db->record['hierarchy'], 'aliasname'=>$db->record['aliasname'], 'shgrps'=>$db->record['shgrps'], 'shusrs'=>$db->record['shusrs']);
  $a['modinfo'] = $m->toArray($sessInfo['uid']);
  if(isset($db->record['code'])) $a['code'] = $db->record['code'];
  if(isset($db->record['syncid'])) $a['syncid'] = $db->record['syncid'];
@@ -1133,6 +1379,8 @@ function dynarc_categoryInfo($args, $sessid, $shellid=null, $extraVar=null)
   $out.= "Published: ".($a['published'] ? "Yes\n" : "No\n");
   $mod = new GMOD($a['modinfo']['mod'],$a['modinfo']['uid'],$a['modinfo']['gid']);
   $out.= "Permissions: ".$mod->toString()."\n";
+  if($a['aliasname'])
+   $out.= "Alias: ".$a['aliasname']."\n";
   if($a['trash'])
    $out.= "Note: this category is into trash\n";
   $db = new AlpaDatabase();
@@ -1175,7 +1423,52 @@ function dynarc_categoryInfo($args, $sessid, $shellid=null, $extraVar=null)
  return array("message"=>$out,"outarr"=>$outArr);
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function dynarc_categorySort($args, $sessid, $shellid=null, $extraVar=null)
+function dynarc_getRootCategory($args, $sessid, $shellid, $extraVar=null)
+{
+ for($c=1; $c < count($args); $c++)
+  switch($args[$c])
+  {
+   case '-ap' : {$_AP=$args[$c+1]; $c++;} break;
+   case '-id' : {$_ID=$args[$c+1]; $c++;} break;
+  }
+
+  if(!$_AP) return array("message"=>"Error: you must specify the archive prefix. (with: -ap ARCHIVE_PREFIX)", "error"=>"INVALID_ARCHIVE");
+  if(!$_ID) return array("message"=>"Error: you must specify the category id. (width: -id CAT_ID)", "error"=>"INVALID_CAT");
+
+  // Get category info
+  $db = new AlpaDatabase();
+  $db->RunQuery("SELECT uid,gid,_mod,parent_id,hierarchy FROM dynarc_".$_AP."_categories WHERE id='".$_ID."'");
+  if(!$db->Read())
+   return array("message"=>"Error: Category #".$_ID." does not exists!", "error"=>"CATEGORY_DOES_NOT_EXISTS");
+  /* CHECK PERMISSION TO READ */
+  $sessInfo = sessionInfo($sessid);
+  $m = new GMOD($db->record['_mod'],$db->record['uid'],$db->record['gid']);
+  if($sessInfo['uname'] != "root" && !$m->canRead($sessInfo['uid']))
+   return array("message"=>"Permission denied!\n","error"=>"PERMISSION_DENIED");
+  $catInfo = array('id'=>$_ID, 'uid'=>$db->record['uid'], 'gid'=>$db->record['gid'], '_mod'=>$db->record['_mod'], 'parent_id'=>$db->record['parent_id'],
+	'hierarchy'=>$db->record['hierarchy']);
+  $db->Close();
+
+  if($catInfo['hierarchy'] && ($catInfo['hierarchy'] != ",") && ($catInfo['hierarchy'] != ",,"))
+  {
+   $hierarchy = explode(",",ltrim($catInfo['hierarchy'],','));
+   $rootCatId = $hierarchy[0];
+  }
+  else 
+   $rootCatId = $catInfo['parent_id'];
+
+  if($rootCatId)
+  {
+   // scambio l'ID con rootCatId
+   for($c=1; $c < count($args); $c++)
+  	switch($args[$c]) { case '-id' : $args[$c+1] = $rootCatId; break; }
+   return dynarc_categoryInfo($args, $sessid, $shellid);
+  }
+  else
+   return dynarc_categoryInfo($args, $sessid, $shellid);
+}
+//-------------------------------------------------------------------------------------------------------------------//
+function dynarc_categorySort($args, $sessid, $shellid, $extraVar=null)
 {
  global $_BASE_PATH;
  for($c=1; $c < count($args); $c++)
@@ -1192,7 +1485,7 @@ function dynarc_categorySort($args, $sessid, $shellid=null, $extraVar=null)
   $archiveInfo = $extraVar;
  else
  {
-  $ret = dynarc_checkForArchive($args,$sessid,$shellid);
+  $ret = dynarc_checkForArchive($args,$sessid,$shellid,$extraVar);
   if($ret['error'])
    return $ret;
   $archiveInfo = $ret['outarr'];
@@ -1214,7 +1507,7 @@ function dynarc_categorySort($args, $sessid, $shellid=null, $extraVar=null)
  return array("message"=>$out);
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function dynarc_categoryMove($args, $sessid, $shellid=null, $extraVar=null)
+function dynarc_categoryMove($args, $sessid, $shellid, $extraVar=null)
 {
  global $_BASE_PATH;
  $out = "";
@@ -1235,7 +1528,7 @@ function dynarc_categoryMove($args, $sessid, $shellid=null, $extraVar=null)
   $archiveInfo = $extraVar;
  else
  {
-  $ret = dynarc_checkForArchive($args,$sessid,$shellid);
+  $ret = dynarc_checkForArchive($args,$sessid,$shellid,$extraVar);
   if($ret['error'])
    return $ret;
   $archiveInfo = $ret['outarr'];
@@ -1319,6 +1612,11 @@ function dynarc_categoryMove($args, $sessid, $shellid=null, $extraVar=null)
    $db2->Close(); $db->Close();
   }
 
+  $oldCatInfo = $catInfo;
+  $oldParentId = $catInfo['parent_id'];
+  $newCatInfo = $catInfo;
+  $newCatInfo['hierarchy'] = $hierarchy;
+
   $qry = "UPDATE dynarc_".$archiveInfo['prefix']."_categories SET ordering='$ordering'";
   if(isset($parentId))
   {
@@ -1329,17 +1627,35 @@ function dynarc_categoryMove($args, $sessid, $shellid=null, $extraVar=null)
     $db->RunQuery("UPDATE dynarc_".$archiveInfo['prefix']."_synclog SET status='MOVED',logtime='".date('Y-m-d H:i:s')."' WHERE syncid='".$catInfo['syncid']."'");
     $db->Close();
    }
+
+   $newCatInfo['parent_id'] = $parentId;
+   $newCatInfo['old_parent_id'] = $oldParentId;
    // call onmovecategory function if exists //
    if($archiveInfo['functionsfile'] && file_exists($_BASE_PATH.$archiveInfo['functionsfile']))
    {
-    $oldCatInfo = $catInfo;
-    $newCatInfo = $catInfo;
-    $newCatInfo['hierarchy'] = $hierarchy;
-    $newCatInfo['parent_id'] = $parentId;
-
     include_once($_BASE_PATH.$archiveInfo['functionsfile']);
     if(is_callable("dynarcfunction_".$archiveInfo['prefix']."_onmovecategory",true))
-     call_user_func("dynarcfunction_".$archiveInfo['prefix']."_onmovecategory", $args, $sessid, $shellid, $archiveInfo, $oldCatInfo, $newCatInfo);
+	{
+     $ret = call_user_func("dynarcfunction_".$archiveInfo['prefix']."_onmovecategory", $args, $sessid, $shellid, $archiveInfo, $oldCatInfo, $newCatInfo);
+	 if(is_array($ret) && $ret['error']) return $ret;
+	}
+   }
+   else if($archiveInfo['inherit'])
+   {
+    // call onmovecategory function inherited if exists //
+    $dbX = new AlpaDatabase();
+    $dbX->RunQuery("SELECT fun_file FROM dynarc_archives WHERE tb_prefix='".$archiveInfo['inherit']."' AND trash=0 LIMIT 1");
+    $dbX->Read();
+    if($dbX->record['fun_file'] && file_exists($_BASE_PATH.$dbX->record['fun_file']))
+    {
+     include_once($_BASE_PATH.$dbX->record['fun_file']);
+     if(is_callable("dynarcfunction_".$archiveInfo['inherit']."_onmovecategory",true))
+     {
+      $ret = call_user_func("dynarcfunction_".$archiveInfo['inherit']."_onmovecategory", $args, $sessid, $shellid, $archiveInfo, $oldCatInfo, $newCatInfo);
+      if(is_array($ret) && $ret['error']) return $ret;
+     }
+    }
+    $dbX->Close();
    }
   }
   /* call onmovecategory function for all installed extensions */
@@ -1349,8 +1665,7 @@ function dynarc_categoryMove($args, $sessid, $shellid=null, $extraVar=null)
    if(is_callable("dynarcextension_".$extensions[$i]."_onmovecategory",true))
    {
     $ret = call_user_func("dynarcextension_".$extensions[$i]."_onmovecategory", $args, $sessid, $shellid, $archiveInfo, $oldCatInfo, $newCatInfo);
-    if($ret['error'])
-     return $ret;
+    if(is_array($ret) && $ret['error']) return $ret;
    }
   }
 
@@ -1367,7 +1682,7 @@ function dynarc_categoryMove($args, $sessid, $shellid=null, $extraVar=null)
  return array("message"=>$out);
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function dynarc_categoryCopy($args, $sessid, $shellid=null, $extraVar=null)
+function dynarc_categoryCopy($args, $sessid, $shellid, $extraVar=null)
 {
  global $_BASE_PATH;
  $out = "";
@@ -1391,7 +1706,7 @@ function dynarc_categoryCopy($args, $sessid, $shellid=null, $extraVar=null)
   $archiveInfo = $extraVar;
  else
  {
-  $ret = dynarc_checkForArchive($args,$sessid,$shellid);
+  $ret = dynarc_checkForArchive($args,$sessid,$shellid,$extraVar);
   if($ret['error'])
    return $ret;
   $archiveInfo = $ret['outarr'];
@@ -1442,6 +1757,34 @@ function dynarc_categoryCopy($args, $sessid, $shellid=null, $extraVar=null)
   $cloneInfo['items'] = array();
   $cloneInfo['categories'] = array();
 
+  // call oncopycategory function if exists //
+  if($archiveInfo['functionsfile'] && file_exists($_BASE_PATH.$archiveInfo['functionsfile']))
+  {
+   include_once($_BASE_PATH.$archiveInfo['functionsfile']);
+   if(is_callable("dynarcfunction_".$archiveInfo['prefix']."_oncopycategory",true))
+   {
+    $ret = call_user_func("dynarcfunction_".$archiveInfo['prefix']."_oncopycategory", $sessid, $shellid, $archiveInfo, $catInfo, $cloneInfo);
+    if(is_array($ret) && $ret['error']) return $ret;
+   }
+  }
+  else if($archiveInfo['inherit'])
+  {
+   // call oncopycategory function inherited if exists //
+   $dbX = new AlpaDatabase();
+   $dbX->RunQuery("SELECT fun_file FROM dynarc_archives WHERE tb_prefix='".$archiveInfo['inherit']."' AND trash=0 LIMIT 1");
+   $dbX->Read();
+   if($dbX->record['fun_file'] && file_exists($_BASE_PATH.$dbX->record['fun_file']))
+   {
+    include_once($_BASE_PATH.$dbX->record['fun_file']);
+    if(is_callable("dynarcfunction_".$archiveInfo['inherit']."_oncopycategory",true))
+    {
+     $ret = call_user_func("dynarcfunction_".$archiveInfo['inherit']."_oncopycategory", $sessid, $shellid, $archiveInfo, $catInfo, $cloneInfo);
+     if(is_array($ret) && $ret['error']) return $ret;
+    }
+   }
+   $dbX->Close();
+  }
+
   /* Copy all extensions */
   for($i=0; $i < count($extensions); $i++)
   {
@@ -1449,8 +1792,7 @@ function dynarc_categoryCopy($args, $sessid, $shellid=null, $extraVar=null)
    if(is_callable("dynarcextension_".$extensions[$i]."_oncopycategory",true))
    {
     $ret = call_user_func("dynarcextension_".$extensions[$i]."_oncopycategory", $sessid, $shellid, $archiveInfo, $catInfo, $cloneInfo);
-    if($ret['error'])
-     return $ret;
+    if(is_array($ret) && $ret['error']) return $ret;
    }
   }
 
@@ -1496,7 +1838,7 @@ function dynarc_categoryCopy($args, $sessid, $shellid=null, $extraVar=null)
  return array("message"=>$out, "outarr"=>$cloneInfo);
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function dynarc_categoryTree($args, $sessid, $shellid=null, $extraVar=null)
+function dynarc_categoryTree($args, $sessid, $shellid, $extraVar=null)
 {
  global $_BASE_PATH;
  $orderBy = "ordering ASC";
@@ -1511,6 +1853,7 @@ function dynarc_categoryTree($args, $sessid, $shellid=null, $extraVar=null)
    case '-cat' : {$catId=$args[$c+1]; $c++;} break;
    case '-ct' : {$catTag=$args[$c+1]; $c++;} break;
    case '-get' : {$get=$args[$c+1]; $c++;} break;
+   case '-where' : {$where=$args[$c+1]; $c++;} break;
   }
 
  /* CHECK FOR ARCHIVE */
@@ -1518,7 +1861,7 @@ function dynarc_categoryTree($args, $sessid, $shellid=null, $extraVar=null)
   $archiveInfo = $extraVar;
  else
  {
-  $ret = dynarc_checkForArchive($args,$sessid,$shellid);
+  $ret = dynarc_checkForArchive($args,$sessid,$shellid, $extraVar);
   if($ret['error'])
    return $ret;
   $archiveInfo = $ret['outarr'];
@@ -1537,9 +1880,13 @@ function dynarc_categoryTree($args, $sessid, $shellid=null, $extraVar=null)
 
  $db = new AlpaDatabase();
  if($serializeOnly)
-  $db->RunQuery("SELECT id FROM dynarc_".$archiveInfo['prefix']."_categories WHERE ($uQry) AND parent_id='".$catId."' AND trash='0' ORDER BY ".$orderBy);
+  $qry = "SELECT id FROM dynarc_".$archiveInfo['prefix']."_categories WHERE (".$uQry.")"
+	.($where ? " AND (".$where.")" : "")." AND parent_id='".$catId."' AND trash='0' ORDER BY ".$orderBy;
  else
-  $db->RunQuery("SELECT id,name".($get ? ",".$get : "")." FROM dynarc_".$archiveInfo['prefix']."_categories WHERE ($uQry) AND parent_id='".$catId."' AND trash='0' ORDER BY ".$orderBy);
+  $qry = "SELECT id,name".($get ? ",".$get : "")." FROM dynarc_".$archiveInfo['prefix']."_categories WHERE (".$uQry.")"
+	.($where ? " AND (".$where.")" : "")." AND parent_id='".$catId."' AND trash='0' ORDER BY ".$orderBy;
+
+ $db->RunQuery($qry);
  $ser = "";
  while($db->Read())
  {
@@ -1718,10 +2065,8 @@ function dynarc_parseCatExtensionSet($action,$set,$sessid, $shellid, $archiveInf
   if(is_callable("dynarcextension_".$extension."_".$action,true))
   {
    $ret = call_user_func("dynarcextension_".$extension."_".$action, $args, $sessid, $shellid, $archiveInfo, $catInfo,true);
-   if($ret['error'])
-	return $ret;
-   else if(is_array($ret))
-	$catInfo = $ret;
+   if(is_array($ret) && $ret['error']) return $ret;
+   else if(is_array($ret)) $catInfo = $ret;
   }
   else
   {

@@ -1,0 +1,433 @@
+div.posmod-frontpanel {
+	background: #ffffff;
+	border: 1px solid #5b98c7;
+	border-radius: 3px;
+}
+
+div.posmod-header {
+	height: 42px;
+	border-bottom: 1px solid #5b98c7;
+	background: url(img/headbg.png) top left repeat-x;
+	padding: 0px;
+}
+
+div.posmod-header img.prevbtn {border:0px;cursor:pointer}
+div.posmod-header img.nextbtn {border:0px;cursor:pointer}
+
+div.posmod-header td.posmod-handle {
+	font-family: "Trebuchet", Arial;
+	font-size: 16px;
+	color: #ffffff;
+	font-weight: bold;
+	text-align: center;
+	vertical-align: middle;
+}
+
+div.posmod-header table.posmod-refdate td {
+	font-family: Arial;
+	font-size: 11px;
+	color: #ffffff;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
+
+div.posmod-container {
+	padding: 10px;
+}
+
+div.posmod-container hr {
+	background: #dadada;
+	border: 0px;
+	height: 1px;
+}
+
+div.posmod-container div.postablecontainer {
+	border-bottom: 1px solid #dadada;
+	padding-bottom: 5px;
+	margin-bottom: 5px;
+}
+
+div.posmod-itemlist-container {
+	height: 360px;
+	overflow: scroll;
+	overflow-x: hidden;
+	position: relative;
+}
+
+div.schedule-item {
+	padding-bottom: 10px;
+	border-bottom: 1px solid #5b98c7;
+	margin-bottom: 10px;
+}
+
+div.schedule-item div.schedule-item-header {
+	height:16px;
+}
+
+div.schedule-item div.schedule-item-header span {
+	font-family: Arial;
+	font-size: 12px;
+	color: #000000;
+	font-weight: bold;
+}
+
+span.schedule-smalltext {
+	font-family: Arial;
+	font-size: 10px;
+	color: #000000;
+}
+
+div.schedule-section {
+	font-family: Arial;
+	font-size: 10px;
+	color: #000000;
+	margin-bottom: 10px;
+}
+
+div.posmod-footer {
+	height: 32px;
+	background: #5b98c7;
+	font-family: Arial;
+	font-size: 11px;
+	font-style: italic;
+	padding-left: 3px;
+	padding-right: 3px;
+	line-height: 22px;
+	color: #ffffff;
+	padding-top: 5px;
+}
+
+div.posmod-footer input.storesearchlist-edit {
+	height: 22px;
+	border: 1px solid #5a7edc;
+	border-radius: 3px;
+	background: #ffffff;
+	font-family: arial, sans-serif;
+	font-size: 12px;
+	color: #333333;
+}
+
+div.posmod-footer img.storesearchadd {
+	cursor: pointer;
+	float: right;
+	margin-top: 5px;
+}
+
+div.posmod-footer span.ndocs {
+	float: left;
+	line-height: 22px;
+}
+
+div.posmod-footer span.totamount {
+	float: right;
+	line-height: 22px;
+}
+
+
+/* BACK */
+div.posmod-backpanel {
+	border: 1px solid #c2c2c2;
+	background: #eeeeee;
+	border-radius: 3px;
+}
+
+div.posmod-backpanel td.header {
+	background: url(img/backheadbg.png) top left repeat-x;
+	height: 28px;
+	vertical-align: middle;
+	text-align: center;
+	font-family: "Trebuchet", Arial, sans-serif;
+	font-size: 16px;
+	font-weight: bold;
+	color: #ffffff;
+}
+
+div.plugbar {
+	display: block;
+	background: #666666;
+	height: 22px;
+	border-radius: 3px;
+	font-family: Arial;
+	font-size: 10px;
+	color: #eeeeee;
+	line-height: 22px;
+	padding: 0px;
+	padding-left: 5px;
+	padding-right: 5px;
+	margin-left: 5px;
+	margin-right: 5px;
+	margin-bottom: 5px;
+}
+
+span.moduleplug {
+	float: right;
+	font-family: Arial;
+	font-size: 9px;
+	font-weight: bold;
+	color: #eeeeee;
+	line-height: 22px;
+	height: 22px;
+}
+
+span.moduleplug img.plug {
+	vertical-align: middle;
+	margin-left: 3px;
+}
+
+
+
+div.posmodule-productinfo {
+	font-family: arial, sans-serif;
+	font-size: 12px;
+}
+
+div.posmodule-productinfo div.product-thumb {
+	width: 64px;
+	height: 64px;
+	border: 1px solid #dadada;
+	border-radius: 3px;
+	cursor: pointer;
+}
+
+div.posmodule-productinfo div.product-code {
+	font-family: arial, sans-serif;
+	font-size: 12px;
+	color: #333333;
+	font-weight: bold;
+	cursor: pointer;
+}
+
+div.posmodule-productinfo div.product-name {
+	font-family: arial, sans-serif;
+	font-size: 12px;
+	color: #3364C3;
+	font-weight: bold;
+	cursor: pointer;
+}
+
+div.posmodule-productinfo div.product-avail-head {
+	height: 18px;
+	background: #b3defd;
+	color: #0169c9;
+	line-height: 18px;
+	padding-left: 5px;
+	font-weight: bold;
+	font-family: arial, sans-serif;
+	font-size: 12px;
+	margin-top: 3px;
+}
+
+div.posmodule-productinfo div.storename {
+	font-family: arial, sans-serif;
+	font-size: 12px;
+	color: #333333;
+	padding-left: 3px;
+	padding-right: 3px;
+}
+
+div.storename span.store-avail {
+	float: right;
+	font-family: arial, sans-serif;
+	font-size: 12px;
+	color: #333333;
+	font-weight: bold;
+}
+
+div.posmodule-productinfo hr {
+	height: 1px;
+	border: 0px;
+	background: #dadada;
+	margin-top: 10px;
+	margin-bottom: 10px;
+}
+
+div.posmod-container div.graytext {
+	font-size: 12px;
+	font-family: arial, sans-serif;
+	color: #333333;
+	text-align: center;
+	font-style: italic;
+}
+
+
+
+div.posmod-backpanel-params {
+	padding: 10px;
+	height: 480px;
+	overflow: auto;
+}
+
+div.posmod-backpanel-params span.bluetitle {
+	font-family: arial, sans-serif;
+	font-size: 13px;
+	color: #013397;
+	font-weight: bold;
+}
+
+div.posmod-backpanel-params td {
+	font-family: arial, sans-serif;
+	font-size: 13px;
+	color: #000000;
+}
+
+
+div.posmod-backpanel-params span.smallitalic {
+	font-family: arial, sans-serif;
+	font-size: 10px;
+	color: #333333;
+	font-style: italic;
+}
+
+div.posmod-backpanel-params input.edit {
+	background: #ffffff;
+	border: 1px solid #dadada;
+	border-radius: 1px;
+	height: 21px;
+}
+
+
+/* TABLE - ITEMLIST */
+table.posmod-itemlist th {
+	font-family: arial, sans-serif;
+	font-size: 10px;
+	height: 21px;
+	background: #0169c9;
+	color: #ffffff;
+}
+
+table.posmod-itemlist td {
+	font-family: arial, sans-serif;
+	font-size: 12px;
+	color: #333333;
+	padding-top: 3px;
+	padding-bottom: 3px;
+	border-bottom: 1px dotted #dadada;
+}
+
+table.posmod-itemlist td.price {
+	font-family: arial, sans-serif;
+	font-size: 12px;
+	color: #333333;
+	font-weight: bold;
+	text-align: right;
+	padding-right: 3px;
+}
+
+input.posmod-qty-edit {
+	background: #e8f5fe;
+	border: 1px solid #0197fd;
+	border-radius: 3px;
+	height: 22px;
+	width: 30px;
+	text-align: center;
+	font-weight: bold;
+	font-family: arial, sans-serif;
+	font-size: 13px;
+}
+
+input.posmod-qty-edit:focus {
+	outline: none;
+	background: #ffffbc;
+	border: 1px solid #fb8b00;
+}
+
+/* INSERIRE LE ALTRE CASELLE DI EDIT */
+input.posmod-name-edit {
+	background: #e8f5fe;
+	border: 1px solid #0197fd;
+	border-radius: 3px;
+	height: 22px;
+	width: 200px;
+	font-weight: bold;
+	font-family: arial, sans-serif;
+	font-size: 13px;
+}
+
+input.posmod-name-edit:focus {
+	outline: none;
+	background: #ffffbc;
+	border: 1px solid #fb8b00;
+}
+
+input.posmod-price-edit {
+	background: #e8f5fe;
+	border: 1px solid #0197fd;
+	border-radius: 3px;
+	height: 22px;
+	width: 50px;
+	font-weight: bold;
+	font-family: arial, sans-serif;
+	font-size: 13px;
+	margin-left: 15px;
+}
+
+input.posmod-price-edit:focus {
+	outline: none;
+	background: #ffffbc;
+	border: 1px solid #fb8b00;
+}
+
+
+
+span.barcodetext {
+	font-family: arial, sans-serif;
+	font-size: 10px;
+	font-weight: bold;
+	color: #013397;
+}
+
+span.fidcardcustname {
+	font-family: Verdana,Geneva,sans-serif;
+	font-size: 10px;
+	color: #333;
+}
+
+input.barcodeedit {
+	background: #e8f5fe;
+	border: 1px solid #0197fd;
+	border-radius: 1px;
+	height: 22px;
+	width: 80%;
+}
+
+input.subjectedit {
+	background: #e8f5fe;
+	border: 1px solid #0197fd;
+	border-radius: 1px;
+	height: 22px;
+	width: 80%;
+}
+
+input.fidcarded {
+	background: #e8f5fe;
+	border: 1px solid #0197fd;
+	border-radius: 1px;
+	height: 22px;
+	width: 100px;
+}
+
+span.posmod-button {
+	display: block;
+	height: 22px;
+	border: 1px solid #013397;
+	border-radius: 3px;
+	font-family: arial,sans-serif;
+	font-size: 13px;
+	color: #013397;
+	line-height: 22px;
+	cursor: pointer;
+	background: #e8f5fe;
+	width: 70px;
+	text-align: center;
+	font-weight: bold;
+}
+
+span.posmod-subtot {
+	font-family: arial, sans-serif;
+	font-size: 20px;
+	font-weight: bold;
+	color: #ffffff;
+	margin-right: 5px;
+}
+

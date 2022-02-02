@@ -1,16 +1,16 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 15-02-2013
+ #DATE: 27-10-2016
  #PACKAGE: makedist
  #DESCRIPTION: Database config form.
- #VERSION: 2.0beta
- #CHANGELOG:
+ #VERSION: 2.1beta
+ #CHANGELOG: 27-10-2016 : MySQLi integration.
  #TODO:
  
 */
@@ -25,21 +25,21 @@ if(isset($_POST['action']))
  switch($_POST['action'])
  {
   case 'database-check' : {
-	 $dbhost = mysql_escape_string(trim($_POST['database-host']));
-	 $dbname = mysql_escape_string(trim($_POST['database-name']));
-	 $username = mysql_escape_string(trim($_POST['database-user']));
-	 $password = mysql_escape_string(trim($_POST['database-passwd']));
+	 $dbhost = trim($_POST['database-host']);
+	 $dbname = trim($_POST['database-name']);
+	 $username = trim($_POST['database-user']);
+	 $password = trim($_POST['database-passwd']);
  
-	 $db = @mysql_connect($dbhost,$username,$password);
+	 $db = @mysqli_connect($dbhost,$username,$password);
 	 if($db == false)
 	  $_ERR = "CONNECT_FAIL";
-	 else if(@mysql_select_db($dbname) && !isset($_POST['database-overwrite']))
+	 else if(@mysqli_select_db($db, $dbname) && !isset($_POST['database-overwrite']))
 	  $_ERR = "ALREADY_EXISTS";
 	 else
 	 {
 	  if($_POST['database-overwrite'])
-	   @mysql_query("DROP DATABASE IF EXISTS ".$dbname);
-	  if(!@mysql_query("CREATE DATABASE IF NOT EXISTS ".$dbname))
+	   @mysqli_query($db, "DROP DATABASE IF EXISTS ".$dbname);
+	  if(!@mysqli_query($db, "CREATE DATABASE IF NOT EXISTS ".$dbname))
 	  {
 	   $_ERR = "PERMISSION_DENIED";
 	   break;

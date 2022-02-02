@@ -115,10 +115,10 @@ FCKConfig.ToolbarLocation = 'In' ;
 	['FitWindow','ShowBlocks','-','About']		// No comma for the last row.
 ] ;*/
 
-FCKConfig.ToolbarSets["Default"] = [
-	['Source','NewPage','Preview','-','Templates'],
+FCKConfig.ToolbarSets["Extended"] = [
+	['Source','FitWindow','Preview','-','ShowBlocks'],
 	['Cut','Copy','Paste','PasteText','PasteWord','-','Print','SpellCheck'],
-	['Undo','Redo','-','Find','Replace','-','SelectAll','RemoveFormat'],
+	['Undo','Redo','-','Find','Replace','-','SelectAll','RemoveFormat','CreateDiv'],
 	'/',
 	['Style','FontFormat','FontName','FontSize'],
 	'/',
@@ -126,9 +126,24 @@ FCKConfig.ToolbarSets["Default"] = [
 	['OrderedList','UnorderedList','-','Outdent','Indent'],
 	['JustifyLeft','JustifyCenter','JustifyRight','JustifyFull'],
 	['Link','Unlink','Anchor'],
-	['Image','Flash','Table','Rule','Smiley','SpecialChar','PageBreak'],
-	['TextColor','BGColor'],
-	['FitWindow','ShowBlocks','-','About']		// No comma for the last row.
+	['Image','Flash','Table','Rule'],['TextColor','BGColor']
+			// No comma for the last row.
+] ;
+
+FCKConfig.ToolbarSets["Default"] = [
+	['Source','NewPage','Preview','-','Templates'],
+	['Cut','Copy','Paste','PasteText','PasteWord','-','Print','SpellCheck'],
+	['Undo','Redo','-','Find','Replace','-','SelectAll','RemoveFormat'],
+	'/',
+	['Style','FontFormat','FontName','FontSize'],['TextColor','BGColor'],
+	'/',
+	['Bold','Italic','Underline','StrikeThrough','-','Subscript','Superscript'],
+
+	['OrderedList','UnorderedList','-','Outdent','Indent'],
+	['JustifyLeft','JustifyCenter','JustifyRight','JustifyFull'],
+	['Link','Unlink','Anchor'],
+	['Image','Flash','Table','Rule','Smiley','SpecialChar','PageBreak']
+			// No comma for the last row.
 ] ;
 
 FCKConfig.ToolbarSets["Small"] = [
@@ -149,7 +164,10 @@ FCKConfig.ToolbarSets["Optimized"] = [
 ] ;
 
 FCKConfig.ToolbarSets["Basic"] = [
-	['Bold','Italic','-','OrderedList','UnorderedList','-','Link','Unlink','-','About']
+	['Bold','Italic','Underline','StrikeThrough','-','Subscript','Superscript'],
+	['OrderedList','UnorderedList','-','Outdent','Indent'],
+	['Link','Unlink','Anchor'],['Image','Table','Rule'],
+	['TextColor','BGColor']
 ] ;
 
 FCKConfig.EnterMode = 'p' ;			// p | div | br

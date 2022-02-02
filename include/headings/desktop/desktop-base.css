@@ -340,4 +340,39 @@ ul.desktop-mainmenu li.last {
 	padding-bottom: 20px;
 }
 
+/* GAP MESSAGE */
+div.gapmessage {
+ width: 199px;
+ height: 66px;
+ background: url(img/gapmessage.png) top left no-repeat;
+ font-family: arial;
+ font-size: 12px;
+ position: absolute;
+ padding: 0px;
+ visibility: hidden;
+}
+
+div.gapmessage img.gapmessage-btnclose {
+ float: right;
+ cursor: pointer;
+}
+
+div.gapmessage div.gapmessage-title {
+ font-family: arial;
+ font-size: 12px;
+ color: #f44800;
+ padding-left: 8px;
+ padding-right: 8px;
+ margin-top: 16px;
+ text-align: left;
+ font-weight: bold;
+}
+
+div.gapmessage div.gapmessage-message {
+ font-family: arial;
+ font-size: 10px;
+ color: #000000;
+ padding: 8px;
+ text-align: left;
+}
 

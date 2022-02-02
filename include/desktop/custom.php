@@ -6,11 +6,12 @@
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 16-06-2013
+ #DATE: 13-11-2013
  #PACKAGE: gnujiko-desktop-base
  #DESCRIPTION: Gnujiko Desktop custom page.
- #VERSION: 2.2beta
- #CHANGELOG: 16-06-2013 : Bug fix vari
+ #VERSION: 2.3beta
+ #CHANGELOG: 13-11-2013 : Sostituito SDD_HANDLER con SIMPDD_HANDLER.
+			 16-06-2013 : Bug fix vari
 			 29-04-2013 : Rimosso temporaneamente dal menu modulo il tasto configura.
  #TODO:
  
@@ -197,7 +198,7 @@ function desktopOnLoad()
 
 function __desktop_registerSection(sec)
 {
- SDD_HANDLER.setDropableContainer(sec);
+ SIMPDD_HANDLER.setDropableContainer(sec);
 }
 
 function __desktop_switchBackPanel(btn)

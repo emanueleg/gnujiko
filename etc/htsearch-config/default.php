@@ -30,6 +30,11 @@ function gnujikohtsearch_default_info($sessid=0, $shellid=0)
 	 "callfunc" => "default_newemptytable"
 	);
 
+ $retInfo['functions'][] = array(
+	 "name"=>"File manager",
+	 "keywords"=>array("file manager"),
+	 "action"=>array("title"=>"esegui &raquo;", "command"=>"gframe -f filemanager")
+	);
 
  return $retInfo;
 }

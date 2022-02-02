@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 10-01-2012
+ #DATE: 24-10-2016
  #PACKAGE: system-config-gui
  #DESCRIPTION: Default Gnujiko Dockbar Menu
- #VERSION: 2.0beta
- #CHANGELOG: 10-01-2012 : Serialize function added.
+ #VERSION: 2.2beta
+ #CHANGELOG: 24-10-2016 : MySQLi integration.
+			 10-01-2012 : Serialize function added.
  #DEPENDS:
  #TODO:
  
@@ -82,7 +83,7 @@ function dockbar_insert($args, $sessid, $shellid)
  }
  $db->RunQuery("INSERT INTO gnujiko_dockbar_menu(uid,gid,_mod,name,file_loader,ordering,published) VALUES('"
 	.$uid."','$gid','$mod','$name','$loader','$ordering','1')");
- $id = mysql_insert_id();
+ $id = $db->GetInsertId();
  $db->Close();
  $outArr = array('id'=>$id,'name'=>$name,'loader'=>$loader,'ordering'=>$ordering);
  $out = "done!";

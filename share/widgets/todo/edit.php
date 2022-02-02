@@ -1,16 +1,18 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 19-06-2013
+ #DATE: 27-05-2014
  #PACKAGE: todo-module
  #DESCRIPTION: Edit TODO form.
- #VERSION: 2.4beta
- #CHANGELOG: 19-06-2013 : Rimpostato FCKEditor in modalità predefinita.
+ #VERSION: 2.6beta
+ #CHANGELOG: 27-05-2014 : Sistemato l'editor.
+			 04-12-2013 : Integrato con calendar.
+			 19-06-2013 : Rimpostato FCKEditor in modalità predefinita.
 			 17-06-2013 : Bug fix nei salvataggi
 			 16-06-2013 : Bug fix vari.
  #DEPENDS: gcal,fckeditor
@@ -25,16 +27,25 @@ define("VALID-GNUJIKO",1);
 
 include_once($_BASE_PATH."include/gshell.php");
 $_AP = $_REQUEST['ap'] ? $_REQUEST['ap'] : "todo";
-$ret = GShell("dynarc item-info -ap '".$_AP."' -id '".$_REQUEST['id']."' -get `status,priority,date_from,date_to,all_day`",$_REQUEST['sessid'],$_REQUEST['shellid']);
+$ret = GShell("dynarc item-info -ap '".$_AP."' -id '".$_REQUEST['id']."' -get `status,priority,date_from,date_to,all_day` -extget `cronevents`",$_REQUEST['sessid'],$_REQUEST['shellid']);
 if(!$ret['error'])
+{
  $todoInfo=$ret['outarr'];
+ $event = $todoInfo['cronevents'][0];
+}
 
 
 $todost = 0;
 $todoet = 0;
-if($todoInfo['date_from'])
+
+if($event)
+ $todost = strtotime($event['from']);
+else
  $todost = strtotime($todoInfo['date_from']);
-if($todoInfo['date_to'])
+
+if($event)
+ $todoet = strtotime($event['to']);
+else
  $todoet = strtotime($todoInfo['date_to']);
 
 ?>
@@ -48,7 +59,7 @@ include_once($_BASE_PATH."include/js/gshell.php");
 <link rel="stylesheet" href="<?php echo $_ABSOLUTE_URL; ?>share/widgets/todo/css/edit.css" type="text/css" />
 
 </head><body>
-<div class="default-widget" style="width:640px;height:480px">
+<div class="default-widget" style="width:640px;height:580px">
  <h3 class="header" onclick="renameTodo()" title="Clicca per rinominare" id="todotitle"><?php echo $todoInfo['name']; ?></h3> <img onclick="gframe_close();" src="<?php echo $_ABSOLUTE_URL; ?>share/widgets/todo/img/widgetclose.png" class="default-widget-close"/>
 
  <div class="default-widget-page">
@@ -67,11 +78,11 @@ include_once($_BASE_PATH."include/js/gshell.php");
   if(!$_REQUEST['showeditor'])
   {
    ?>
-   <div id="preview-contents" style="height:360px;overflow:auto"><?php echo $todoInfo['desc']; ?></div>
+   <div id="preview-contents" style="height:460px;overflow:auto"><?php echo $todoInfo['desc']; ?></div>
    <?php
   }
   ?>
-  <textarea style="width:100%;height:350px;<?php if(!$_REQUEST['showeditor']) echo 'display:none'; ?>" id="description"><?php echo $todoInfo['desc']; ?></textarea>
+  <textarea style="width:100%;height:450px;<?php if(!$_REQUEST['showeditor']) echo 'display:none'; ?>" id="description"><?php echo $todoInfo['desc']; ?></textarea>
  </div>
 
  <div class="default-widget-footer" style="clear:both;margin-top:10px">
@@ -126,7 +137,7 @@ function gframe_cachecontentsload(contents)
  document.getElementById('description').innerHTML = contents;
  var sSkinPath = "<?php echo $_BASE_PATH; ?>../var/objects/fckeditor/editor/skins/office2003/";
  oFCKeditor = new FCKeditor('description') ;
- /*oFCKeditor.ToolbarSet = "Small";*/
+ oFCKeditor.ToolbarSet = "Small";
  oFCKeditor.BasePath	= "<?php echo $_BASE_PATH; ?>var/objects/fckeditor/";
  oFCKeditor.Config['SkinPath'] = sSkinPath ;
  oFCKeditor.Config['PreloadImages'] =
@@ -134,7 +145,7 @@ function gframe_cachecontentsload(contents)
 				sSkinPath + 'images/toolbar.end.gif' + ';' +
 				sSkinPath + 'images/toolbar.bg.gif' + ';' +
 				sSkinPath + 'images/toolbar.buttonarrow.gif' ;
- oFCKeditor.Height = 360;
+ oFCKeditor.Height = 460;
 
  if(document.getElementById("preview-contents"))
   document.getElementById("preview-contents").style.display = "none";
@@ -187,8 +198,11 @@ function submit()
  }
 
  var sh = new GShell();
- sh.OnOutput = function(o,a){gframe_close(o,a);}
- sh.sendCommand("dynarc edit-item -ap '"+AP+"' -id '"+ID+"' -name `"+title+"`"+(editorIsLoaded ? " -desc `"+contents+"`" : "")+" -set `priority="+priority+",date_from='"+dateFrom+"',date_to='"+dateTo+"',all_day="+allDay+"`");
+ sh.OnOutput = function(o,a){
+	 a['name'] = title;
+	 gframe_close(o,a);
+	}
+ sh.sendCommand("dynarc edit-item -ap '"+AP+"' -id '"+ID+"' -name `"+title+"`"+(editorIsLoaded ? " -desc `"+contents+"`" : "")+" -set `priority="+priority+",date_from='"+dateFrom+"',date_to='"+dateTo+"',all_day="+allDay+"` -extset `cronevents.id=<?php echo $event['id']; ?>,name='''"+title+"''',from='"+dateFrom+"',to='"+dateTo+"',allday="+(allDay ? "1" : "0")+"`");
  
 }
 </script>

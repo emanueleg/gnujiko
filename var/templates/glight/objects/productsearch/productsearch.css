@@ -1,0 +1,142 @@
+div.glproductsearch-container {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	visibility: hidden;
+	z-index: 10000;
+}
+
+div.glproductsearch-menu-div {
+	border: 1px solid #e6e6e6;
+	border-radius: 2px;
+	background: #ffffff;
+}
+
+ul.glproductsearch-menu {
+	list-style: none;
+	margin: 0px;
+	padding: 0px;
+}
+
+ul.glproductsearch-menu li {
+	background-color: #ffffff;
+	height: 34px;
+	border-bottom: 1px solid #e6e6e6;
+	cursor: pointer;
+}
+
+ul.glproductsearch-menu li.selected {background-color: #ffff99;}
+
+ul.glproductsearch-menu li.extended {
+	/*background-image: url(img/product-details.png);
+	background-position: 10px center;
+	background-repeat: no-repeat;*/
+}
+
+ul.glproductsearch-menu li.emptymessage {
+	font-family: Arial, sans-serif;
+	font-size: 10px;
+	text-align: center;
+	line-height: 34px;
+	color: #777;
+}
+
+ul.glproductsearch-menu li.extended:hover {background-color: #fafafa;}
+
+div.glproductinfo {
+	float: left;
+	margin-left: 10px;
+	overflow: hidden;
+}
+
+div.glproduct-name {
+	font-family: Arial,sans-serif;
+	font-size: 13px;
+	font-weight: bold;
+	color: #333;
+	white-space: nowrap;
+	height: 20px;
+	line-height: 20px;
+}
+
+div.glproduct-coords, div.glproduct-barcode {
+	font-family: Arial,sans-serif;
+	font-size: 10px;
+	color: #999;
+	white-space: nowrap;
+	height: 12px;
+	line-height: 12px;
+}
+
+/* OPTBOX */
+div.glproductsearch-optbox {
+	margin-top: 2px;
+	border: 1px solid #e6e6e6;
+	border-radius: 2px;
+	background: #ffffff;
+	padding-left: 10px;
+	padding-right: 10px;
+}
+
+div.glproductsearch-optbox-header {
+	height: 16px;
+	line-height: 16px;
+}
+
+span.optbox-link {
+	font-family: Arial, sans-serif;
+	font-size: 10px;
+	color: #013397;
+	cursor: pointer;
+}
+
+span.optbox-caption {
+	font-family: Arial, sans-serif;
+	font-size: 10px;
+	color: #666666;
+	visibility: hidden;
+	margin-left: 10px;
+}
+
+div.glproductsearch-optbox-body {
+	padding-top: 10px;
+	padding-bottom: 10px;
+	font-family: Arial, sans-serif;
+	font-size: 10px;
+	color: #333;
+}
+
+div.glproductsearch-optbox-body td {
+	font-family: Arial, sans-serif;
+	font-size: 10px;
+}
+
+div.optbox-cbcontainer {
+	height: 70px;
+	overflow: auto;
+}
+
+span.checkbox {
+	font-family: Arial, sans-serif;
+	font-size: 10px;
+	color: #333;
+	vertical-align: middle;
+	margin-right: 10px;
+	white-space: nowrap;
+	float: left;
+}
+
+input.checkbox {
+	font-family: Arial, sans-serif;
+	font-size: 10px;
+	color: #333;
+	vertical-align: middle;
+}
+
+span.optbox-repeatqry-link {
+	font-family: Arial, sans-serif;
+	font-size: 13px;
+	color: #013397;
+	cursor: pointer;
+}
+

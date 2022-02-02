@@ -21,13 +21,16 @@ function mosCreateMail( $from='', $fromname='', $subject, $body ) {
 	$mosConfig_mailfrom = '';
 	$mosConfig_sendmail = $_SMTP_SENDMAIL ? $_SMTP_SENDMAIL : '/usr/sbin/sendmail';
     if(($_SMTP_AUTH == "on") || ($_SMTP_AUTH == "true") || ($_SMTP_AUTH == 1) || ($_SMTP_AUTH == true) || ($_SMTP_AUTH == "1"))
-	 $mosConfig_smtpauth = '1';
+	 $mosConfig_smtpauth = true;
 	else
-	 $mosConfig_smtpauth = '0';
-	$mosConfig_smtphost = $_SMTP_HOST; //'smtp.fastwebnet.it';
+	 $mosConfig_smtpauth = false;
+	$mosConfig_smtphost = $_SMTP_HOST;
 	$mosConfig_smtppass = $_SMTP_PASSWORD;
 	$mosConfig_smtpuser = $_SMTP_USERNAME;
 	$mosConfig_uniquemail = '1';
+
+	if($_SMTP_AUTH || $_SMTP_USERNAME)
+	 $mosConfig_mailer = "smtp";
 
 	$mail = new mosPHPMailer();
 
@@ -86,9 +89,12 @@ function mosMail( $from, $fromname, $recipient, $subject, $body, $mode=0, $cc=NU
 	}
 
 	// Filter from, fromname and subject
-	if (!JosIsValidEmail( $from ) || !JosIsValidName( $fromname ) || !JosIsValidName( $subject )) {
-		return false;
-	}
+	if(!JosIsValidEmail($from))
+	 return array("message"=>"Error: '".$from."' is not a valid email", "error"=>"INVALID_EMAIL");
+    if(!JosIsValidName($fromname))
+	 return array("message"=>"Error: '".$fromname."' is not a valid name", "error"=>"INVALID_NAME");
+	if(!JosIsValidName($subject))
+	 return array("message"=>"Error: '".$fromname."' is not a valid subject message", "error"=>"INVALID_SUBJECT");
 
 	$mail = mosCreateMail( $from, $fromname, $subject, $body );
 
@@ -100,13 +106,13 @@ function mosMail( $from, $fromname, $recipient, $subject, $body, $mode=0, $cc=NU
 	if (is_array( $recipient )) {
 		foreach ($recipient as $to) {
 			if (!JosIsValidEmail( $to )) {
-				return false;
+				return array("message"=>"Error: '".$to."' is not a valid email", "error"=>"INVALID_EMAIL");
 			}
 			$mail->AddAddress( $to );
 		}
 	} else {
 		if (!JosIsValidEmail( $recipient )) {
-			return false;
+			return array("message"=>"Error: '".$to."' is not a valid recipient email", "error"=>"INVALID_RECIPIENT");
 		}
 		$mail->AddAddress( $recipient );
 	}
@@ -114,13 +120,13 @@ function mosMail( $from, $fromname, $recipient, $subject, $body, $mode=0, $cc=NU
 		if (is_array( $cc )) {
 			foreach ($cc as $to) {
 				if (!JosIsValidEmail( $to )) {
-					return false;
+					return array("message"=>"Error: '".$to."' is not a valid email", "error"=>"INVALID_EMAIL");
 				}
 				$mail->AddCC($to);
 			}
 		} else {
 			if (!JosIsValidEmail( $cc )) {
-				return false;
+				return array("message"=>"Error: '".$cc."' is not a valid email", "error"=>"INVALID_EMAIL");
 			}
 			$mail->AddCC($cc);
 		}
@@ -129,13 +135,13 @@ function mosMail( $from, $fromname, $recipient, $subject, $body, $mode=0, $cc=NU
 		if (is_array( $bcc )) {
 			foreach ($bcc as $to) {
 				if (!JosIsValidEmail( $to )) {
-					return false;
+					return array("message"=>"Error: '".$to."' is not a valid email", "error"=>"INVALID_EMAIL");
 				}
 				$mail->AddBCC( $to );
 			}
 		} else {
 			if (!JosIsValidEmail( $bcc )) {
-				return false;
+				return array("message"=>"Error: '".$bcc."' is not a valid email", "error"=>"INVALID_EMAIL");
 			}
 			$mail->AddBCC( $bcc );
 		}
@@ -155,29 +161,35 @@ function mosMail( $from, $fromname, $recipient, $subject, $body, $mode=0, $cc=NU
 			reset( $replytoname );
 			foreach ($replyto as $to) {
 				$toname = ((list( $key, $value ) = each( $replytoname )) ? $value : '');
-				if (!JosIsValidEmail( $to ) || !JosIsValidName( $toname )) {
-					return false;
-				}
+				if(!JosIsValidEmail($to))
+				 return array("message"=>"Error: '".$to."' is not a valid email", "error"=>"INVALID_EMAIL");
+				if(!JosIsValidName( $toname ))
+				 return array("message"=>"Error: '".$toname."' is not a valid destination name", "error"=>"INVALID_EMAIL");
 				$mail->AddReplyTo( $to, $toname );
 			}
         } else {
-			if (!JosIsValidEmail( $replyto ) || !JosIsValidName( $replytoname )) {
-				return false;
-			}
+			if(!JosIsValidEmail($replyto))
+			 return array("message"=>"Error: '".$replyto."' is not a valid email", "error"=>"INVALID_EMAIL");
+			if(!JosIsValidName($replytoname))
+			 return array("message"=>"Error: '".$replytoname."' is not a valid reply name", "error"=>"INVALID_EMAIL");
 			$mail->AddReplyTo($replyto, $replytoname);
 		}
     }
 
 	$mailssend = $mail->Send();
+	$shellout = "";
+	if( $mosConfig_debug )
+	 $shellout.= "Mails send: ".$mailssend;
 
-	if( $mosConfig_debug ) {
-		//$mosDebug->message( "Mails send: $mailssend");
-	}
-	if( $mail->error_count > 0 ) {
-		//$mosDebug->message( "The mail message $fromname <$from> about $subject to $recipient <b>failed</b><br /><pre>$body</pre>", false );
-		//$mosDebug->message( "Mailer Error: " . $mail->ErrorInfo . "" );
-	}
-	return $mailssend;
+	if( $mail->error_count > 0 ) 
+	 return array("message"=>$mail->ErrorInfo, "error"=>"PHPMAILER_ERROR");
+
+	if(!$mailssend)
+	 return array("message"=>$mail->ErrorInfo, "error"=>"PHPMAILER_ERROR");
+	else
+	 return array("message"=>$shellout."\ndone");
+
+	//return $mailssend;
 } // mosMail
 
 /**

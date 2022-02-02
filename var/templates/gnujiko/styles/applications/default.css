@@ -1,0 +1,154 @@
+body {
+ background-color: #e5e5e5;
+}
+
+div.access-denied {
+	width: 500px;
+	height: 250px;
+	background: #fff;
+	border: 3px solid #f31903;
+	border-radius: 3px;
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	margin-left: -230px;
+	margin-top: -110px;
+}
+
+div.access-denied h3 {
+	font-family: Arial;
+	font-size: 20px;
+	color: #d40000;
+	margin:10px;
+}
+
+div.access-denied p {
+	font-family: Arial;
+	font-size: 14px;
+	color: #000000;
+	margin:10px;
+}
+
+div.access-denied small {
+	font-family: Arial;
+	font-size: 12px;
+	color: #000000;
+	color: #333333;
+}
+
+hr {
+ height: 1px;
+ border: 0px;
+ background: #cccccc;
+ margin-top: 20px;
+ margin-bottom: 20px;
+}
+
+div.gnujiko-template-header {
+ height: 60px;
+ background: #ffffff;
+ padding-left: 30px;
+ padding-right: 30px;
+}
+
+div.gnujiko-application-title {
+ font-family: arial;
+ font-size: 24px;
+ color: #333333;
+}
+
+div.gnujiko-application-title img {
+ /*float: left;*/
+ vertical-align: middle;
+ margin-right: 20px;
+}
+
+div.gnujiko-template-header div.page-logo {
+ width: 48px;
+ height: 60px;
+ text-align: center;
+ vertical-align: middle;
+ background-position: center center;
+ background-repeat: no-repeat;
+}
+
+div.gnujiko-template-header span.page-title {
+ font-family: Impact, Charcoal, sans-serif;
+ font-size: 26px;
+ color: #333333;
+}
+
+div.gnujiko-template-toolbar {
+ height: 44px;
+ background: #f5f5f5;
+ padding-left: 30px;
+ padding-right: 30px;
+}
+
+/* TEXT */
+span.small-gray {
+ font-family: sans-serif;
+ font-size: 12px;
+ color: #666666;
+}
+
+/* FORM */
+div.form-section {
+ border-bottom: 1px solid #e5e5e5;
+ padding: 20px;
+}
+
+div.form-section label {
+ font-family: arial;
+ font-size: 20px;
+ color: #666666
+}
+
+div.form-section label.small {
+ font-size:14px;
+}
+
+div.form-footer {
+ height: 44px;
+ padding-left: 20px;
+ padding-right: 20px;
+ background: #f5f5f5;
+}
+
+input.big-edit {
+ font-family: arial;
+ font-size: 16px;
+ color: #404040; 
+ border: 0px;
+ background: #ffffff;
+}
+
+input.big-edit:focus {outline:none;}
+
+textarea.textarea {
+ font-family: arial;
+ font-size: 12px;
+ color: #666666; 
+ border: 1px solid #e5e5e5;
+ background: #ffffff;
+ padding: 5px;
+ resize: none;
+}
+
+/* INPUT LIST TABLE */
+table.inputlist-header {
+ border: 2px solid #87a73d;
+}
+
+table.inputlist-header th {
+ height: 26px;
+ vertical-align: middle;
+ font-size: 12px;
+ font-family: arial;
+}
+
+table.inputlist-table td {
+ height: 32px;
+ vertical-align: middle;
+}
+

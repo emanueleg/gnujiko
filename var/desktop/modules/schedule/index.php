@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 27-02-2013
+ #DATE: 24-05-2014
  #PACKAGE: schedule-module
  #DESCRIPTION: Schedule module for Gnujiko Desktop.
- #VERSION: 2.0beta
- #CHANGELOG:
+ #VERSION: 2.2beta
+ #CHANGELOG: 24-05-2014 : Bug fix.
+			 09-11-2013 : Aggiornato con le nuove disposizioni.
  #DEPENDS: dynarc-mmr-extension
  #TODO:
  
@@ -57,8 +58,8 @@ LoadLanguage("schedule");
 
 <div class="schedmod-container" id="<?php echo $_MODULE_INFO['id'].'-container'; ?>">
 <?php
-$ret = GShell("mmr schedule");
-$list = $ret['outarr'];
+$ret = GShell("mmr schedule --only-invoices");
+$list = $ret['outarr']['results'];
 $totIncomes = 0;
 for($c=0; $c < count($list); $c++)
 {

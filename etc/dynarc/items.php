@@ -1,32 +1,28 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2017 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 26-09-2013
+ #DATE: 23-05-2017
  #PACKAGE: dynarc
  #DESCRIPTION: Items functions for Dynarc
- #VERSION: 2.19beta
- #CHANGELOG: 	26-09-2013 : Bug fix on dynarc item-move
-				20-09-2013 : Bug fix in dynarc item-info.
-				06-09-2013 : Aggiunte varie.
-				06-04-2013 : Bug fix in new-item and edit-item with group.
-				14-12-2012 : Bug fix in new-item with code-num.
-				03-12-2012 : Completamento delle funzioni di base sulle estensioni.
-				22-11-2012 : Bug fix in functions edit,copy and move.
-				21-11-2012 : Bug fix with DynarcSync.
-				16-11-2012 - Integrazione con DynarcSync.
-				27-06-2012 : Aggiustamenti vari.
-			    26-05-2012 : Aggiunto parametro --get-short-description su funzione itemInfo
-				23-04-2012 : Bug fix in dynarc_itemMove.
-				31-03-2012 : Bug fix in clone function
-				08-03-2012 : Aggiunta funzioni set,extset,unset su ItemCopy.
-				28-02-2012 : Bug fix in ItemCopy.
-				31-01-2012 : Bug fix su funzione itemInfo, ed aggiunto argomento --if-exists su funzione editItem.
- #TODO: Dynarc move and hierarchy.
+ #VERSION: 2.30beta
+ #CHANGELOG: 23-05-2017 : Bug fix sharing.
+			 15-05-2017 : Aggiunto parametro extraVar su tutte le funzioni.
+			 24-10-2016 : MySQLi integration.
+			 15-07-2016 : Aggiunto parametro -groupby su funzione item-list [da completare, vedere TODO]
+			 16-01-2015 : Aggiunto parametro -gettotals su funzione item-list.
+			 25-07-2014 : Bug fix vari	
+			 12-07-2014 : Bug fix catId su funzione edit-item
+			 02-07-2014 : Aggiunta funzione getItemsCount
+			 27-05-2014 : Bug fix alias.
+			 16-01-2014 : Aggiunta opzione --get-cat-name nella funzione dynarc_itemInfo.
+ 
+ #TODO: su itemlist ho aggiunto parametro groupby (es: mysql GROUP BY name) però bisogna escogitare sistema per il count.
+	    PS: GROUP BY serve per filtrare i risultati rimuovendo i doppioni.
  
 */
 
@@ -48,6 +44,7 @@ function dynarc_newItem($args, $sessid, $shellid=null, $extraVar=null)
    case '-a' : case '-archive' : {$archive=$args[$c+1]; $c++;} break;
    case '-aid' : {$archiveId=$args[$c+1]; $c++;} break;
    case '-ap' : case '--archive-prefix' : {$archivePrefix=$args[$c+1]; $c++;} break;
+   case '-id' : {$_ID=$args[$c+1]; $c++;} break; // possibilità di scegliere l'ID
 
    case '-cat' : {$catId=$args[$c+1]; $c++;} break;
    case '-ct' : case '--cat-tag' : {$catTag=$args[$c+1]; $c++;} break;
@@ -80,8 +77,6 @@ function dynarc_newItem($args, $sessid, $shellid=null, $extraVar=null)
    /* SHARING */
    case '--share-add-group' : {$shGroups[]=$args[$c+1]; $c++;} break; // divide group and perms with(:) example: --share-add-group mygroup:6
    case '--share-add-user' : {$shUsers[]=$args[$c+1]; $c++;} break; // divide user and perms with(:) example: --share-add-user alex:4
-   case '--unshare-group' : {$unshGroups[]=$args[$c+1]; $c++;} break;
-   case '--unshare-user' : {$unshUsers[]=$args[$c+1]; $c++;} break;
 
    /* PRIVATE */
    case '-syncid' : {$syncid=$args[$c+1]; $c++;} break;
@@ -96,7 +91,7 @@ function dynarc_newItem($args, $sessid, $shellid=null, $extraVar=null)
   $archiveInfo = $extraVar;
  else
  {
-  $ret = dynarc_checkForArchive($args,$sessid,$shellid);
+  $ret = dynarc_checkForArchive($args,$sessid,$shellid,$extraVar);
   if($ret['error'])
    return $ret;
   $archiveInfo = $ret['outarr'];
@@ -199,7 +194,8 @@ function dynarc_newItem($args, $sessid, $shellid=null, $extraVar=null)
  $fields = $db->FieldsInfo("dynarc_".$archiveInfo['prefix']."_items");
  //$db->Close();
 
- $q = "INSERT INTO dynarc_".$archiveInfo['prefix']."_items(uid,gid,_mod,cat_id,lnk_id,lnkarc_id,name,description,ordering,ctime,published,hierarchy";
+ $q = "INSERT INTO dynarc_".$archiveInfo['prefix']."_items(".($_ID ? "id," : "");
+ $q.= "uid,gid,_mod,cat_id,lnk_id,lnkarc_id,name,description,ordering,ctime,published,hierarchy";
  if($fields['code_num'])
   $q.= ",code_num";
  if($fields['code_str'])
@@ -218,7 +214,8 @@ function dynarc_newItem($args, $sessid, $shellid=null, $extraVar=null)
   $q.= ",shgrps";
  if($fields['shusrs'])
   $q.= ",shusrs";
- $q.= ") VALUES('".$uid."','".$gid."','".$mod."','".$catId."','".$linkID."','".$linkAID."','"
+ $q.= ") VALUES(".($_ID ? "'".$_ID."'," : "");
+ $q.= "'".$uid."','".$gid."','".$mod."','".$catId."','".$linkID."','".$linkAID."','"
 	.$db->Purify($name)."','".$db->Purify($desc)."','$ord','".date('Y-m-d H:i:s',$now)."','$published','".($catInfo ? $catInfo['hierarchy'].$catInfo['id'].",'" : ",'");
  if($fields['code_num'])
  {
@@ -264,7 +261,7 @@ function dynarc_newItem($args, $sessid, $shellid=null, $extraVar=null)
   $q.= ",'".$lang."'";
  if($fields['aliasname'])
  {
-  if(!$alias)
+  if(!isset($alias))
   {
    $alias = str_replace(" ","_",strtolower(html_entity_decode($name,ENT_QUOTES,"UTF-8")));
    $k = array("?", "#", "'", '"', "&", "/", "\"");
@@ -272,7 +269,7 @@ function dynarc_newItem($args, $sessid, $shellid=null, $extraVar=null)
    $alias = str_replace($k,$v,$alias);
    $alias = str_replace("__","_",$alias);
   }
-  $q.= ",'".$alias."'";
+  $q.= ",'".$db->Purify($alias)."'";
  }
  if($fields['shgrps'])
  {
@@ -284,14 +281,8 @@ function dynarc_newItem($args, $sessid, $shellid=null, $extraVar=null)
    {
     $p = strrpos($shGroups[$c],":");
     $shMOD = substr($archiveInfo['def_item_perms'],1,1);
-    if($p === false)
-	 $shGID = is_numeric($shGroups[$c]) ? $shGroups[$c] : _getGID($shGroups[$c]);
-    else
-    {
-	 $tmp = substr($shGroups[$c],0,$p);
-	 $shGID = is_numeric($tmp) ? $tmp : _getGID($tmp);
-	 $shMOD = substr($shGroups[$c],$p+1);
-    }
+    if($p === false) $shGID = is_numeric($shGroups[$c]) ? $shGroups[$c] : _getGID($shGroups[$c]);
+    else { $tmp = substr($shGroups[$c],0,$p); $shGID = is_numeric($tmp) ? $tmp : _getGID($tmp); $shMOD = substr($shGroups[$c],$p+1); }
     $shareGroups[$shGID] = $shMOD;
    }
   }
@@ -299,10 +290,8 @@ function dynarc_newItem($args, $sessid, $shellid=null, $extraVar=null)
   if(count($shareGroups))
   {
    $shgrps = "#,";
-   while(list($k,$v) = each($shareGroups))
-   {
-    $shgrps.= $k."=".$v.",";
-   }
+   reset($shareGroups);
+   while(list($k,$v) = each($shareGroups)) { $shgrps.= $k."=".$v.","; }
    $shgrps.= "#";
   }
   $q.= ",'".$shgrps."'";
@@ -319,12 +308,7 @@ function dynarc_newItem($args, $sessid, $shellid=null, $extraVar=null)
     $shMOD = substr($archiveInfo['def_item_perms'],0,1);
     if($p === false)
 	 $shUID = is_numeric($shUsers[$c]) ? $shUsers[$c] : _getUID($shUsers[$c]);
-    else
-    {
-	 $tmp = substr($shUsers[$c],0,$p);
-	 $shUID = is_numeric($tmp) ? $tmp : _getUID($tmp);
-	 $shMOD = substr($shUsers[$c],$p+1);
-    }
+    else { $tmp = substr($shUsers[$c],0,$p); $shUID = is_numeric($tmp) ? $tmp : _getUID($tmp); $shMOD = substr($shUsers[$c],$p+1); }
     $shareUsers[$shUID] = $shMOD;
    }
   }
@@ -332,10 +316,8 @@ function dynarc_newItem($args, $sessid, $shellid=null, $extraVar=null)
   if(count($shareUsers))
   {
    $shusrs = "#,";
-   while(list($k,$v) = each($shareUsers))
-   {
-    $shusrs.= $k."=".$v.",";
-   }
+   reset($shareUsers);
+   while(list($k,$v) = each($shareUsers)) { $shusrs.= $k."=".$v.","; }
    $shusrs.= "#";
   }
   $q.= ",'".$shusrs."'";  
@@ -344,7 +326,11 @@ function dynarc_newItem($args, $sessid, $shellid=null, $extraVar=null)
 
  $db = new AlpaDatabase();
  $db->RunQuery($q);
- $id = mysql_insert_id();
+ if($db->Error) return array('message'=>$out."failed!\nMySQL Error: ".$db->Error, 'error'=>'MYSQL_ERROR');
+ else if($_ID)
+  $id = $_ID;
+ else
+  $id = $db->GetInsertId();
  $db->Close();
 
  if($archiveInfo['sync_enabled'])
@@ -361,7 +347,7 @@ function dynarc_newItem($args, $sessid, $shellid=null, $extraVar=null)
 
  $a = array('id'=>$id,'cat_id'=>$catId,'name'=>$name,'desc'=>$desc,'ordering'=>$ord,'ctime'=>$now,'published'=>$published,'hierarchy'=>($catInfo ? $catInfo['hierarchy'].$catInfo['id']."," : ""));
 
- if($alias)
+ if(isset($alias))
   $a['aliasname'] = $alias;
 
  if($catInfo)
@@ -383,9 +369,21 @@ function dynarc_newItem($args, $sessid, $shellid=null, $extraVar=null)
  $out.= "done! ID=$id\n";
  $outArr = $a;
 
- // call oncreateitem function inherited if exists //
- if($archiveInfo['inherit'])
+ if($archiveInfo['functionsfile'] && file_exists($_BASE_PATH.$archiveInfo['functionsfile']))
  {
+  // call oncreateitem function if exists //
+  include_once($_BASE_PATH.$archiveInfo['functionsfile']);
+  if(is_callable("dynarcfunction_".$archiveInfo['prefix']."_oncreateitem",true))
+  {
+   $ret = call_user_func("dynarcfunction_".$archiveInfo['prefix']."_oncreateitem", $args, $sessid, $shellid, $archiveInfo, $a);
+   if(is_array($ret) && $ret['error']) return $ret;
+   else if(is_array($ret) && $ret['outarr']) $outArr = $ret['outarr'];
+   else if(is_array($ret)) $outArr = $ret;
+  }
+ }
+ else if($archiveInfo['inherit'])
+ {
+  // call oncreateitem function inherited if exists //
   $db = new AlpaDatabase();
   $db->RunQuery("SELECT fun_file FROM dynarc_archives WHERE tb_prefix='".$archiveInfo['inherit']."' AND trash=0 LIMIT 1");
   $db->Read();
@@ -395,28 +393,14 @@ function dynarc_newItem($args, $sessid, $shellid=null, $extraVar=null)
    if(is_callable("dynarcfunction_".$archiveInfo['inherit']."_oncreateitem",true))
    {
     $ret = call_user_func("dynarcfunction_".$archiveInfo['inherit']."_oncreateitem", $args, $sessid, $shellid, $archiveInfo, $a);
-    if($ret['error'])
-	 return $ret;
-    else if($ret['outarr'])
-	 $outArr = $ret['outarr'];
+    if(is_array($ret) && $ret['error']) return $ret;
+    else if(is_array($ret) && $ret['outarr']) $outArr = $ret['outarr'];
+    else if(is_array($ret)) $outArr = $ret;
    }
   }
   $db->Close();
  }
 
- // call oncreateitem function if exists //
- if($archiveInfo['functionsfile'] && file_exists($_BASE_PATH.$archiveInfo['functionsfile']))
- {
-  include_once($_BASE_PATH.$archiveInfo['functionsfile']);
-  if(is_callable("dynarcfunction_".$archiveInfo['prefix']."_oncreateitem",true))
-  {
-   $ret = call_user_func("dynarcfunction_".$archiveInfo['prefix']."_oncreateitem", $args, $sessid, $shellid, $archiveInfo, $a);
-   if($ret['error'])
-	return $ret;
-   else if($ret['outarr'])
-	$outArr = $ret['outarr'];
-  }
- }
 
  // call oncreateitem function from all installed extensions //
  $db = new AlpaDatabase();
@@ -428,8 +412,7 @@ function dynarc_newItem($args, $sessid, $shellid=null, $extraVar=null)
   if(is_callable("dynarcextension_".$db->record['extension_name']."_oncreateitem",true))
   {
    $ret = call_user_func("dynarcextension_".$db->record['extension_name']."_oncreateitem", $args, $sessid, $shellid, $archiveInfo, $a);
-   if($ret['error'])
-    return $ret;
+   if(is_array($ret) && $ret['error']) return $ret;
   }
  }
  $db->Close();
@@ -480,6 +463,11 @@ function dynarc_editItem($args, $sessid, $shellid=null, $extraVar=null)
    case '-keywords' : case '-keyw' : {$keywords = $args[$c+1]; $c++;} break;
    case '-language' : case '-lang' : {$lang = $args[$c+1]; $c++;} break;
 
+   /* Link arguments */
+   case '-linkap' : {$linkAP=$args[$c+1]; $c++;} break;
+   case '-linkaid' : {$linkAID=$args[$c+1]; $c++;} break;
+   case '-linkid' : {$linkID=$args[$c+1]; $c++;} break;
+
    /* SHARING */
    case '--share-add-group' : {$shGroups[]=$args[$c+1]; $c++;} break; // divide group and perms with(:) example: --share-add-group mygroup:6
    case '--share-add-user' : {$shUsers[]=$args[$c+1]; $c++;} break; // divide user and perms with(:) example: --share-add-user alex:4
@@ -495,7 +483,7 @@ function dynarc_editItem($args, $sessid, $shellid=null, $extraVar=null)
   $archiveInfo = $extraVar;
  else
  {
-  $ret = dynarc_checkForArchive($args,$sessid,$shellid);
+  $ret = dynarc_checkForArchive($args,$sessid,$shellid,$extraVar);
   if($ret['error'])
    return $ret;
   $archiveInfo = $ret['outarr'];
@@ -513,9 +501,25 @@ function dynarc_editItem($args, $sessid, $shellid=null, $extraVar=null)
   return $ret;
  }
  $itemInfo = $ret['outarr'];
+
  if(!$itemInfo['modinfo']['can_write'])
-  return array("message"=>"Permission denied!, you have not permissions for edit this item.","error"=>"PERMISSION_DENIED");
- 
+ {
+  if($itemInfo['cat_id'])
+  {
+   // check category shared perms
+   $db2 = new AlpaDatabase();
+   $db2->RunQuery("SELECT shgrps,shusrs FROM dynarc_".$archiveInfo['prefix']."_categories WHERE id='".$itemInfo['cat_id']."'");
+   if($db2->Error) return array('message'=>$out."failed!\nMySQL Error: ".$db->Error, 'error'=>'MYSQL_ERROR');
+   if($db2->Read())
+   {
+	$m = new GMOD($itemInfo['modinfo']['mod'],$itemInfo['modinfo']['uid'],$itemInfo['modinfo']['gid'], $db2->record['shgrps'],$db2->record['shusrs']);
+	$itemInfo['modinfo'] = $m->toArray($sessInfo['uid']);
+   }
+   $db2->Close();
+  }
+ }
+ if(!$itemInfo['modinfo']['can_write'])
+  return array("message"=>"Permission denied!, you have not permissions for edit this item.", "error"=>"PERMISSION_DENIED"); 
 
  if($catId && ($catId != $itemInfo['cat_id']))
  {
@@ -539,6 +543,25 @@ function dynarc_editItem($args, $sessid, $shellid=null, $extraVar=null)
  }
 
  $a = $itemInfo;
+ $a['old_cat_id'] = $itemInfo['cat_id'];
+
+ if($linkID)
+ {
+  if($linkAP)
+  {
+   if($linkAP == $archiveInfo['prefix'])
+	$linkAID = $archiveInfo['id'];
+   else
+   {
+	$db = new AlpaDatabase();
+	$db->RunQuery("SELECT id FROM dynarc_archives WHERE tb_prefix='".$db->Purify($linkAP)."'");
+	if($db->Read())
+	 $linkAID = $db->record['id'];
+	$db->Close();
+   }
+  }
+ }
+
 
  if($group)
   $groupId = _getGID($group);
@@ -546,10 +569,15 @@ function dynarc_editItem($args, $sessid, $shellid=null, $extraVar=null)
  $db = new AlpaDatabase();
  /* UPDATE BASIC INFO */
  $q = "";
- if($catInfo){
+ if($catInfo)
+ {
   $q.= ",cat_id='".$catInfo['id']."',hierarchy='".$catInfo['hierarchy'].$catInfo['id'].",'"; $a['cat_id']=$catInfo['id'];
-  if($catInfo['id'] != $itemInfo['cat_id'])
-   $a['old_cat_id'] = $itemInfo['cat_id'];
+  $a['cat_id'] = $catInfo['id'];
+ }
+ else if(isset($catId) && ($catId == 0))
+ {
+  $q.= ",cat_id='0',hierarchy=''";
+  $a['cat_id'] = 0;
  }
  if($name){
   $q.= ",name='".$db->Purify($name)."'"; $a['name']=$name;}
@@ -572,6 +600,8 @@ function dynarc_editItem($args, $sessid, $shellid=null, $extraVar=null)
   if(($itemInfo['modinfo']['uid'] == $sessInfo['uid']) || ($sessInfo['uname'] == 'root'))
    $q.= ",_mod='$perms'";
  }
+ if(isset($linkAID) && isset($linkID))
+  $q.= ",lnkarc_id='".$linkAID."',lnk_id='".$linkID."'";
 
  if($groupId)
  {
@@ -597,8 +627,8 @@ function dynarc_editItem($args, $sessid, $shellid=null, $extraVar=null)
   $q.= ",keywords='".$db->Purify($keywords)."'"; $a['keywords']=$keywords;}
  if(isset($lang) && $fields['lang']){
   $q.= ",lang='$lang'"; $a['lang']=$lang;}
- if($alias && $fields['aliasname'])
-  $q.= ",aliasname='$alias'";
+ if(isset($alias) && $fields['aliasname'])
+  $q.= ",aliasname='".$db->Purify($alias)."'";
 
  $db->Close();
 
@@ -642,13 +672,14 @@ function dynarc_editItem($args, $sessid, $shellid=null, $extraVar=null)
    if($m->SHGROUPS[$unshareGroups[$c]])
 	unset($m->SHGROUPS[$unshareGroups[$c]]);
   }
-
+  reset($shareGroups);
   while(list($k,$v) = each($shareGroups))
   {
    $m->SHGROUPS[$k] = $v;
   }
 
   $shgrps = "#,";
+  reset($m->SHGROUPS);
   while(list($k,$v) = each($m->SHGROUPS))
   {
    $shgrps.= $k."=".$v.",";
@@ -697,17 +728,12 @@ function dynarc_editItem($args, $sessid, $shellid=null, $extraVar=null)
    if($m->SHUSERS[$unshareUsers[$c]])
 	unset($m->SHUSERS[$unshareUsers[$c]]);
   }
-
-  while(list($k,$v) = each($shareUsers))
-  {
-   $m->SHUSERS[$k] = $v;
-  }
+  reset($shareUsers);
+  while(list($k,$v) = each($shareUsers)) { $m->SHUSERS[$k] = $v; }
 
   $shusrs = "#,";
-  while(list($k,$v) = each($m->SHUSERS))
-  {
-   $shusrs.= $k."=".$v.",";
-  }
+  reset($m->SHUSERS);
+  while(list($k,$v) = each($m->SHUSERS)) { $shusrs.= $k."=".$v.","; }
   $shusrs.= "#";
   $q.= ",shusrs='".$shusrs."'";
  }
@@ -755,9 +781,21 @@ function dynarc_editItem($args, $sessid, $shellid=null, $extraVar=null)
 
  $outArr = $a;
 
- // call onedititem function inherited if exists //
- if($archiveInfo['inherit'])
+ if($archiveInfo['functionsfile'] && file_exists($_BASE_PATH.$archiveInfo['functionsfile']))
  {
+  // call onedititem function if exists //
+  include_once($_BASE_PATH.$archiveInfo['functionsfile']);
+  if(is_callable("dynarcfunction_".$archiveInfo['prefix']."_onedititem",true))
+  {
+   $ret = call_user_func("dynarcfunction_".$archiveInfo['prefix']."_onedititem", $args, $sessid, $shellid, $archiveInfo, $a);
+   if(is_array($ret) && $ret['error']) return $ret;
+   else if(is_array($ret) && $ret['outarr']) $outArr = $ret['outarr'];
+   else if(is_array($ret)) $outArr = $ret;
+  }
+ }
+ else if($archiveInfo['inherit'])
+ {
+  // call onedititem function inherited if exists //
   $db = new AlpaDatabase();
   $db->RunQuery("SELECT fun_file FROM dynarc_archives WHERE tb_prefix='".$archiveInfo['inherit']."' AND trash=0 LIMIT 1");
   $db->Read();
@@ -767,28 +805,14 @@ function dynarc_editItem($args, $sessid, $shellid=null, $extraVar=null)
    if(is_callable("dynarcfunction_".$archiveInfo['inherit']."_onedititem",true))
    {
     $ret = call_user_func("dynarcfunction_".$archiveInfo['inherit']."_onedititem", $args, $sessid, $shellid, $archiveInfo, $a);
-    if($ret['error'])
-	 return $ret;
-    else if($ret['outarr'])
-	 $outArr = $ret['outarr'];
+    if(is_array($ret) && $ret['error']) return $ret;
+    else if(is_array($ret) && $ret['outarr']) $outArr = $ret['outarr'];
+    else if(is_array($ret)) $outArr = $ret;
    }
   }
   $db->Close();
  }
 
- // call onedititem function if exists //
- if($archiveInfo['functionsfile'] && file_exists($_BASE_PATH.$archiveInfo['functionsfile']))
- {
-  include_once($_BASE_PATH.$archiveInfo['functionsfile']);
-  if(is_callable("dynarcfunction_".$archiveInfo['prefix']."_onedititem",true))
-  {
-   $ret = call_user_func("dynarcfunction_".$archiveInfo['prefix']."_onedititem", $args, $sessid, $shellid, $archiveInfo, $a);
-   if($ret['error'])
-	return $ret;
-   else if(is_array($ret))
-	$outArr = $ret;
-  }
- }
 
  // call onedititem function from all installed extensions //
  $db = new AlpaDatabase();
@@ -800,8 +824,7 @@ function dynarc_editItem($args, $sessid, $shellid=null, $extraVar=null)
   if(is_callable("dynarcextension_".$db->record['extension_name']."_onedititem",true))
   {
    $ret = call_user_func("dynarcextension_".$db->record['extension_name']."_onedititem", $args, $sessid, $shellid, $archiveInfo, $a);
-   if($ret['error'])
-    return $ret;
+   if(is_array($ret) && $ret['error']) return $ret;
   }
  }
  $db->Close();
@@ -861,9 +884,19 @@ function dynarc_deleteItem($args, $sessid, $shellid=null, $extraVar=null)
 
   if($delete)
   {
-   // call ondeleteitem function inherited if exists //
-   if($archiveInfo['inherit'])
+   // call ondeleteitem function if exists //
+   if($archiveInfo['functionsfile'] && file_exists($_BASE_PATH.$archiveInfo['functionsfile']))
    {
+    include_once($_BASE_PATH.$archiveInfo['functionsfile']);
+    if(is_callable("dynarcfunction_".$archiveInfo['prefix']."_ondeleteitem",true))
+    {
+	 $ret = call_user_func("dynarcfunction_".$archiveInfo['prefix']."_ondeleteitem", $args, $sessid, $shellid, $archiveInfo, $itemInfo);
+	 if(is_array($ret) && $ret['error']) return $ret;
+    }
+   }
+   else if($archiveInfo['inherit'])
+   {
+    // call ondeleteitem function inherited if exists //
     $db = new AlpaDatabase();
     $db->RunQuery("SELECT fun_file FROM dynarc_archives WHERE tb_prefix='".$archiveInfo['inherit']."' AND trash=0 LIMIT 1");
     $db->Read();
@@ -873,22 +906,10 @@ function dynarc_deleteItem($args, $sessid, $shellid=null, $extraVar=null)
      if(is_callable("dynarcfunction_".$archiveInfo['inherit']."_ondeleteitem",true))
      {
       $ret = call_user_func("dynarcfunction_".$archiveInfo['inherit']."_ondeleteitem", $args, $sessid, $shellid, $archiveInfo, $itemInfo);
-      if($ret['error'])
-	   return $ret;
+      if(is_array($ret) && $ret['error']) return $ret;
      }
     }
     $db->Close();
-   }
-   // call ondeleteitem function if exists //
-   if($archiveInfo['functionsfile'] && file_exists($_BASE_PATH.$archiveInfo['functionsfile']))
-   {
-    include_once($_BASE_PATH.$archiveInfo['functionsfile']);
-    if(is_callable("dynarcfunction_".$archiveInfo['prefix']."_ondeleteitem",true))
-    {
-	 $ret = call_user_func("dynarcfunction_".$archiveInfo['prefix']."_ondeleteitem", $args, $sessid, $shellid, $archiveInfo, $itemInfo);
-	 if($ret['error'])
-	  return $ret;
-    }
    }
    // call ondeleteitem function from all installed extensions //
    $db = new AlpaDatabase();
@@ -900,8 +921,7 @@ function dynarc_deleteItem($args, $sessid, $shellid=null, $extraVar=null)
 	if(is_callable("dynarcextension_".$db->record['extension_name']."_ondeleteitem",true))
 	{
 	 $ret = call_user_func("dynarcextension_".$db->record['extension_name']."_ondeleteitem", $args, $sessid, $shellid, $archiveInfo, $itemInfo);
-	 if($ret['error'])
-	  return $ret;
+	 if(is_array($ret) && $ret['error']) return $ret;
 	}
    }
    $db->Close();
@@ -924,9 +944,19 @@ function dynarc_deleteItem($args, $sessid, $shellid=null, $extraVar=null)
   }
   else
   {
-   // call ontrashitem function inherited if exists //
-   if($archiveInfo['inherit'])
+   // call ontrashitem function if exists //
+   if($archiveInfo['functionsfile'] && file_exists($_BASE_PATH.$archiveInfo['functionsfile']))
    {
+    include_once($_BASE_PATH.$archiveInfo['functionsfile']);
+    if(is_callable("dynarcfunction_".$archiveInfo['prefix']."_ontrashitem",true))
+    {
+	 $ret = call_user_func("dynarcfunction_".$archiveInfo['prefix']."_ontrashitem", $args, $sessid, $shellid, $archiveInfo, $itemInfo);
+	 if(is_array($ret) && $ret['error']) return $ret;
+    }
+   }
+   else if($archiveInfo['inherit'])
+   {
+    // call ontrashitem function inherited if exists //
     $db = new AlpaDatabase();
     $db->RunQuery("SELECT fun_file FROM dynarc_archives WHERE tb_prefix='".$archiveInfo['inherit']."' AND trash=0 LIMIT 1");
     $db->Read();
@@ -936,23 +966,10 @@ function dynarc_deleteItem($args, $sessid, $shellid=null, $extraVar=null)
      if(is_callable("dynarcfunction_".$archiveInfo['inherit']."_ontrashitem",true))
      {
       $ret = call_user_func("dynarcfunction_".$archiveInfo['inherit']."_ontrashitem", $args, $sessid, $shellid, $archiveInfo, $itemInfo);
-      if($ret['error'])
-	   return $ret;
+      if(is_array($ret) && $ret['error']) return $ret;
      }
     }
     $db->Close();
-   }
-
-   // call ontrashitem function if exists //
-   if($archiveInfo['functionsfile'] && file_exists($_BASE_PATH.$archiveInfo['functionsfile']))
-   {
-    include_once($_BASE_PATH.$archiveInfo['functionsfile']);
-    if(is_callable("dynarcfunction_".$archiveInfo['prefix']."_ontrashitem",true))
-    {
-	 $ret = call_user_func("dynarcfunction_".$archiveInfo['prefix']."_ontrashitem", $args, $sessid, $shellid, $archiveInfo, $itemInfo);
-	 if($ret['error'])
-	  return $ret;
-    }
    }
 
    // call ontrashitem function from all installed extensions //
@@ -965,8 +982,7 @@ function dynarc_deleteItem($args, $sessid, $shellid=null, $extraVar=null)
 	if(is_callable("dynarcextension_".$db->record['extension_name']."_ontrashitem",true))
 	{
 	 $ret = call_user_func("dynarcextension_".$db->record['extension_name']."_ontrashitem", $args, $sessid, $shellid, $archiveInfo, $itemInfo);
-	 if($ret['error'])
-	  return $ret;
+	 if(is_array($ret) && $ret['error']) return $ret;
 	}
    }
    $db->Close();
@@ -1011,11 +1027,13 @@ function dynarc_itemInfo($args, $sessid, $shellid=null, $extraVar=null)
    case '-ap' : case '--archive-prefix' : {$archivePrefix=$args[$c+1]; $c++;} break;
    case '-get' : {$get=$args[$c+1]; $c++;} break;
    case '-extget' : {$extget=$args[$c+1]; $c++;} break;
+   case '-cat' : {$catId=$args[$c+1]; $c++;} break;
    case '-into' : {$into=$args[$c+1]; $c++;} break;
    case '-name' : {$name=$args[$c+1]; $c++;} break;
    case '-where' : {$where=$args[$c+1]; $c++;} break;
 
    case '--get-short-description' : $getShortDescription=true; break;
+   case '--get-cat-name' : $getCatName=true; break;
    case '--verbose' : $verbose=true; break;
    default : $name=$args[$c]; break;
   }
@@ -1054,6 +1072,8 @@ function dynarc_itemInfo($args, $sessid, $shellid=null, $extraVar=null)
    }
    $qry = "SELECT * FROM dynarc_".$archiveInfo['prefix']."_items WHERE name='".$db->Purify($name)."' AND hierarchy LIKE '%,".$intoId.",%' AND trash='0' LIMIT 1";
   }
+  else if(isset($catId))
+   $qry = "SELECT * FROM dynarc_".$archiveInfo['prefix']."_items WHERE name='".$db->Purify($name)."' AND cat_id='".$catId."' AND trash='0' LIMIT 1";
   else
    $qry = "SELECT * FROM dynarc_".$archiveInfo['prefix']."_items WHERE name='".$db->Purify($name)."' AND trash='0' LIMIT 1";
  }
@@ -1070,10 +1090,12 @@ function dynarc_itemInfo($args, $sessid, $shellid=null, $extraVar=null)
 	 return $ret;
 	$intoId = $ret['outarr']['id'];
    }
-   $qry = "SELECT * FROM dynarc_".$archiveInfo['prefix']."_items WHERE aliasname='$alias' AND hierarchy LIKE '%,".$intoId.",%' AND trash='0' LIMIT 1";
+   $qry = "SELECT * FROM dynarc_".$archiveInfo['prefix']."_items WHERE aliasname='".$alias."' AND hierarchy LIKE '%,".$intoId.",%' AND trash='0' LIMIT 1";
   }
+  else if(isset($catId))
+   $qry = "SELECT * FROM dynarc_".$archiveInfo['prefix']."_items WHERE aliasname='".$alias."' AND cat_id='".$catId."' AND trash='0' LIMIT 1";
   else
-   $qry = "SELECT * FROM dynarc_".$archiveInfo['prefix']."_items WHERE aliasname='$alias' AND trash='0' LIMIT 1";
+   $qry = "SELECT * FROM dynarc_".$archiveInfo['prefix']."_items WHERE aliasname='".$alias."' AND trash='0' LIMIT 1";
  }
  else if($code)
  {
@@ -1088,15 +1110,17 @@ function dynarc_itemInfo($args, $sessid, $shellid=null, $extraVar=null)
 	 return $ret;
 	$intoId = $ret['outarr']['id'];
    }
-   $qry = "SELECT * FROM dynarc_".$archiveInfo['prefix']."_items WHERE code_str='$code' AND hierarchy LIKE '%,$intoId,%' AND trash='0' LIMIT 1";
+   $qry = "SELECT * FROM dynarc_".$archiveInfo['prefix']."_items WHERE code_str='".$code."' AND hierarchy LIKE '%,".$intoId.",%' AND trash='0' LIMIT 1";
   }
+  else if(isset($catId))
+   $qry = "SELECT * FROM dynarc_".$archiveInfo['prefix']."_items WHERE code_str='".$code."' AND cat_id='".$catId."' AND trash='0' LIMIT 1";
   else
-   $qry = "SELECT * FROM dynarc_".$archiveInfo['prefix']."_items WHERE code_str='$code' AND trash='0' LIMIT 1";
+   $qry = "SELECT * FROM dynarc_".$archiveInfo['prefix']."_items WHERE code_str='".$code."' AND trash='0' LIMIT 1";
  }
  else if($barcode)
-  $qry = "SELECT * FROM dynarc_".$archiveInfo['prefix']."_items WHERE barcode='".$barcode."' AND trash='0' LIMIT 1";
+  $qry = "SELECT * FROM dynarc_".$archiveInfo['prefix']."_items WHERE barcode='".$barcode."'".(isset($catId) ? " AND cat_id='".$catId."'" : "")." AND trash='0' LIMIT 1";
  else if($where)
-  $qry = "SELECT * FROM dynarc_".$archiveInfo['prefix']."_items WHERE ".$where." AND trash='0' LIMIT 1";
+  $qry = "SELECT * FROM dynarc_".$archiveInfo['prefix']."_items WHERE ".$where.(isset($catId) ? " AND cat_id='".$catId."'" : "")." AND trash='0' LIMIT 1";
  else
   return array("message"=>"You must specify item. with(-id ITEM_ID || -alias ITEM_ALIAS || -code ITEM_CODE)","error"=>"INVALID_ITEM");
 
@@ -1108,7 +1132,7 @@ function dynarc_itemInfo($args, $sessid, $shellid=null, $extraVar=null)
   if(isset($id))
    $out = "Item #$id does not exists into archive ".$archiveInfo['name'];
   else if(isset($name))
-   $out = "Item '$name' not found into archive ".$archiveInfo['name']."\nDName: ".$dName."\nHName: ".$hName;
+   $out = "Item '$name' not found into archive ".$archiveInfo['name'];
   else if(isset($alias))
    $out = "Item with alias '$alias' does not exists into ".($into ? " category $into (#".$intoId.") of the " : "")."archive ".$archiveInfo['name'];
   else if(isset($code))
@@ -1123,10 +1147,22 @@ function dynarc_itemInfo($args, $sessid, $shellid=null, $extraVar=null)
  /* CHECK PERMISSION TO READ */
  $m = new GMOD($db->record['_mod'],$db->record['uid'],$db->record['gid'],$db->record['shgrps'],$db->record['shusrs']);
  if(!$m->canRead($sessInfo['uid']))
+ {
+  // get cat info and re-check.
+  if($db->record['cat_id'])
+  {
+   $db2 = new AlpaDatabase();
+   $db2->RunQuery("SELECT shgrps,shusrs FROM dynarc_".$archiveInfo['prefix']."_categories WHERE id='".$db->record['cat_id']."'");
+   if($db2->Read())
+	$m->set($db->record['_mod'],$db->record['uid'],$db->record['gid'],$db2->record['shgrps'],$db2->record['shusrs']);
+   $db2->Close();
+  }
+ }
+ if(!$m->canRead($sessInfo['uid']))
   return array("message"=>"Permission denied!\n","error"=>"PERMISSION_DENIED");
 
  /* OUTPUT */
- $description = $getShortDescription ? substr($db->record['description'],0,128) : $db->record['description'];
+ $description = $getShortDescription ? substr(strip_tags($db->record['description']),0,512) : $db->record['description'];
  $a = array('id'=>$db->record['id'],'cat_id'=>$db->record['cat_id'],'name'=>$db->record['name'],'desc'=>$description,'ordering'=>$db->record['ordering'],'trash'=>$db->record['trash'],'ctime'=>strtotime($db->record['ctime']),'mtime'=>strtotime($db->record['mtime']),'published'=>$db->record['published'],'aliasname'=>$db->record['aliasname'],'hierarchy'=>$db->record['hierarchy']);
  $a['modinfo'] = $m->toArray($sessInfo['uid']);
  if(isset($db->record['syncid'])) $a['syncid'] = $db->record['syncid'];
@@ -1151,6 +1187,20 @@ function dynarc_itemInfo($args, $sessid, $shellid=null, $extraVar=null)
  {
   if(isset($db->record[$fields[$c]]))
    $a[$fields[$c]] = $db->record[$fields[$c]];
+ }
+
+ if($getCatName)
+ {
+  if($a['cat_id'])
+  {
+   $db2 = new AlpaDatabase();
+   $db2->RunQuery("SELECT name FROM dynarc_".$archiveInfo['prefix']."_categories WHERE id='".$a['cat_id']."'");
+   $db2->Read();
+   $a['cat_name'] = $db2->record['name'];
+   $db2->Close();
+  }
+  else
+   $a['cat_name'] = "";
  }
 
  if($verbose)
@@ -1190,10 +1240,12 @@ function dynarc_itemInfo($args, $sessid, $shellid=null, $extraVar=null)
  return array("message"=>$out, "outarr"=>$a);
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function dynarc_itemList($args, $sessid, $shellid=null, $extraVar=null)
+function dynarc_getItemsCount($args, $sessid, $shellid=null, $extraVar=null)
 {
  global $_BASE_PATH;
- //$orderBy = "ordering ASC";
+ $out = "";
+ $outArr = array();
+
  for($c=1; $c < count($args); $c++)
   switch($args[$c])
   {
@@ -1203,17 +1255,10 @@ function dynarc_itemList($args, $sessid, $shellid=null, $extraVar=null)
    case '-c' : case '-cat' : {$catId=$args[$c+1]; $c++;} break;
    case '-ct' : case '--cat-tag' : {$catTag=$args[$c+1]; $c++;} break;
    case '-into' : {$into=$args[$c+1]; $c++;} break;
-   case '-get' : {$get=$args[$c+1]; $c++;} break;
-   case '-extget' : {$extget=$args[$c+1]; $c++;} break;
-   case '-limit' : {$limit=$args[$c+1]; $c++;} break;
-   case '--order-by' : {$orderBy=$args[$c+1]; $c++;} break;
+   case '-linkap' : {$linkAP=$args[$c+1]; $c++;} break;
+   case '-linkaid' : {$linkAID=$args[$c+1]; $c++;} break;
+   case '-linkid' : {$linkID=$args[$c+1]; $c++;} break;
    case '-where' : {$where=$args[$c+1]; $c++;} break;
-   case '--verbose' : $verbose=true; break;
-   case '--return-cat-info' : $returnCatInfo=true; break;
-   case '--return-serp-info' : $returnSERPInfo=true; break;
-   case '--return-path' : $returnPath=true; break;
-   case '--all-cat' : $searchIntoAllCategories=true; break;
-   case '--include-trash' : $includeTrash=true; break;
   }
 
  /* CHECK FOR ARCHIVE */
@@ -1256,6 +1301,155 @@ function dynarc_itemList($args, $sessid, $shellid=null, $extraVar=null)
   }
  }
 
+ if($linkID)
+ {
+  if($linkAP)
+  {
+   if($linkAP == $archiveInfo['prefix'])
+	$linkAID = $archiveInfo['id'];
+   else
+   {
+	$db = new AlpaDatabase();
+	$db->RunQuery("SELECT id FROM dynarc_archives WHERE tb_prefix='".$db->Purify($linkAP)."'");
+	if($db->Read())
+	 $linkAID = $db->record['id'];
+	$db->Close();
+   }
+  }
+  else if(!$linkAID)
+   $linkAID = $archiveInfo['id'];
+ }
+
+ if($catInfo && $returnCatInfo)
+  $outArr['catinfo'] = $catInfo;
+
+ $m = new GMOD();
+ $uQry = $m->userQuery($sessid,null,"dynarc_".$archiveInfo['prefix']."_items");
+
+ $db = new AlpaDatabase();
+ /* COUNT QRY */
+ $countQry = "SELECT COUNT(*) FROM dynarc_".$archiveInfo['prefix']."_items WHERE ($uQry)";
+ if($catId)
+  $countQry.= " AND cat_id='$catId'";
+ else if($intoId)
+  $countQry.= " AND (hierarchy=',$intoId,' OR hierarchy LIKE ',$intoId,%' OR hierarchy LIKE '%,$intoId,' OR hierarchy LIKE '%,$intoId,%')";
+ else if(!$where && !$searchIntoAllCategories && !isset($linkAID) && !isset($linkID))
+  $countQry.= " AND cat_id='0'";
+ if(isset($linkAID) && isset($linkID))
+  $countQry.= " AND lnkarc_id='".$linkAID."' AND lnk_id='".$linkID."'";
+ if($where)
+  $countQry.= " AND (".$where.")";
+ if(!$includeTrash)
+  $countQry.= " AND trash='0'";
+ 
+ $db->RunQuery($countQry);
+ $db->Read();
+ $outArr['count'] = $db->record[0];
+ $db->Close();
+
+ $out.= $outArr['count']." items found.";
+
+ return array("message"=>$out, "outarr"=>$outArr);
+}
+//-------------------------------------------------------------------------------------------------------------------//
+function dynarc_itemList($args, $sessid, $shellid=null, $extraVar=null)
+{
+ global $_BASE_PATH;
+ $_SUM_COLUMNS = array();
+
+ for($c=1; $c < count($args); $c++)
+  switch($args[$c])
+  {
+   case '-a' : case '-archive' : {$archive=$args[$c+1]; $c++;} break;
+   case '-ap' : case '--archive-prefix' : {$archivePrefix=$args[$c+1]; $c++;} break;
+   case '-aid' : {$archiveId=$args[$c+1]; $c++;} break;
+   case '-c' : case '-cat' : {$catId=$args[$c+1]; $c++;} break;
+   case '-ct' : case '--cat-tag' : {$catTag=$args[$c+1]; $c++;} break;
+   case '-into' : {$into=$args[$c+1]; $c++;} break;
+
+   case '-linkap' : {$linkAP=$args[$c+1]; $c++;} break;
+   case '-linkaid' : {$linkAID=$args[$c+1]; $c++;} break;
+   case '-linkid' : {$linkID=$args[$c+1]; $c++;} break;
+
+   case '-get' : {$get=$args[$c+1]; $c++;} break;
+   case '-extget' : {$extget=$args[$c+1]; $c++;} break;
+
+   case '-gettotals' : case '-getsum' : case '-totals' : {$_SUM_COLUMNS = explode(",",$args[$c+1]); $c++;} break;
+
+   case '-limit' : {$limit=$args[$c+1]; $c++;} break;
+   case '--order-by' : {$orderBy=$args[$c+1]; $c++;} break;
+   case '--group-by' : {$groupBy=$args[$c+1]; $c++;} break;
+   case '-where' : {$where=$args[$c+1]; $c++;} break;
+   case '--verbose' : $verbose=true; break;
+   case '--return-cat-info' : $returnCatInfo=true; break;
+   case '--return-serp-info' : $returnSERPInfo=true; break;
+   case '--return-path' : $returnPath=true; break;
+   case '--all-cat' : $searchIntoAllCategories=true; break;
+   case '--include-trash' : $includeTrash=true; break;
+   case '--get-full-description' : case '--get-full-desc' : $getFullDescription=true; break;
+   case '--get-cat-name' : $getCatName=true; break;
+  }
+
+ /* CHECK FOR ARCHIVE */
+ if($extraVar)
+  $archiveInfo = $extraVar;
+ else
+ {
+  $ret = dynarc_checkForArchive($args,$sessid,$shellid);
+  if($ret['error'])
+   return $ret;
+  $archiveInfo = $ret['outarr'];
+ }
+
+ /* CHECK FOR PARENT */
+ if($catId)
+ {
+  $ret = GShell("dynarc cat-info --archive-prefix '".$archiveInfo['prefix']."' -id '$catId'",$sessid,$shellid,$archiveInfo);
+  if($ret['error'])
+   return $ret;
+  $catInfo = $ret['outarr'];
+ }
+ else if($catTag)
+ {
+  $ret = GShell("dynarc cat-info --archive-prefix '".$archiveInfo['prefix']."' -tag '$catTag'",$sessid,$shellid,$archiveInfo);
+  if($ret['error'])
+   return $ret;
+  $catInfo = $ret['outarr'];
+  $catId = $catInfo['id'];
+ }
+ else if($into)
+ {
+  if(is_numeric($into))
+	$intoId = $into;
+  else
+  {
+   $ret = GShell("dynarc cat-info -ap '".$archiveInfo['prefix']."' -tag '$into'",$sessid,$shellid,$extraVar);
+   if($ret['error'])
+    return $ret;
+   $intoId = $ret['outarr']['id'];
+  }
+ }
+
+ if($linkID)
+ {
+  if($linkAP)
+  {
+   if($linkAP == $archiveInfo['prefix'])
+	$linkAID = $archiveInfo['id'];
+   else
+   {
+	$db = new AlpaDatabase();
+	$db->RunQuery("SELECT id FROM dynarc_archives WHERE tb_prefix='".$db->Purify($linkAP)."'");
+	if($db->Read())
+	 $linkAID = $db->record['id'];
+	$db->Close();
+   }
+  }
+  else if(!$linkAID)
+   $linkAID = $archiveInfo['id'];
+ }
+
+
  $out = "";
  $outArr = array();
 
@@ -1272,8 +1466,10 @@ function dynarc_itemList($args, $sessid, $shellid=null, $extraVar=null)
   $countQry.= " AND cat_id='$catId'";
  else if($intoId)
   $countQry.= " AND (hierarchy=',$intoId,' OR hierarchy LIKE ',$intoId,%' OR hierarchy LIKE '%,$intoId,' OR hierarchy LIKE '%,$intoId,%')";
- else if(!$where && !$searchIntoAllCategories)
+ else if(!$where && !$searchIntoAllCategories && !isset($linkAID) && !isset($linkID))
   $countQry.= " AND cat_id='0'";
+ if(isset($linkAID) && isset($linkID))
+  $countQry.= " AND lnkarc_id='".$linkAID."' AND lnk_id='".$linkID."'";
  if($where)
   $countQry.= " AND (".$where.")";
  if(!$includeTrash)
@@ -1282,6 +1478,22 @@ function dynarc_itemList($args, $sessid, $shellid=null, $extraVar=null)
  $db->RunQuery($countQry);
  $db->Read();
  $outArr['count'] = $db->record[0];
+
+ /* SUM */
+ if(count($_SUM_COLUMNS))
+ {
+  $sumcolumnsQryStr = "";
+  for($c=0; $c < count($_SUM_COLUMNS); $c++)
+   $sumcolumnsQryStr.= ",SUM(".$_SUM_COLUMNS[$c].")";
+  $sumQry = "SELECT ".ltrim($sumcolumnsQryStr,',').ltrim($countQry, "SELECT COUNT(*)");
+  $outArr['totals'] = array();
+
+  $db->RunQuery($sumQry);
+  $db->Read();
+  for($i=0; $i < count($_SUM_COLUMNS); $i++)
+   $outArr['totals'][$_SUM_COLUMNS[$i]] = $db->record['SUM('.$_SUM_COLUMNS[$i].')'];
+
+ }
 
  // CHECK LIMIT //
  if($limit && $outArr['count'])
@@ -1320,13 +1532,16 @@ function dynarc_itemList($args, $sessid, $shellid=null, $extraVar=null)
  }
  else if($intoId)
   $selectQry.= " AND hierarchy LIKE '%,$intoId,%'";
- else if(!$where && !$searchIntoAllCategories)
+ else if(!$where && !$searchIntoAllCategories && !isset($linkAID) && !isset($linkID))
   $selectQry.= " AND cat_id='0'";
+ if(isset($linkAID) && isset($linkID))
+  $selectQry.= " AND lnkarc_id='".$linkAID."' AND lnk_id='".$linkID."'";
  if($where)
   $selectQry.= " AND (".$where.")";
  if(!$includeTrash)
   $selectQry.= " AND trash='0'";
 
+ if($groupBy)	$selectQry.= " GROUP BY ".$groupBy;
  if(!$orderBy)
   $orderBy = "ordering ASC";
  $selectQry.= " ORDER BY ".$orderBy;
@@ -1338,9 +1553,17 @@ function dynarc_itemList($args, $sessid, $shellid=null, $extraVar=null)
   $pathNames = array();
 
  $db->RunQuery($selectQry);
+ if($db->Error)
+  return array("message"=>"MySQL Error: ".$db->Error, "error"=>"MYSQL_ERROR");
  while($db->Read())
  {
-  $ret = GShell("dynarc item-info --archive-prefix '".$archiveInfo['prefix']."' --get-short-description -id ".$db->record['id'].($extget ? " -extget \"".$extget."\"" : "").($get ? " -get \"".$get."\"" : ""),$sessid,$shellid,$archiveInfo);
+  $cmd = "dynarc item-info -ap '".$archiveInfo['prefix']."' -id '".$db->record['id']."'";
+  if(!$getFullDescription)		$cmd.= " --get-short-description";
+  if($getCatName)				$cmd.= " --get-cat-name";
+  if($extget)					$cmd.= " -extget \"".$extget."\"";
+  if($get)						$cmd.= " -get \"".$get."\"";
+
+  $ret = GShell($cmd,$sessid,$shellid,$archiveInfo);
   if($ret['error'])
    continue;
   if($returnPath)
@@ -1697,10 +1920,8 @@ function dynarc_parseExtensionSet($action,$set,$sessid, $shellid, $archiveInfo, 
   if(is_callable("dynarcextension_".$extension."_".$action,true))
   {
    $ret = call_user_func("dynarcextension_".$extension."_".$action, $args, $sessid, $shellid, $archiveInfo, $itemInfo);
-   if($ret['error'])
-	return $ret;
-   else if(is_array($ret))
-	$itemInfo = $ret;
+   if(is_array($ret) && $ret['error']) return $ret;
+   else if(is_array($ret)) $itemInfo = $ret;
   }
   else
   {
@@ -1960,17 +2181,39 @@ function dynarc_itemMove($args, $sessid, $shellid=null, $extraVar=null)
   $db2->Close();
   $db->Close();
 
+  $oldItemInfo = $db->record;
+  $newItemInfo = $db->record;
+  $newItemInfo['hierarchy'] = $catInfo['hierarchy'].$catInfo['id'].",";
+  $newItemInfo['cat_id'] = $cat;
+  $newItemInfo['old_cat_id'] = $oldCatId;
   // call onmoveitem function if exists //
   if($archiveInfo['functionsfile'] && file_exists($_BASE_PATH.$archiveInfo['functionsfile']))
   {
-   $oldItemInfo = $db->record;
-   $newItemInfo = $db->record;
-   $newItemInfo['hierarchy'] = $catInfo['hierarchy'].$catInfo['id'].",";
-   $newItemInfo['cat_id'] = $cat;
    include_once($_BASE_PATH.$archiveInfo['functionsfile']);
    if(is_callable("dynarcfunction_".$archiveInfo['prefix']."_onmoveitem",true))
-    call_user_func("dynarcfunction_".$archiveInfo['prefix']."_onmoveitem", $args, $sessid, $shellid, $archiveInfo, $oldItemInfo, $newItemInfo);
+   {
+    $ret = call_user_func("dynarcfunction_".$archiveInfo['prefix']."_onmoveitem", $args, $sessid, $shellid, $archiveInfo, $oldItemInfo, $newItemInfo);
+	if(is_array($ret) && $ret['error']) return $ret;
+   }
   }
+  else if($archiveInfo['inherit'])
+  {
+   // call onmoveitem function inherited if exists //
+   $dbX = new AlpaDatabase();
+   $dbX->RunQuery("SELECT fun_file FROM dynarc_archives WHERE tb_prefix='".$archiveInfo['inherit']."' AND trash=0 LIMIT 1");
+   $dbX->Read();
+   if($dbX->record['fun_file'] && file_exists($_BASE_PATH.$dbX->record['fun_file']))
+   {
+    include_once($_BASE_PATH.$dbX->record['fun_file']);
+    if(is_callable("dynarcfunction_".$archiveInfo['inherit']."_onmoveitem",true))
+    {
+     $ret = call_user_func("dynarcfunction_".$archiveInfo['inherit']."_onmoveitem", $args, $sessid, $shellid, $archiveInfo, $oldItemInfo, $newItemInfo);
+     if(is_array($ret) && $ret['error']) return $ret;
+    }
+   }
+   $dbX->Close();
+  }
+
   // call onmoveitem function for all installed extensions //
   for($i=0; $i < count($extensions); $i++)
   {
@@ -1978,8 +2221,7 @@ function dynarc_itemMove($args, $sessid, $shellid=null, $extraVar=null)
    if(is_callable("dynarcextension_".$extensions[$i]."_onmoveitem",true))
    {
     $ret = call_user_func("dynarcextension_".$extensions[$i]."_onmoveitem", $args, $sessid, $shellid, $archiveInfo, $oldItemInfo, $newItemInfo);
-    if($ret['error'])
-     return $ret;
+    if(is_array($ret) && $ret['error']) return $ret;
    }
   }
 
@@ -2067,51 +2309,47 @@ function dynarc_itemCopy($args, $sessid, $shellid=null, $extraVar=null)
 	.($db->record['code_ext'] ? " -code-ext `".$db->record['code_ext']."`" : "")
 	.($db->record['contents'] ? " -contents `".$db->record['contents']."`" : "")
 	.($db->record['keywords'] ? " -keyw `".$db->record['keywords']."`" : "")
-	.($db->record['lang'] ? " -lang `".$db->record['lang']."`" : ""), $sessid, $shellid);
+	.($db->record['lang'] ? " -lang `".$db->record['lang']."`" : ""), $sessid, $shellid, $extraVar);
   if(!$ret['error'])
   {
    $cloneInfo = $ret['outarr'];
 
+   if($archiveInfo['functionsfile'] && file_exists($_BASE_PATH.$archiveInfo['functionsfile']))
+   {
+	// call oncopyitem function if exists //
+ 	include_once($_BASE_PATH.$archiveInfo['functionsfile']);
+ 	if(is_callable("dynarcfunction_".$archiveInfo['prefix']."_oncopyitem",true))
+ 	{
+ 	 $ret = call_user_func("dynarcfunction_".$archiveInfo['prefix']."_oncopyitem", $sessid, $shellid, $archiveInfo, $cloneInfo, $srcInfo);
+	 if(is_array($ret) && $ret['error']) return $ret;
+	 $cloneInfo = $ret;
+ 	}
+   }
+   else	if($archiveInfo['inherit'])
+   {
  	// call oncopyitem function inherited if exists //
- 	if($archiveInfo['inherit'])
+ 	$db = new AlpaDatabase();
+ 	$db->RunQuery("SELECT fun_file FROM dynarc_archives WHERE tb_prefix='".$archiveInfo['inherit']."' AND trash=0 LIMIT 1");
+ 	$db->Read();
+ 	if($db->record['fun_file'] && file_exists($_BASE_PATH.$db->record['fun_file']))
  	{
- 	 $db = new AlpaDatabase();
- 	 $db->RunQuery("SELECT fun_file FROM dynarc_archives WHERE tb_prefix='".$archiveInfo['inherit']."' AND trash=0 LIMIT 1");
- 	 $db->Read();
- 	 if($db->record['fun_file'] && file_exists($_BASE_PATH.$db->record['fun_file']))
+ 	 include_once($_BASE_PATH.$db->record['fun_file']);
+ 	 if(is_callable("dynarcfunction_".$archiveInfo['inherit']."_oncopyitem",true))
  	 {
- 	  include_once($_BASE_PATH.$db->record['fun_file']);
- 	  if(is_callable("dynarcfunction_".$archiveInfo['inherit']."_oncopyitem",true))
- 	  {
- 	   $ret = call_user_func("dynarcfunction_".$archiveInfo['inherit']."_oncopyitem", $sessid, $shellid, $archiveInfo, $cloneInfo, $srcInfo);
- 	   if(!$ret['error'])
-		$cloneInfo = $ret;
- 	  }
- 	 }
- 	 $db->Close();
- 	}
-
- 	// call oncopyitem function if exists //
- 	if($archiveInfo['functionsfile'] && file_exists($_BASE_PATH.$archiveInfo['functionsfile']))
- 	{
- 	 include_once($_BASE_PATH.$archiveInfo['functionsfile']);
- 	 if(is_callable("dynarcfunction_".$archiveInfo['prefix']."_oncopyitem",true))
- 	 {
- 	  $ret = call_user_func("dynarcfunction_".$archiveInfo['prefix']."_oncopyitem", $sessid, $shellid, $archiveInfo, $cloneInfo, $srcInfo);
- 	  if(!$ret['error'])
-	   $cloneInfo = $ret;
+ 	  $ret = call_user_func("dynarcfunction_".$archiveInfo['inherit']."_oncopyitem", $sessid, $shellid, $archiveInfo, $cloneInfo, $srcInfo);
+ 	  if(is_array($ret) && $ret['error']) return $ret;
+	  $cloneInfo = $ret;
  	 }
  	}
-
-
+ 	$db->Close();
+   }
    for($i=0; $i < count($extensions); $i++)
    {
     /* EXECUTE FUNCTION */
     if(is_callable("dynarcextension_".$extensions[$i]."_oncopyitem",true))
     {
      $ret = call_user_func("dynarcextension_".$extensions[$i]."_oncopyitem", $sessid, $shellid, $archiveInfo, $srcInfo, $cloneInfo);
-     if($ret['error'])
-      return $ret;
+     if(is_array($ret) && $ret['error']) return $ret;
     }
    }
 

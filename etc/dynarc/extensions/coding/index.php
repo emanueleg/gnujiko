@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 03-12-2012
+ #DATE: 10-06-2014
  #PACKAGE: dynarc-coding-extension
  #DESCRIPTION: Official Gnujiko coding system. Extension for Dynarc
- #VERSION: 2.1beta
- #CHANGELOG: 03-12-2012 : Completamento delle funzioni principali.
+ #VERSION: 2.2beta
+ #CHANGELOG: 10-06-2014 : Aggiunta funzione onarchiveempty
+			 03-12-2012 : Completamento delle funzioni principali.
  #TODO:Rifare funzione import & export e completare funzioni syncimport & syncexport.
  
 */
@@ -200,11 +201,14 @@ function dynarcextension_coding_onmovecategory($args, $sessid, $shellid, $archiv
  return true;
 }
 //-------------------------------------------------------------------------------------------------------------------//
-
-//-------------------------------------------------------------------------------------------------------------------//
 function dynarcextension_coding_oncopycategory($sessid, $shellid, $archiveInfo, $srcInfo, $cloneInfo)
 {
  return $cloneInfo;
+}
+//-------------------------------------------------------------------------------------------------------------------//
+function dynarcextension_coding_onarchiveempty($args, $sessid, $shellid, $archiveInfo)
+{
+ return true;
 }
 //-------------------------------------------------------------------------------------------------------------------//
 function dynarcextension_coding_export($sessid, $shellid, $archiveInfo, $itemInfo)

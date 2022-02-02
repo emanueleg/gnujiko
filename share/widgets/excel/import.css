@@ -1,15 +1,21 @@
+h3, h4 {
+ font-family: arial, sans-serif;
+}
+
 div.excel-widget {
-	background: url(img/background.png) top left no-repeat;
-	width: 851px;
-	height: 652px;
-	margin: 0px;
-	padding-left: 28px;
-	padding-top: 26px;
+ background: #ffffff;
+ width: 800px;
+ border: 2px solid #0169c9;
+ border-radius: 6px;
+ -moz-box-shadow: 0px 0px 8px #777777;
+ -webkit-box-shadow: 0px 0px 8px #777777;
+ box-shadow: 0px 0px 8px #777777;
+
 }
 
 div.excel-widget div.excel-header {
-	width: 795px;
-	height: 28px;
+ background: #0169c9;
+ height: 28px;
 }
 
 div.excel-header span.excel-title {
@@ -35,6 +41,12 @@ span.bluetitle {
 	font-family: arial, sans-serif;
 	font-size: 18px;
 	color: #013397;
+}
+
+span.smalltext {
+	font-family: arial, sans-serif;
+	font-size: 12px;
+	color: #333;
 }
 
 div.excel-table-container {
@@ -87,7 +99,7 @@ table.excel-table td.head {
 
 div.excel-keys-container {
 	width: 770px;
-	height: 225px;
+	height: 200px;
 	overflow: auto;
 	margin: 10px;
 }
@@ -158,10 +170,33 @@ a.bluebutton {
 	text-decoration: none;
 }
 
+div.excel-options-container {
+ border-top: 2px solid #0169c9;
+ padding: 10px;
+ font-family: arial, sans-serif;
+ font-size: 14px;
+ color: #333333;
+}
+
+div.excel-options-container div {
+ padding: 5px;
+}
+
 div.excel-footer {
 	width: 785px;
 	height: 36px;
 	border-top: 2px solid #0169c9;
 	padding: 5px;
 }
+
+input.edit {
+ height: 29px;
+ background-color: #ffffff;
+ border: 1px solid #c0c0c0;
+ font-family: sans-serif;
+ font-size: 12px;
+ padding-left: 10px;
+ padding-right: 10px;
+}
+input.edit:focus {outline: none;}
 

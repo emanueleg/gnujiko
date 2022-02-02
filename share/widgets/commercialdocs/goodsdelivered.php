@@ -1,16 +1,20 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 04-09-2013
+ #DATE: 08-04-2016
  #PACKAGE: gcommercialdocs
  #DESCRIPTION: Goods delivered auto-upload into store.
- #VERSION: 2.4beta
- #CHANGELOG: 04-09-2013 : Possibilità di caricare lo stesso articolo su più magazzini.
+ #VERSION: 2.8beta
+ #CHANGELOG: 08-04-2016 : Bugfix, aggiunto vendorid x caricamenti da ddt fornitore.
+			 08-03-2016 : Aggiornamenti vari.
+			 02-04-2015 : Integrato con taglie e colori.
+			 02-08-2014 : Bug fix ed integrazione con prodotti finiti, componenti e materiali.
+			 04-09-2013 : Possibilità di caricare lo stesso articolo su più magazzini.
 			 31-07-2013 : Aggiunto il lotto di produzione.
 			 27-07-2013 : Possibilità di specificare magazzini multipli e di auto-generare bolle di movim. interna.
 			 15-03-2013 : Bug fix.
@@ -92,44 +96,48 @@ a.button {
 $ret = GShell("store list",$_REQUEST['sessid'],$_REQUEST['shellid']);
 $storeList = $ret['outarr'];
 
-$form = new GForm("Carico merce semi-automatico", "MB_OK|MB_ABORT", "simpleform", "default", "orange", 700, 480);
+$form = new GForm("Carico merce semi-automatico", "MB_OK|MB_ABORT", "simpleform", "default", "orange", 800, 480);
 $form->Begin($_ABSOLUTE_URL."share/widgets/commercialdocs/img/checkavail.gif");
 echo "<div id='contents' style='padding:5px;visibility:hidden'>";
 ?>
 <p style="font-family:Arial,sans-serif;font-size:13px;color:#3364C3"><b>Caricare i seguenti articoli a magazzino?</b>
-<select id='storelist' style='margin-left:170px;width:190px' onchange='selectMainStore(this)'><option value='0'>seleziona un magazzino</option>
+<select id='storelist' style='margin-left:270px;width:190px' onchange='selectMainStore(this)'><option value='0'>seleziona un magazzino</option>
   <?php
   for($c=0; $c < count($storeList); $c++)
    echo "<option value='".$storeList[$c]['id']."'>".$storeList[$c]['name']."</option>";
   ?></select>
 </p>
 
-<div style="height:200px;width:650;overflow:auto;border-bottom:1px solid #dadada;margin-top:20px">
-<table class='checkavailtable' id='checkavailtable' width='630' cellspacing='0' cellpadding='0' border='0'>
+<div style="height:200px;width:750;overflow:auto;border-bottom:1px solid #dadada;margin-top:20px">
+<table class='checkavailtable' id='checkavailtable' width='730' cellspacing='0' cellpadding='0' border='0'>
 <tr><th width='32'><input type='checkbox' onchange='checkAll(this)' checked='true'/></th>
 	<th style='text-align:left'>ARTICOLO</th>
 	<th width='60'>QTA&lsquo;</th>
 	<th width='100' style='text-align:left'>Lotto di produz.</th>
+	<th width='60'>TAGLIA</th>
+	<th width='60'>COLORE</th>
 	<th width='130' style='text-align:left'>FORNITORE</th>
 	<th width='140' style='text-align:left'>MAGAZZINO</th>
 	<th width='32'>&nbsp;</th>
 </tr>
 <?php
 $count = 0;
+$vendorName = $docInfo['subject_name'];
+
 for($c=0; $c < count($docInfo['elements']); $c++)
 {
  $itm = $docInfo['elements'][$c];
- if($itm['type'] != "article")
+ if(($itm['type'] != "article") && ($itm['type'] != "finalproduct") && ($itm['type'] != "component") && ($itm['type'] != "material"))
   continue;
  $qty = $itm['qty'];
-
- $vendorName = $docInfo['subject_name'];
 
  echo "<tr id='".$itm['ref_id']."' refap='".$itm['ref_ap']."'>";
  echo "<td align='center'><input type='checkbox' checked='true'/></td>";
  echo "<td>".$itm['name']."</td>";
  echo "<td align='center'><input type='text' class='edit' style='width:40px' value=\"".$qty."\"/></td>";
  echo "<td><input type='text' class='edit' style='width:90px' value=\"".$itm['lot']."\"/></td>";
+ echo "<td align='center'>".($itm['variant_sizmis'] ? $itm['variant_sizmis'] : '&nbsp;')."</td>";
+ echo "<td align='center'>".($itm['variant_coltint'] ? $itm['variant_coltint'] : '&nbsp;')."</td>";
  echo "<td>".($vendorName ? $vendorName : "???")."</td>";
  echo "<td><select style='width:130px' onchange='storeChange()'><option value='0'>&nbsp;</option>";
  for($i=0; $i < count($storeList); $i++)
@@ -164,6 +172,8 @@ $form->End();
 ?>
 
 <script>
+var VENDOR_ID = "<?php echo $docInfo['subject_id']; ?>";
+
 function bodyOnLoad()
 {
  if(<?php echo $count; ?> == 0)
@@ -184,48 +194,52 @@ function OnFormSubmit()
 
  // divide gli articoli per magazzino //
  var tb = document.getElementById('checkavailtable');
- var storesQry = new Array();
+ var xml = "";
+ var storeList = new Array();
+
  for(var c=1; c < tb.rows.length; c++)
  {
   if(tb.rows[c].cells[0].getElementsByTagName('INPUT')[0].checked)
   {
-   var storeId = tb.rows[c].cells[5].getElementsByTagName('SELECT')[0].value;
+   var storeId = tb.rows[c].cells[7].getElementsByTagName('SELECT')[0].value;
    if(storeId)
    {
 	var qty = tb.rows[c].cells[2].getElementsByTagName('INPUT')[0].value;
 	var q = tb.rows[c].getAttribute('refap')+":"+tb.rows[c].id+"X"+parseFloat(qty);
     var lot = tb.rows[c].cells[3].getElementsByTagName('INPUT')[0].value;
-	if(lot)
-	 q+= "~"+lot;
-	if(!storesQry[storeId])
-	 storesQry[storeId] = q;
-	else
-	 storesQry[storeId]+= ","+q;
+	var sizmis = (tb.rows[c].cells[4].innerHTML != "&nbsp;") ? tb.rows[c].cells[4].innerHTML : "";
+	var coltint = (tb.rows[c].cells[5].innerHTML != "&nbsp;") ? tb.rows[c].cells[5].innerHTML : "";
+
+	if(storeList.indexOf(storeId) < 0)
+	 storeList.push(storeId);
+
+	xml+= "<item ap='"+tb.rows[c].getAttribute('refap')+"' id='"+tb.rows[c].id+"' qty='"+parseFloat(qty)+"' lot='"+lot+"' sizmis='"+sizmis+"' coltint='"+coltint+"' storeid='"+storeId+"'/"+">";
+
    }
   }
  }
 
- if(!storesQry.length)
+ if(xml == "")
   return saveFinish(isPaid, status);
 
 
- // lancia un comando per ogni magazzino da caricare //
- var ddtGenerated = new Array();
+ var cmd = "commercialdocs upload-goods-delivered -xml `"+xml+"` -refid `<?php echo $docInfo['id']; ?>` -vendorid '"+VENDOR_ID+"'";
+ for(var c=0; c < storeList.length; c++)
+ {
+  if(document.getElementById("autogenddt-"+storeList[c]).checked == true)
+   cmd+= " -gen-ddt-storeid '"+storeList[c]+"'";
+ }
+
  var sh = new GShell();
- sh.OnError = function(msg,errcode){alert(msg);}
+ sh.OnError = function(err){alert(err);}
  sh.OnOutput = function(o,a){
-	 if(!a || !a['ddtinfo'])
-	  return;
-	 ddtGenerated.push(a['ddtinfo']);
+	 if(a && a['ddtlist'])
+	  saveFinish(isPaid, status, a['ddtlist']);
+	 else
+	  saveFinish(isPaid, status);
 	}
 
- sh.OnFinish = function(o,a){
-	 this.OnOutput(o,a);
-	 saveFinish(isPaid, status, ddtGenerated);
-	}
-
- for(var k in storesQry)
-  sh.sendCommand("commercialdocs upload-goods-delivered `"+storesQry[k]+"` -store "+k+" -refid <?php echo $docInfo['id']; ?>"+(document.getElementById("autogenddt-"+k).checked ? " --auto-gen-ddt" : "")); 
+ sh.sendCommand(cmd);
 }
 
 function saveFinish(isPaid, status, ddtGenerated)
@@ -249,7 +263,7 @@ function saveFinish(isPaid, status, ddtGenerated)
 		 }
 		 gframe_close(oo,aa);
 		}
-	 sh3.sendCommand("dynarc edit-item -ap commercialdocs -id `<?php echo $docInfo['id']; ?>` -extset `cdinfo.status=10,payment-date='"+date.printf('Y-m-d')+"'`");
+	 sh3.sendCommand("dynarc edit-item -ap commercialdocs -id `<?php echo $docInfo['id']; ?>` -extset `cdinfo.status=10,payment-date='"+date.printf('Y-m-d')+"',cdelements.setallsent=1`");
 	}
   sh2.sendCommand("gframe -f commercialdocs/pay -params `id=<?php echo $docInfo['id']; ?>&desc=Saldo&isdebit=true`");
  }
@@ -266,7 +280,7 @@ function saveFinish(isPaid, status, ddtGenerated)
 	 }
 	 gframe_close(o,a);
 	}
-  sh2.sendCommand("dynarc edit-item -ap commercialdocs -id `<?php echo $docInfo['id']; ?>` -extset `cdinfo.status="+status+"`");
+  sh2.sendCommand("dynarc edit-item -ap commercialdocs -id `<?php echo $docInfo['id']; ?>` -extset `cdinfo.status="+status+",cdelements.setallsent=1`");
  }
 }
 
@@ -304,7 +318,7 @@ function selectMainStore(sel)
 {
  var tb = document.getElementById('checkavailtable');
  for(var c=1; c < tb.rows.length; c++)
-  tb.rows[c].cells[5].getElementsByTagName('SELECT')[0].value = sel.value;
+  tb.rows[c].cells[7].getElementsByTagName('SELECT')[0].value = sel.value;
  storeChange();
 }
 
@@ -317,7 +331,7 @@ function storeChange()
  var tb = document.getElementById('checkavailtable');
  for(var c=1; c < tb.rows.length; c++)
  {
-  var storeId = tb.rows[c].cells[5].getElementsByTagName('SELECT')[0].value;
+  var storeId = tb.rows[c].cells[7].getElementsByTagName('SELECT')[0].value;
   if(stores.indexOf(storeId) < 0)
    stores.push(storeId);
  }
@@ -349,10 +363,13 @@ function duplicateRow(rObj)
 
  r.insertCell(-1).innerHTML = "<input type='text' class='edit' style='width:90px' value=''/"+">";
 
- r.insertCell(-1).innerHTML = rObj.cells[4].innerHTML;
+ r.insertCell(-1).innerHTML = rObj.cells[4].innerHTML; r.cells[4].style.textAlign='center';
+ r.insertCell(-1).innerHTML = rObj.cells[5].innerHTML; r.cells[5].style.textAlign='center';
+
+ r.insertCell(-1).innerHTML = rObj.cells[6].innerHTML;
 
  var html = "<select style='width:130px' onchange='storeChange()'>";
- var oSel = rObj.cells[5].getElementsByTagName('SELECT')[0];
+ var oSel = rObj.cells[7].getElementsByTagName('SELECT')[0];
  for(var c=0; c < oSel.options.length; c++)
   html+= "<option value='"+oSel.options[c].value+"'>"+oSel.options[c].innerHTML+"</option>";
  html+= "</select>";

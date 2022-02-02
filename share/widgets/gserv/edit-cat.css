@@ -187,14 +187,14 @@ table.thumbtable td {
 
 
 /* EDIT INPUT */
-span.editinput {
+span.spaneditinput {
 	height: 38px;
 	width: 270px;
 	display: block;
 	background: url(img/edit-bg-r.png) top right no-repeat;
 }
 
-span.editinput span.editinput-inner {
+span.spaneditinput span.spaneditinput-inner {
 	height: 38px;
 	display: block;
 	background: url(img/edit-bg.png) top left no-repeat;
@@ -203,13 +203,18 @@ span.editinput span.editinput-inner {
 	padding-top: 8px;
 }
 
-span.editinput-inner input {
+span.spaneditinput-inner input {
 	height: 22px;
 	border: 0px;
 }
 
-span.editinput-inner input:focus {
+span.spaneditinput-inner input:focus {
 	outline: none;
+}
+
+span.smalltext {
+ font-family: arial, sans-serif;
+ font-size: 10px;
 }
 
 
@@ -236,7 +241,7 @@ table.prop-table td span.tit {
 	line-height: 38px;
 }
 
-table.prop-table td span.editinput {
+table.prop-table td span.spaneditinput {
 	float: left;
 }
 

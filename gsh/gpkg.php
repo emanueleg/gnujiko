@@ -1,21 +1,38 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2017 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 22-10-2013
+ #DATE: 20-07-2017
  #PACKAGE: gpkg
  #DESCRIPTION: Gnujiko Package Tool
- #VERSION: 2.4beta
- #CHANGELOG: 22-10-2013 : Autenticazione.
+ #VERSION: 2.21beta
+ #CHANGELOG: 20-07-2017 : Bug fix su funzione gpkg_get_package.
+			 08-12-2016 : Bug fix su funzione build.
+			 04-12-2016 : Aggiunto ERRORE-301 repository locked.
+			 30-10-2016 : Aggiunta funzione unpublish.
+			 28-10-2016 : Bugfix continue not into for or switch.
+			 24-10-2016 : MySQLi integration.
+			 23-05-2016 : Aggiornata funzione Build, Install ed Upgrade. (check files via md5).
+			 11-03-2016 : Aggiornata funzione gpkg upgrade.
+			 25-01-2016 : Aggiornata funzione gpkg_upgrade, aggiunto variabile globale INSTALLED_VER per comparare versioni.
+			 08-11-2015 : Aggiunto parametro --remove-from-repo su funzione delete.
+			 16-03-2015 : Aggiunto comando update-repo-versionlist.
+			 23-11-2014 : Creata funzione stringfind.
+			 25-08-2014 : Bug fix su funzione delete.
+			 18-07-2014 : Bug fix sul comando file-changed su pacchetti che non contengono files.
+			 17-07-2014 : Aggiunta funzione delete package.
+			 25-04-2014 : Aggiunto filter by repository in function gpkg_list
+			 22-10-2013 : Autenticazione.
 			 15-04-2013 : Bug fix su funzione file-find.
 			 11-04-2013 : Sistemato i permessi ai files.
 			 05-02-2013 : Aggiunto exec-ordering su funzione check-depends.
 			 11-01-2013 : Bug fix in upgrade function.
- #TODO: Completare funzione auto-check-depends
+
+ #TODO: 1) - Completare funzione auto-check-depends
  
 */
 
@@ -35,6 +52,7 @@ function shell_gpkg($args, $sessid, $shellid=0)
  {
   case 'new' : return gpkg_newPackage($args, $sessid, $shellid); break;
   case 'edit' : return gpkg_editPackage($args, $sessid, $shellid); break;
+  case 'delete' : return gpkg_deletePackage($args, $sessid, $shellid); break;
   case 'add-file' : return gpkg_addFile($args, $sessid, $shellid); break;
   case 'build' : return gpkg_build($args, $sessid, $shellid); break;
   case 'download' : return gpkg_download($args, $sessid, $shellid); break;
@@ -45,20 +63,25 @@ function shell_gpkg($args, $sessid, $shellid=0)
   case 'info' : return gpkg_info($args, $sessid, $shellid); break;
   case 'list' : return gpkg_list($args, $sessid, $shellid); break;
   case 'resolve' : return gpkg_resolve($args, $sessid, $shellid); break;
+
   // ACTIONS //
   case 'publish' : return gpkg_publish($args, $sessid, $shellid); break;
+  case 'unpublish' : case 'remove-from-repo' : return gpkg_unpublish($args, $sessid, $shellid); break;
+
   // SERVERS //
   case 'add-server' : return gpkg_addServer($args, $sessid, $shellid); break;
   case 'edit-server' : return gpkg_editServer($args, $sessid, $shellid); break;
   case 'delete-server' : return gpkg_deleteServer($args, $sessid, $shellid); break;
   case 'server-info' : return gpkg_serverInfo($args, $sessid, $shellid); break;
   case 'server-list' : return gpkg_serverList($args, $sessid, $shellid); break;
+  case 'update-repo-versionlist' : return gpkg_updateRepoVersionlist($args, $sessid, $shellid); break;
   // OTHER FUNCTIONS //
   case 'file-info' : return gpkg_fileInfo($args, $sessid, $shellid); break;
   case 'file-changed' : return gpkg_fileChanged($args, $sessid, $shellid); break;
   case 'file-find' : return gpkg_fileFind($args, $sessid, $shellid); break;
   case 'auto-check-depends' : return gpkg_autoCheckDepends($args, $sessid, $shellid); break;
   case 'reverse-check-depends' : return gpkg_reverseCheckDepends($args, $sessid, $shellid); break; /*Instead of checking the dependencies of a given package, this command returns a list of all packages that depend on the specified package.*/
+  case 'stringfind' : case 'strfind' : case 'findstring' : case 'findstr' : return gpkg_stringFind($args, $sessid, $shellid); break;
 
   default : return gpkg_invalidArguments(); break;
  }
@@ -96,7 +119,7 @@ function gpkg_newPackage($args, $sessid, $shellid)
 
  // crea cartella pacchetto//
  $out.= "Creating package folder...";
- $ret = GShell("mkdir var/packages/$name",$sessid, $shellid);
+ $ret = GShell("mkdir var/packages/".$name,$sessid, $shellid);
  if($ret['error'])
   return array("message"=>$out.$ret['message'],"error"=>$ret['error']);
  $path = $ret['outarr']['path'];
@@ -190,6 +213,93 @@ function gpkg_editPackage($args, $sessid, $shellid)
  return array('message'=>$out,'outarr'=>$outArr);
 }
 //-------------------------------------------------------------------------------------------------------------------//
+function gpkg_deletePackage($args, $sessid, $shellid)
+{
+ global $_BASE_PATH, $_DEFAULT_FILE_PERMS;
+ $out = "";
+
+ for($c=1; $c < count($args); $c++)
+  switch($args[$c])
+  {
+   case '-package' : {$package=$args[$c+1]; $c++;} break;
+   case '-r' : $deleteAll=true; break;
+   case '--remove-from-repo' : case '--remove-from-repository' : $removeFromRepo=true; break;
+
+   default : $package=$args[$c]; break; 
+  }
+
+ if(!$package)
+  return array("message"=>"You must specify the package to delete", "error"=>"INVALID_PACKAGE");
+
+ // verifica se il pacchetto esiste //
+ $path = $_BASE_PATH."var/packages/".$package."/";
+ if(!file_exists($path."packageinfo.xml"))
+  return array("message"=>"Package ".$package." does not exists.\n", "error"=>"PACKAGE_DOES_NOT_EXISTS");
+
+ $ret = GShell("rm `var/packages/".$package."/`",$sessid,$shellid);
+ if($ret['error'])
+  return array("message"=>"Unable to delete package ".$package.".\n".$ret['message'], "error"=>$ret['error']);
+
+ if($deleteAll && file_exists($_BASE_PATH."var/packages/".$package.".zip"))
+ {
+  $ret = GShell("rm `var/packages/".$package.".zip`",$sessid,$shellid);
+  if($ret['error'])
+   return array("message"=>"Unable to delete file ".$package.".zip into var/packages/\n".$ret['message'], "error"=>$ret['error']);
+ }
+ $out = "done!\nPackage ".$package." has been deleted.";
+
+ if($removeFromRepo)
+ {
+  $db = new AlpaDatabase();
+  $db->RunQuery("SELECT repository FROM gnujiko_packages WHERE name='".$package."' LIMIT 1");
+  if($db->Read())
+  {
+   $repoURI = $db->record['repository'];
+   $x = explode("/", str_replace("http://","",$repoURI));
+   $host = $x[0];
+   $ver = $x[2];
+   $sec = $x[3];
+   
+   $db->RunQuery("SELECT name,host,basepath,login,password FROM gnujiko_gpkg_servers WHERE host='".$host."'");
+   if($db->Read())
+   {
+	$serverInfo = array('name'=>$db->record['name'], 'host'=>$db->record['host'], 'basepath'=>$db->record['basepath'], 
+		'login'=>$db->record['login'], 'password'=>$db->record['password']);
+	
+	$out.= "Connecting to server ".$serverInfo['name']."...";
+    $conn = ftp_connect($serverInfo['host']);
+	if(!$conn) return array('message'=>$out."failed!\nUnable to connect with server ".$serverInfo['name'],'error'=>"INVALID_CONNECTION");
+	if(!ftp_login($conn,$serverInfo['login'],$serverInfo['password']))
+	  return array('message'=>$out."failed! Login failed!",'error'=>"LOGIN_FAILED");
+	$out.= "done!\n";
+
+	/* Remove zip file */
+	$path = "dists/".$ver."/".$sec."/data/".$package.".zip";
+	$out.= "Remove package from data/ folder...";
+	if(!@ftp_delete($conn, $path))
+	 return array('message'=>$out."failed!\nUnable to delete file ".$path." from server ".$serverInfo['name'], 'error'=>"FTP_DELETE_FAILED");
+	$out.= "done!\n";
+
+	/* Remove info file */
+	$path = "dists/".$ver."/".$sec."/info/".$package.".xml";
+	$out.= "Remove package info from info/ folder...";
+	if(!@ftp_delete($conn, $path))
+	 return array('message'=>$out."failed!\nUnable to delete file ".$path." from server ".$serverInfo['name'], 'error'=>"FTP_DELETE_FAILED");
+	$out.= "done!\n";
+
+	/* Update version list */
+	$out.= "Update repository version list...";
+	$ret = GShell("gpkg update-repo-versionlist -server '".$serverInfo['name']."' -version '".$ver."' -section '".$sec."'",$sessid,$shellid);
+	if($ret['error']) return array('message'=>$out."failed!\n".$ret['message'], 'error'=>$ret['error']);
+	$out.= "done!\n";
+   }
+  }
+  $db->Close();
+ }
+
+ return array("message"=>$out);
+}
+//-------------------------------------------------------------------------------------------------------------------//
 function gpkg_addFile($args, $sessid, $shellid)
 {
  global $_BASE_PATH, $_DEFAULT_FILE_PERMS;
@@ -213,9 +323,9 @@ function gpkg_addFile($args, $sessid, $shellid)
  if(!file_exists($_BASE_PATH."var/packages/$pkgname/packageinfo.xml"))
   return array("message"=>"Package $pkgname does not exists!.\n","error"=>"PACKAGE_DOES_NOT_EXISTS");
 
- if(!is_dir($_BASE_PATH."var/packages/$pkgname/__files"))
+ if(!is_dir($_BASE_PATH."var/packages/".$pkgname."/__files"))
  {
-  $ret = GShell("mkdir var/packages/$pkgname/__files",$sessid,$shellid);
+  $ret = GShell("mkdir var/packages/".$pkgname."/__files",$sessid,$shellid);
   if($ret['error'])
    return array("message"=>"Unable to create __files into dir var/packages/$pkgname/ \n","error"=>$ret['error']);
   $out.= "Folder __files created automatically.\n";
@@ -259,8 +369,13 @@ function gpkg_build($args, $sessid, $shellid)
   switch($args[$c])
   {
    case '-package' : {$packages[]=$args[$c+1]; $c++;} break;
+   case '--auto-update-changelog' : $autoUpdateChangelog=true; break;
    default: $packages[]=$args[$c]; break;
   }
+
+ if($autoUpdateChangelog)
+  include_once($_BASE_PATH."var/lib/xmllib.php");
+
 
  for($c=0; $c < count($packages); $c++)
  {
@@ -270,8 +385,56 @@ function gpkg_build($args, $sessid, $shellid)
   // verifica se il pacchetto esiste //
   if(!file_exists($_BASE_PATH."var/packages/$pkgname/packageinfo.xml"))
    return array("message"=>"Package $pkgname does not exists!.\n","error"=>"PACKAGE_DOES_NOT_EXISTS");
+
+  // AUTOUPDATE MD5
+  if($autoUpdateChangelog)
+  {
+   if(file_exists($_BASE_PATH."var/packages/".$pkgname."/changelog.xml"))
+   {
+    $xml = new GXML($_BASE_PATH."var/packages/".$pkgname."/changelog.xml");
+	if(!$xml) return array('message'=>"Update changelog failed!\nUnable to parse xml file var/packages/".$pkgname."/changelog.xml", 'error'=>'AUTOUPDATE_CHANGELOG_ERROR');
+	$xmlElements = $xml->toArray();
+    reset($xmlElements);
+	while(list($k,$v) = each($xmlElements))
+	 $_XML_FILES[] = $v;
+   }
+   else
+	$_XML_FILES = array();
+
+   $_XML_FILENAMES = array();
+   for($i=0; $i < count($_XML_FILES); $i++)
+	$_XML_FILENAMES[] = $_XML_FILES[$i]['name'];
+
+   // check last file added/changed from last revision
+   $ret = GShell("dynarc item-list -ap gpkgdtrev -ct '".$pkgname."' --order-by 'ctime DESC' -limit 1",$sessid, $shellid);
+   if(!$ret['error'] && count($ret['outarr']['items']))
+   {
+	$lastRevInfo = $ret['outarr']['items'][0];
+	$ret = GShell("dynarc item-info -ap gpkgdtrev -id '".$lastRevInfo['id']."' -extget gpkgrevfiles",$sessid,$shellid);
+	if(!$ret['error'] && count($ret['outarr']['gpkgrevfiles']))
+	{
+	 for($i=0; $i < count($ret['outarr']['gpkgrevfiles']); $i++)
+	 {
+	  $fileInfo = $ret['outarr']['gpkgrevfiles'][$i];
+	  if(($fileInfo['action'] == 'NEW') || ($fileInfo['action'] == 'UPDATED'))
+	  {
+	   $a = array('name'=>$fileInfo['name'], 'version'=>$fileInfo['version'], 'mtime'=>$fileInfo['mtime'], 'md5'=>$fileInfo['md5']);
+	   $idx = array_search($fileInfo['name'], $_XML_FILENAMES);
+	   if(($idx !== false) && is_array($_XML_FILES[$idx])) $_XML_FILES[$idx] = $a; else $_XML_FILES[] = $a;
+	  }
+	 }
+	}
+   }
+
+   // write to file
+   $ret = GShell("echo <![CDATA[".array_to_xml($_XML_FILES)."]]> > var/packages/".$pkgname."/changelog.xml",$sessid,$shellid);
+   if($ret['error']) return array('message'=>"Update changelog failed!\n".$ret['message'], 'error'=>$ret['error']);
+  }
+
+
+
   // comprime l'archivio //
-  $ret = GShell("zip var/packages/$pkgname/ var/packages/$pkgname.zip", $sessid, $shellid);
+  $ret = GShell("zip var/packages/".$pkgname."/ var/packages/".$pkgname.".zip", $sessid, $shellid);
   if($ret['error'])
    return array("message"=>"Compression failed!\n".$ret['message'],"error"=>$ret['error']);
  }
@@ -311,8 +474,6 @@ function gpkg_download($args, $sessid, $shellid)
   if(!$rep)
    return array("message"=>"Unable to detect repository from package ".$pack['name'],"error"=>"INVALID_PACKAGE_REPOSITORY");
   gshPreOutput($shellid,"Downloading package ".$pack['name']." from ".$rep, "DOWNLOAD_PACKAGE", $pack['name']);
-  //$url = rtrim($rep,"/")."/data/".$pack['name'].".zip";
-  //$buffer = gpkg_http_get($url,$shellid,"DOWNLOADING",$pack['name'],"SINGLE_LINE");
   $ret = gpkg_get_package(rtrim($rep,"/"), $pack['name'], $shellid,"DOWNLOADING",$pack['name'],"SINGLE_LINE");
   if($ret['error'])
    return $ret;
@@ -370,6 +531,9 @@ function gpkg_install($args, $sessid, $shellid)
  if(!count($packages))
   return array("message"=>"You must specify at least one package. (with -package PACKAGE_NAME)","error"=>"INVALID_PACKAGE");
 
+ include_once($_BASE_PATH."var/lib/xmllib.php");
+
+
  for($c=0; $c < count($packages); $c++)
  {
   $out = "";
@@ -410,6 +574,26 @@ function gpkg_install($args, $sessid, $shellid)
    $ret = GShell("unzip ".$from.$packInfo['name'].".zip tmp/packages/".$packInfo['name']."/",$sessid,$shellid);
    if($ret['error'])
 	return array("message"=>"Unable to decompress package ".$packInfo['name']." into folder tmp/packages/\n".$ret['message'],'error'=>$ret['error']);
+
+   // check md5 from changelog.xml
+   if(file_exists($_BASE_PATH."tmp/packages/".$packInfo['name']."/changelog.xml"))
+   {
+    $xml = new GXML($_BASE_PATH."tmp/packages/".$packInfo['name']."/changelog.xml");
+	if(!$xml) return array('message'=>"Read changelog failed for package ".$packInfo['name']."!\nUnable to parse xml file tmp/packages/".$packInfo['name']."/changelog.xml", 'error'=>'READ_CHANGELOG_FAILED');
+	$_CHANGELOG_FILES = $xml->toArray();
+	reset($_CHANGELOG_FILES);
+	while(list($k,$logFile) = each($_CHANGELOG_FILES))
+	{
+	 if(file_exists($_BASE_PATH."tmp/packages/".$packInfo['name']."/__files/".$logFile['name']))
+	 {
+	  $ret = GShell("gpkg file-info `tmp/packages/".$packInfo['name']."/__files/".$logFile['name']."`",$sessid,$shellid);
+	  if($ret['error']) return array('message'=>"Read changelog failed!\nUnable to get informations about file ".$logFile['name'], 'error'=>$ret['error']);
+	  if($ret['outarr']['md5'] != $logFile['md5'])
+	   return array('message'=>"GPKG Error: The file ".$logFile['name']." is corrupted!", 'error'=>'FILE_CORRUPTED');
+	 }
+	}
+   }  
+
    // copy files //
    gshPreOutput($shellid,"Copy files...", "COPY_FILES", $packInfo['name']);
    if(file_exists($_BASE_PATH."tmp/packages/".$packInfo['name']."/__files/") && !full_copy($_BASE_PATH."tmp/packages/".$packInfo['name']."/__files/",$_BASE_PATH,$_DEFAULT_FILE_PERMS))
@@ -471,6 +655,7 @@ function gpkg_upgrade($args, $sessid, $shellid)
    case '--configure-only' : $configureOnly=true; break;
    case '--force' : $force=true; break;
    case '--no-resolve' : $noResolve=true; break; // force for no resolving dependences //
+   case '--force-installed-ver' : case '-instver' : { $forceInstalledVer=$args[$c+1]; $c++;} break;
    default : $packages[] = $args[$c]; break;
   }
 
@@ -485,6 +670,8 @@ function gpkg_upgrade($args, $sessid, $shellid)
  if(!count($packages))
   return array("message"=>"You must specify at least one package. (with -package PACKAGE_NAME)","error"=>"INVALID_PACKAGE");
 
+ include_once($_BASE_PATH."var/lib/xmllib.php");
+
  for($c=0; $c < count($packages); $c++)
  {
   $ret = GShell("gpkg info '".$packages[$c]."'",$sessid, $shellid);
@@ -493,9 +680,9 @@ function gpkg_upgrade($args, $sessid, $shellid)
   $packInfo = $ret['outarr'];
 
   // verify if already installed //
-  if(!$packInfo['installed_version'])
+  if(!$packInfo['installed_version'] && !$force)
    return array("message"=>"Package ".$packInfo['name']." is not installed.","error"=>"PACKAGE_IS_NOT_INSTALLED");
-  if($packInfo['installed_version'] == $packInfo['version'])
+  if(($packInfo['installed_version'] == $packInfo['version']) && !$force)
    return array("message"=>"Package ".$packInfo['name']." is already the updated version.","error"=>"PACKAGE_ALREADY_UPDATED_VERSION"); 
 
   // verify if package file exists //
@@ -519,22 +706,51 @@ function gpkg_upgrade($args, $sessid, $shellid)
    $ret = GShell("unzip ".$from.$packInfo['name'].".zip tmp/packages/".$packInfo['name']."/",$sessid,$shellid);
    if($ret['error'])
 	return array("message"=>"Unable to decompress package ".$packInfo['name']." into folder tmp/packages/\n".$ret['message'],'error'=>$ret['error']);
+
+   // check md5 from changelog.xml
+   if(file_exists($_BASE_PATH."tmp/packages/".$packInfo['name']."/changelog.xml"))
+   {
+    $xml = new GXML($_BASE_PATH."tmp/packages/".$packInfo['name']."/changelog.xml");
+	if(!$xml) return array('message'=>"Read changelog failed for package ".$packInfo['name']."!\nUnable to parse xml file tmp/packages/".$packInfo['name']."/changelog.xml", 'error'=>'READ_CHANGELOG_FAILED');
+	$_CHANGELOG_FILES = $xml->toArray();
+	reset($_CHANGELOG_FILES);
+	while(list($k,$logFile) = each($_CHANGELOG_FILES))
+	{
+	 if(file_exists($_BASE_PATH."tmp/packages/".$packInfo['name']."/__files/".$logFile['name']))
+	 {
+	  $ret = GShell("gpkg file-info `tmp/packages/".$packInfo['name']."/__files/".$logFile['name']."`",$sessid,$shellid);
+	  if($ret['error']) return array('message'=>"Read changelog failed!\nUnable to get informations about file ".$logFile['name'], 'error'=>$ret['error']);
+	  if($ret['outarr']['md5'] != $logFile['md5'])
+	   return array('message'=>"GPKG Error: The file ".$logFile['name']." is corrupted!", 'error'=>'FILE_CORRUPTED');
+	 }
+	}
+   }  
+
    // copy files //
    gshPreOutput($shellid,"Copy files...", "COPY_FILES", $packInfo['name']);
    $_out = ""; $_err = "";
    if(!full_copy($_BASE_PATH."tmp/packages/".$packInfo['name']."/__files/",$_BASE_PATH,$_DEFAULT_FILE_PERMS,$_out,$_err))
 	return array("message"=>"Unable to copy files from ".$_BASE_PATH."tmp/packages/".$packInfo['name']."/__files/\n".$_out,"error"=>"UNABLE_TO_COPY_FILES");
   }
+  else if(!file_exists($_BASE_PATH."tmp/packages/".$packInfo['name']."/packageinfo.xml"))
+  {
+   // decompress package //
+   gshPreOutput($shellid,"Decompress package ".$packInfo['name']." ...", "DECOMPRESS_PACKAGE", $packInfo['name']);
+   $ret = GShell("unzip ".$from.$packInfo['name'].".zip tmp/packages/".$packInfo['name']."/",$sessid,$shellid);
+   if($ret['error'])
+	return array("message"=>"Unable to decompress package ".$packInfo['name']." into folder tmp/packages/\n".$ret['message'],'error'=>$ret['error']);
+  }
 
   // run packageupdate.php (if exists) //
   if(file_exists($_BASE_PATH."tmp/packages/".$packInfo['name']."/packageupdate.php"))
   {
    $out.= "Updating package ".$packInfo['name']."\n";
-   global $_SHELL_OUT, $_SHELL_ERR, $_SESSION_ID, $_SHELL_ID;
+   global $_SHELL_OUT, $_SHELL_ERR, $_SESSION_ID, $_SHELL_ID, $_INSTALLED_VER;
    $_SHELL_OUT = "";
    $_SHELL_ERR = "";
    $_SESSION_ID = $sessid;
    $_SHELL_ID = $shellid;
+   $_INSTALLED_VER = $forceInstalledVer ? $forceInstalledVer : ($packInfo['installed_version'] ? $packInfo['installed_version'] : "");
 
    define("VALID-GNUJIKO",1);
    include_once($_BASE_PATH."tmp/packages/".$packInfo['name']."/packageupdate.php");
@@ -749,6 +965,7 @@ function gpkg_info($args, $sessid, $shellid)
   {
    case '-repo' : case '-repository' : {$repository=$args[$c+1]; $c++;} break;
    case '--get-local-ver' : $getLocalVer=true; break;
+   case '--get-compiled-ver' : $getCompiledVer=true; break;
    case '--verbose' : $verbose=true; break;
    case '-local' : $local=true; break;
    default: {if(!$name)$name=$args[$c];} break;
@@ -771,21 +988,42 @@ function gpkg_info($args, $sessid, $shellid)
    }
    else
     $status = "available";
-   $outArr = array('name'=>$db->record['name'],'version'=>$db->record['version'],'installed_version'=>$db->record['installed_version'],
-	'section'=>$db->record['section'],'maintainer'=>$db->record['maintainer'],'essential'=>$db->record['essential'],
-	'pre-depends'=>$db->record['pre_depends'],'depends'=>$db->record['depends'],'replaces'=>$db->record['replaces'],
-	'conflicts'=>$db->record['conflicts'],'description'=>$db->record['description'],'repository'=>$db->record['repository'],'status'=>$status);
+   $outArr = array('name'=>$db->record['name'],'version'=>$db->record['version'],'online_version'=>$db->record['version'],
+	'installed_version'=>$db->record['installed_version'],'section'=>$db->record['section'],'maintainer'=>$db->record['maintainer'],
+	'essential'=>$db->record['essential'],'pre-depends'=>$db->record['pre_depends'],'depends'=>$db->record['depends'],
+	'replaces'=>$db->record['replaces'],'conflicts'=>$db->record['conflicts'],'description'=>$db->record['description'],
+	'repository'=>$db->record['repository'],'status'=>$status);
 
    if($getLocalVer)
    {
-    // verifica se esiste la versione locale */
-    if(file_exists($_BASE_PATH."var/packages/$name/packageinfo.xml"))
+    // verifica se esiste la versione locale 
+    if(file_exists($_BASE_PATH."var/packages/".$name."/packageinfo.xml"))
     {
 	 include_once($_BASE_PATH."var/lib/xmllib.php");
-	 $xml = new GXML($_BASE_PATH."var/packages/$name/packageinfo.xml");
+	 $xml = new GXML($_BASE_PATH."var/packages/".$name."/packageinfo.xml");
 	 $el = $xml->GetElementsByTagName('package');
 	 $outArr['local_version'] = $el[0]->getString('version');
     }
+   }
+   if($getCompiledVer)
+   {
+    // verfica se esiste la versione compilata
+	if(file_exists($_BASE_PATH."var/packages/".$name.".zip"))
+	{
+	 include_once($_BASE_PATH.'var/lib/zip/unzip.lib.php');
+	 $zip = new SimpleUnzip($_BASE_PATH."var/packages/".$name.".zip");
+  	 for($c=0; $c < $zip->Count(); $c++)
+  	 {
+   	  if(ltrim($zip->GetPath($c)."/".$zip->GetName($c),"/") != "packageinfo.xml")
+	   continue;
+   	  include_once($_BASE_PATH."var/lib/xmllib.php");
+   	  $xml = new GXML();
+   	  $xml->LoadFromString($zip->GetData($c));
+   	  $el = $xml->GetElementsByTagName('package');
+	  $outArr['compiled_version'] = $el[0]->getString('version');
+	  break;
+	 }
+	}
    }
    $intoDB = true;
   }
@@ -867,11 +1105,13 @@ function gpkg_list($args, $sessid, $shellid)
   {
    case '-section' : {$section=$args[$c+1]; $c++;} break;
    case '-installed' : $installed=true; break;
+   case '-repository' : {$filterByRepo=$args[$c+1]; $c++;} break; // specify url,ver,section separated by space (ex: http://gnujiko.alpatech.it 10.1 main)
    case '-local' : $local=true; break;
    case '--verbose' : $verbose=true; break;
    case '-limit' : {$limit=$args[$c+1]; $c++;} break;
    case '--order-by' : {$orderBy=$args[$c+1]; $c++;} break;
    case '--get-local-ver' : $getLocalVer=true; break;
+   case '--get-compiled-ver' : $getCompiledVer=true; break;
   }
 
  if($local)
@@ -895,13 +1135,13 @@ function gpkg_list($args, $sessid, $shellid)
 
   $packages = array();
   /* Detect compiled packages */
-  $ret = GShell("ls /var/packages/ -f -filter zip");
+  $ret = GShell("ls /var/packages/ -f -filter zip",$sessid, $shellid);
   $list = $ret['outarr']['files'];
   for($c=0; $c < count($list); $c++)
    $packages[] = rtrim($list[$c]['name'],".zip");
 
   /* Detect un-compiled packages */
-  $ret = GShell("ls /var/packages/ -d");
+  $ret = GShell("ls /var/packages/ -d",$sessid, $shellid);
   $list = $ret['outarr']['dirs'];
   for($c=0; $c < count($list); $c++)
   {
@@ -914,7 +1154,7 @@ function gpkg_list($args, $sessid, $shellid)
   $list = array();
   foreach($packages as $k => $package)
   {
-   $ret = GShell("gpkg info `".$package."` -local");
+   $ret = GShell("gpkg info `".$package."` -local",$sessid, $shellid);
    if(!$ret['error'])
    {
 	$pkg = $ret['outarr'];
@@ -976,10 +1216,14 @@ function gpkg_list($args, $sessid, $shellid)
 	}
 
     $outArr['packages'][] = $pkg;
-  }
-
+  } /* EOF - FOR */
+ 
+  if($verbose)
+   $out.= "</table><br/>".$outArr['count']." packages found.";
   return array('message'=>$out,'outarr'=>$outArr);
- }
+ } /* EOF - IF $local */
+
+ //------------------------------------------------------------------------------------------------------------------//
 
  /* Get packages from database */
  if($verbose)
@@ -991,6 +1235,15 @@ function gpkg_list($args, $sessid, $shellid)
   $qry.= " AND section='$section'";
  if($installed)
   $qry.= " AND installed_version!=''";
+ if($filterByRepo)
+ {
+  $x = explode(" ",$filterByRepo);
+  $repoURL = $x[0];
+  $repoVER = $x[1];
+  $repoSEC = $x[2];
+  $repostr = $repoURL."/dists/".$repoVER."/".$repoSEC;
+  $qry.= " AND repository='".$repostr."'";
+ }
 
  if(!$qry)
   $qry = "1";
@@ -1006,7 +1259,7 @@ function gpkg_list($args, $sessid, $shellid)
  $db->RunQuery("SELECT name FROM gnujiko_packages WHERE ".ltrim($qry," AND ")." ORDER BY ".$orderBy.($limit ? " LIMIT ".$limit : ""));
  while($db->Read())
  {
-  $ret = GShell("gpkg info ".$db->record['name'].($getLocalVer ? " --get-local-ver" : ""),$sessid,$shellid);
+  $ret = GShell("gpkg info ".$db->record['name'].($getLocalVer ? " --get-local-ver" : "").($getCompiledVer ? " --get-compiled-ver" : ""),$sessid,$shellid);
   if(!$ret['error'])
   {
    $pkg = $ret['outarr'];
@@ -1021,6 +1274,11 @@ function gpkg_list($args, $sessid, $shellid)
    $out.= "<tr><td style='color:#f31903'>".$db->record['name']."</td><td colspan='3'>Unable to retrieve package informations.</td></tr>";
  }
  $db->Close();
+
+ if($verbose)
+  $out.= "</table><br/>".$outArr['count']." packages found.";
+
+
  return array("message"=>$out,"outarr"=>$outArr);
 }
 //-------------------------------------------------------------------------------------------------------------------//
@@ -1144,7 +1402,7 @@ function __gpkg_resolve($pack,$sessid,$shellid)
  if(!$pack)
   return;
 
- $ret = GShell("gpkg info $pack",$sessid,$shellid);
+ $ret = GShell("gpkg info `".$pack."`",$sessid,$shellid);
  if($ret['error'])
  {
   $_GPKG_LIST[$pack] = "UNAVAILABLE";
@@ -1181,7 +1439,7 @@ function __gpkg_resolve($pack,$sessid,$shellid)
 
  /* Check if exists language-pack for this package */
  $langpack = $pack."-language-pack-".substr($_LANGUAGE,0,strpos($_LANGUAGE,"-"));
- $ret = GShell("gpkg info $langpack",$sessid,$shellid);
+ $ret = GShell("gpkg info `".$langpack."`",$sessid,$shellid);
  if(!$ret['error'])
   __gpkg_resolve($langpack,$sessid,$shellid);
  
@@ -1195,14 +1453,19 @@ function gpkg_publish($args, $sessid, $shellid)
  global $_BASE_PATH;
  $packages = array();
  $servers = array();
+ $svrver = "10.1";
 
  for($c=1; $c < count($args); $c++)
   switch($args[$c])
   {
    case '-package' : {$packages[] = $args[$c+1]; $c++;} break;
    case '-server' : {$servers[] = $args[$c+1]; $c++;} break;
+   case '-version' : case '-ver' : {$svrver=$args[$c+1]; $c++;} break;
    case '-section' : {$section=$args[$c+1]; $c++;} break;
    case '-build' : $build=true; break;
+
+   case '--auto-update-changelog' : $autoUpdateChangelog=true; break;
+
    default : $packages[] = $args[$c]; break;
   }
 
@@ -1229,14 +1492,14 @@ function gpkg_publish($args, $sessid, $shellid)
  /* detect local packages */
  for($c=0; $c < count($packages); $c++)
  {
-  $ret = GShell("gpkg info ".$packages[$c]." -local",$sessid,$shellid);
+  $ret = GShell("gpkg info '".$packages[$c]."' -local",$sessid,$shellid);
   if($ret['error'])
    return $ret;
   $packageList[] = $ret['outarr'];
   if($build)
   {
    gshPreOutput($shellid,"Building package...","BUILD_PACKAGE",$packages[$c]);
-   $ret = GShell("gpkg build -package '".$packages[$c]."'",$sessid,$shellid);
+   $ret = GShell("gpkg build -package '".$packages[$c]."'".($autoUpdateChangelog ? " --auto-update-changelog": ""),$sessid,$shellid);
    if($ret['error'])
 	return $ret;
   }
@@ -1257,8 +1520,8 @@ function gpkg_publish($args, $sessid, $shellid)
   for($p=0; $p < count($packageList); $p++)
   {
    $packageInfo = $packageList[$p];
-   $servpath = rtrim($serverInfo['basepath'],"/")."/dists/10.1/".$section."/data/";
-   $servpathinfo = rtrim($serverInfo['basepath'],"/")."/dists/10.1/".$section."/info/";
+   $servpath = rtrim($serverInfo['basepath'],"/")."/dists/".$svrver."/".$section."/data/";
+   $servpathinfo = rtrim($serverInfo['basepath'],"/")."/dists/".$svrver."/".$section."/info/";
    gshPreOutput($shellid,"Uploading package ".$packageInfo['name']." into section $section ...","UPLOADING_PACKAGE", $packageInfo['name']);
    /* upload zip package */
    if(!@ftp_put($conn,rtrim($servpath,"/")."/".$packageInfo['name'].".zip",$_BASE_PATH."var/packages/".$packageInfo['name'].".zip",FTP_BINARY))
@@ -1277,12 +1540,139 @@ function gpkg_publish($args, $sessid, $shellid)
  return array('message'=>$out,'outarr'=>$outArr);
 }
 //-------------------------------------------------------------------------------------------------------------------//
+function gpkg_unpublish($args, $sessid, $shellid)
+{
+ global $_BASE_PATH;
+ $packages = array();
+ $_SERVERS = array();
+
+
+ for($c=1; $c < count($args); $c++)
+  switch($args[$c])
+  {
+   case '-package' : {$packages[] = $args[$c+1]; $c++;} break;
+
+   default : $packages[] = $args[$c]; break;
+  }
+
+ if(!count($packages)) return array('message'=>"GPKG unpublish error. You must specify at least one package.", 'error'=>'INVALID_PACKAGE');
+
+ /* detect local packages */
+ $_PACKAGES = array();
+ for($c=0; $c < count($packages); $c++)
+ {
+  $ret = GShell("gpkg info '".$packages[$c]."' -local",$sessid,$shellid);
+  if($ret['error']) return array('message'=>$out.= "Get package info '".$packages[$c]."' failed.\n".$ret['message'], 'error'=>$ret['error']);
+
+  $_PACKAGES[] = $ret['outarr'];
+ }
+
+ // Check repository for each package
+ $db = new AlpaDatabase();
+ for($c=0; $c < count($_PACKAGES); $c++)
+ {
+  $db->RunQuery("SELECT repository FROM gnujiko_packages WHERE name='".$_PACKAGES[$c]['name']."' LIMIT 1");
+  if($db->Read())
+  {
+   $repoURI = $db->record['repository'];
+   $_PACKAGES[$c]['repository'] = $repoURI;
+   
+   $x = explode("/", str_replace("http://","",$repoURI));
+   $host = $x[0];
+   $ver = $x[2];
+   $sec = $x[3];
+
+   $_PACKAGES[$c]['repo_ver'] = $ver;
+   $_PACKAGES[$c]['repo_sec'] = $sec;
+
+   if(is_array($_SERVERS[$host]))
+	$_SERVERS[$host]['packages'][] = $_PACKAGES[$c];
+   else
+   {
+    $db->RunQuery("SELECT name,host,basepath,login,password FROM gnujiko_gpkg_servers WHERE host='".$host."'");
+	if($db->Read())
+    {
+	 $serverInfo = array('name'=>$db->record['name'], 'host'=>$db->record['host'], 'basepath'=>$db->record['basepath'], 
+		'login'=>$db->record['login'], 'password'=>$db->record['password'], 'packages'=>array(), 'versions'=>array());
+	 $serverInfo['packages'][] = $_PACKAGES[$c];
+	 $_SERVERS[$host] = $serverInfo;
+	}
+   }
+  }
+ }
+ $db->Close();
+
+ // Unpublish packages for each servers
+ reset($_SERVERS);
+ while(list($k,$serverInfo) = each($_SERVERS))
+ {
+  $out.= "Connecting to server ".$serverInfo['name']."...";
+  $conn = ftp_connect($serverInfo['host']);
+  if(!$conn) return array('message'=>$out."failed!\nUnable to connect with server ".$serverInfo['name'],'error'=>"INVALID_CONNECTION");
+  if(!ftp_login($conn,$serverInfo['login'],$serverInfo['password']))
+   return array('message'=>$out."failed! Login failed!",'error'=>"LOGIN_FAILED");
+  $out.= "done!\n";
+  
+  $db = new AlpaDatabase();
+  for($c=0; $c < count($serverInfo['packages']); $c++)
+  {
+   $package = $serverInfo['packages'][$c];
+
+   /* Remove zip file */
+   $path = "dists/".$package['repo_ver']."/".$package['repo_sec']."/data/".$package['name'].".zip";
+   $out.= "Remove package from data/ folder...";
+   if(!@ftp_delete($conn, $path))
+	return array('message'=>$out."failed!\nUnable to delete file ".$path." from server ".$serverInfo['name'], 'error'=>"FTP_DELETE_FAILED");
+   $out.= "done!\n";
+
+   /* Remove info file */
+   $path = "dists/".$package['repo_ver']."/".$package['repo_sec']."/info/".$package['name'].".xml";
+   $out.= "Remove package info from info/ folder...";
+   if(!@ftp_delete($conn, $path))
+	return array('message'=>$out."failed!\nUnable to delete file ".$path." from server ".$serverInfo['name'], 'error'=>"FTP_DELETE_FAILED");
+   $out.= "done!\n";
+
+   $versec = $package['repo_ver']."-".$package['repo_sec'];
+   if(!is_array($serverInfo['versions'][$package['repo_ver']]))
+	$serverInfo['versions'][$package['repo_ver']] = array('sections'=>array());
+
+   if(!in_array($package['repo_sec'], $serverInfo['versions'][$package['repo_ver']]['sections']))
+    $serverInfo['versions'][$package['repo_ver']]['sections'][] = $package['repo_sec'];
+
+   $db->RunQuery("UPDATE gnujiko_packages SET repository='' WHERE name='".$package['name']."'");
+  }
+  $db->Close();
+
+  // Update versionlist for each repository version and section.
+  reset($serverInfo['versions']);
+  while(list($ver,$verdata) = each($serverInfo['versions']))
+  {
+   for($c=0; $c < count($verdata['sections']); $c++)
+   {
+	$sec = $verdata['sections'][$c];
+
+    /* Update version list */
+	$out.= "Update repository version list...";
+	$ret = GShell("gpkg update-repo-versionlist -server '".$serverInfo['name']."' -version '".$ver."' -section '".$sec."'",$sessid,$shellid);
+	if($ret['error']) return array('message'=>$out."failed!\n".$ret['message'], 'error'=>$ret['error']);
+	$out.= "done!\n";
+   }
+  }
+
+ }
+
+ return array('message'=>$out);
+}
+//-------------------------------------------------------------------------------------------------------------------//
+
+//-------------------------------------------------------------------------------------------------------------------//
 //--------------- S E R V E R ---------------------------------------------------------------------------------------//
 //-------------------------------------------------------------------------------------------------------------------//
 function gpkg_addServer($args, $sessid, $shellid)
 {
  $out = "";
  $outArr = array();
+
  for($c=1; $c < count($args); $c++)
   switch($args[$c])
   {
@@ -1296,16 +1686,20 @@ function gpkg_addServer($args, $sessid, $shellid)
   return array('message'=>"You must specify at least name and host. (with: -name serverName -host serverHost)","error"=>"INVALID_PARAMS");
 
  $db = new AlpaDatabase();
- $db->RunQuery("INSERT INTO gnujiko_gpkg_servers(name,host,basepath,login,password) VALUES('$name','$host','$basePath','$login','$passw')");
- $id = mysql_insert_id();
+ $db->RunQuery("INSERT INTO gnujiko_gpkg_servers(name,host,basepath,login,password) VALUES('".$name."','".$host."','"
+	.$basePath."','".$login."','".$passw."')");
+ $id = $db->GetInsertId();
  $out.= "done!\n";
- $outArr = array('id'=>$id,'name'=>$name,'host'=>$host,'basepath'=>$basePath,'login'=>$login,'password'=>$passw);
+ $outArr = array('id'=>$id, 'name'=>$name, 'host'=>$host, 'basepath'=>$basePath, 'login'=>$login, 'password'=>$passw);
  $db->Close();
  return array('message'=>$out,'outarr'=>$outArr);
 }
 //-------------------------------------------------------------------------------------------------------------------//
 function gpkg_editServer($args, $sessid, $shellid)
 {
+ $out = "";
+ $outArr = array();
+
  for($c=1; $c < count($args); $c++)
   switch($args[$c])
   {
@@ -1315,30 +1709,25 @@ function gpkg_editServer($args, $sessid, $shellid)
    case '-host' : {$host=$args[$c+1]; $c++;} break;
    case '--base-path' : {$basePath=$args[$c+1]; $c++;} break;
    case '-login' : {$login=$args[$c+1]; $c++;} break;
-   case '-passw' : case 'password' : {$passw=$args[$c+1]; $c++;} break;
+   case '-passw' : case '-password' : {$passw=$args[$c+1]; $c++;} break;
   }
  
  $db = new AlpaDatabase();
- if($name)
-  $db->RunQuery("SELECT id FROM gnujiko_gpkg_servers WHERE name='$name'");
- else if($id)
-  $db->RunQuery("SELECT name FROM gnujiko_gpkg_servers WHERE id='$id'");
- else
-  return array('message'=>"You must specify server. (with: -id serverId OR -name serverName)", 'error'=>"INVALID_SERVER_ID");
- if(!$db->Read())
-  return array('message'=>"Server ".($name ? $name : "#$id")." does not exists.","SERVER_DOES_NOT_EXISTS");
+ if($name)			$db->RunQuery("SELECT * FROM gnujiko_gpkg_servers WHERE name='".$name."'");
+ else if($id)		$db->RunQuery("SELECT * FROM gnujiko_gpkg_servers WHERE id='".$id."'");
+ else				return array('message'=>"You must specify server. (with: -id serverId OR -name serverName)", 'error'=>"INVALID_SERVER_ID");
+ if(!$db->Read())	return array('message'=>"Server ".($name ? $name : "#".$id)." does not exists.","SERVER_DOES_NOT_EXISTS");
+
+ $outArr = array('id'=>$db->record['id'], 'name'=>$db->record['name'], 'host'=>$db->record['host'], 'basepath'=>$db->record['basepath'],
+	'login'=>$db->record['login'], 'password'=>$db->record['password']);
 
  $q = "";
- if($rename)
-  $q.= ",name='$rename'";
- if($host)
-  $q.= ",host='$host'";
- if($basePath)
-  $q.= ",basepath='$basePath'";
- if($login)
-  $q.= ",login='$login'";
- if($passw)
-  $q.= ",password='$passw'";
+ if($rename)				{ $q.= ",name='".$rename."'";		$outArr['name'] = $rename; }
+ if($host)					{ $q.= ",host='".$host."'";			$outArr['host'] = $host; }
+ if(isset($basePath))		{ $q.= ",basepath='".$basePath."'"; $outArr['basepath'] = $basepath; }
+ if(isset($login))			{ $q.= ",login='".$login."'";		$outArr['login'] = $login; }
+ if(isset($passw))			{ $q.= ",password='".$passw."'";	$outArr['password'] = $password; }
+
  $db->RunQuery("UPDATE gnujiko_gpkg_servers SET ".ltrim($q,",")." WHERE id='$id'");
  $db->Close();
  $out.= "done!\n";
@@ -1347,6 +1736,8 @@ function gpkg_editServer($args, $sessid, $shellid)
 //-------------------------------------------------------------------------------------------------------------------//
 function gpkg_deleteServer($args, $sessid, $shellid)
 {
+ $out = "";
+ 
  for($c=1; $c < count($args); $c++)
   switch($args[$c])
   {
@@ -1357,12 +1748,12 @@ function gpkg_deleteServer($args, $sessid, $shellid)
   return array('message'=>"You must specify server. (with -id serverId)","error"=>"INVALID_SERVER_ID");
  
  $db = new AlpaDatabase();
- $db->RunQuery("SELECT name FROM gnujiko_gpkg_servers WHERE id='$id'");
+ $db->RunQuery("SELECT name FROM gnujiko_gpkg_servers WHERE id='".$id."'");
  if(!$db->Read())
-  return array('message'=>"Server #$id does not exists", "SERVER_DOES_NOT_EXISTS");
- $db->RunQuery("DELETE FROM gnujiko_gpkg_servers WHERE id='$id'");
+  return array('message'=>"Server #".$id." does not exists", "SERVER_DOES_NOT_EXISTS");
+ $db->RunQuery("DELETE FROM gnujiko_gpkg_servers WHERE id='".$id."'");
  $db->Close();
- $out.= "Server #$id hase been removed!\n";
+ $out.= "Server #".$id." hase been removed!\n";
  return array('message'=>$out);
 }
 //-------------------------------------------------------------------------------------------------------------------//
@@ -1408,26 +1799,65 @@ function gpkg_serverList($args, $sessid, $shellid)
  $out = "";
  $outArr = array();
 
+ $_ORDER_BY = "id ASC";
+ $_LIMIT = 100;
+
+ for($c=1; $c < count($args); $c++)
+  switch($args[$c])
+  {
+   case '--order-by' : {$_ORDER_BY = $args[$c+1]; $c++;} break;
+   case '-limit' : {$_LIMIT=$args[$c+1]; $c++;} break;
+
+   case '--get-count' : $getCount=true; break;
+  }
+
  $db = new AlpaDatabase();
- $db->RunQuery("SELECT * FROM gnujiko_gpkg_servers WHERE 1 ORDER BY id ASC");
+ if($getCount)
+ {
+  $db->RunQuery("SELECT COUNT(*) FROM gnujiko_gpkg_servers WHERE 1");
+  $db->Read();
+  $outArr['count'] = $db->record[0];
+  $outArr['items'] = array();
+ }
+
+ $db->RunQuery("SELECT * FROM gnujiko_gpkg_servers WHERE 1 ORDER BY ".$_ORDER_BY." LIMIT ".$_LIMIT);
  while($db->Read())
  {
   $out.= "#".$db->record['id']." ".$db->record['name']."\n";
-  $outArr[] = array('id'=>$db->record['id'],'name'=>$db->record['name'],'host'=>$db->record['host'],'basepath'=>$db->record['basepath']);
+  $a = array('id'=>$db->record['id'],'name'=>$db->record['name'],'host'=>$db->record['host'],'basepath'=>$db->record['basepath']);
+  if($getCount)
+   $outArr['items'][] = $a;
+  else
+   $outArr[] = $a;
  }
  $db->Close();
  return array('message'=>$out,'outarr'=>$outArr);
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function gpkg_get_package($repository, $package, $shellid=0,$msgType="",$msgRef="", $mode="")
+function gpkg_updateRepoVersionlist($args, $sessid, $shellid)
 {
- global $_GNUJIKO_ACCOUNT, $_GNUJIKO_TOKEN;
+ global $_BASE_PATH;
+ $out = "";
+ $outArr = array();
 
- $url = $repository."/getfile.php?package=".$package."&account=".$_GNUJIKO_ACCOUNT."&token=".$_GNUJIKO_TOKEN;
+ for($c=1; $c < count($args); $c++)
+  switch($args[$c])
+  {
+   case '-server' : {$server=$args[$c+1]; $c++;} break;
+   case '-version' : case '-ver' : {$version=$args[$c+1]; $c++;} break;
+   case '-section' : case '-sec' : {$section=$args[$c+1]; $c++;} break;
+  }
+
+ $ret = GShell("gpkg server-info '".$server."'",$sessid,$shellid);
+ if($ret['error']) return $ret;
+ $repoInfo = $ret['outarr'];
+
+ $url = "http://".$repoInfo['host']."/dists/".$version."/".$section."/updateversionlist.php";
  $url_stuff = parse_url($url);
  $port = isset($url_stuff['port']) ? $url_stuff['port'] : 80;
 
- $fp = fsockopen($url_stuff['host'], $port);
+ $fp = @fsockopen($url_stuff['host'], $port);
+ if(!$fp) return array('message'=>"Unable to connect to server ".$repoInfo['host'].".", 'error'=>'FSOCKOPEN: CONNECTION_FAILED');
 
  $query  = 'GET ' . $url_stuff['path']."?".$url_stuff['query'] . " HTTP/1.0\n";
  $query .= 'Host: ' . $url_stuff['host'];
@@ -1446,14 +1876,73 @@ function gpkg_get_package($repository, $package, $shellid=0,$msgType="",$msgRef=
   if(!$fileSize)
   { 
    // check for errors //
-   if(ereg("ERROR-100:",$buffer))
+   if(preg_match("/ERROR/",$buffer))
+	return array("message"=>$buffer,"error"=>"UPDATE_VERSIONLIST_ERROR");
+
+   // try to detect file size //
+   if(preg_match('/Content-Length: (\d+)/', $buffer, $matches))
+   {
+	$fileSize = (int)$matches[1];
+	$perc = floor((100/$fileSize)*$buffLen);
+	$nextStep+= 71680;
+   }
+  }
+ }
+
+ preg_match('/Content-Length: ([0-9]+)/', $buffer, $parts);
+ $buffer = substr($buffer, - $parts[1]);
+
+ $out.= $buffer;
+
+ return array('message'=>$out,'outarr'=>$outArr);
+}
+//-------------------------------------------------------------------------------------------------------------------//
+function gpkg_get_package($repository, $package, $shellid=0,$msgType="",$msgRef="", $mode="")
+{
+ global $_GNUJIKO_ACCOUNT, $_GNUJIKO_TOKEN;
+
+ $url = $repository."/getfile.php?package=".$package."&account=".$_GNUJIKO_ACCOUNT."&token=".$_GNUJIKO_TOKEN;
+ $url_stuff = parse_url($url);
+ $port = isset($url_stuff['port']) ? $url_stuff['port'] : 80;
+
+ $fp = @fsockopen($url_stuff['host'], $port);
+ if(!$fp) return array('message'=>"Unable to connect to server ".$repoInfo['host'].".", 'error'=>'FSOCKOPEN: CONNECTION_FAILED');
+
+ /*$query  = 'GET ' . $url_stuff['path']."?".$url_stuff['query'] . " HTTP/1.0\n";
+ $query .= 'Host: ' . $url_stuff['host'];
+ $query .= "\n\n";*/
+
+ $header = array(
+	 'GET '.$url_stuff['path']."?".$url_stuff['query']." HTTP/1.1",
+	 'Host: '.$url_stuff['host'],
+	 'User-agent: Gnujiko'
+	);
+
+ //fwrite($fp, $query);
+ fputs($fp, join("\r\n", $header)."\r\n\r\n");
+
+
+ $fileSize = 0;
+ $needPreOutput = false;
+ $nextStep = 0;
+
+ while ($tmp = fread($fp, 1024))
+ {
+  $buffer .= $tmp;
+  $buffLen = strlen($buffer);
+  if(!$fileSize)
+  { 
+   // check for errors //
+   if(preg_match("/ERROR-100:/",$buffer))
 	return array("message"=>"Error: Package ".$package." does not exists!","error"=>"PACKAGE_DOES_NOT_EXISTS");
-   else if(ereg("ERROR-201",$buffer))
+   else if(preg_match("/ERROR-201/",$buffer))
 	return array("message"=>"Error: You have an invalid account!","error"=>"INVALID_ACCOUNT");
-   else if(ereg("ERROR-202",$buffer))
+   else if(preg_match("/ERROR-202/",$buffer))
 	return array("message"=>"Error: Invalid token!","error"=>"INVALID_TOKEN");
-   else if(ereg("ERROR-203",$buffer))
-	return array("message"=>"Error: There are some restrictions in your account!","error"=>"ACCOUNT_RESTRICTIONS");
+   else if(preg_match("/ERROR-203/",$buffer))
+	return array("message"=>"Error: There are some restrictions in your account! Unable to install package ".$package,"error"=>"ACCOUNT_RESTRICTIONS");
+   else if(preg_match("/ERROR-301/",$buffer))
+	return array("message"=>"Error: This repository is locked for maintenance, please try later!","error"=>"REPOSITORY_LOCKED");
 
    // try to detect file size //
    if(preg_match('/Content-Length: (\d+)/', $buffer, $matches))
@@ -1623,13 +2112,13 @@ function gpkg_fileChanged($args, $sessid, $shellid)
  if(!$package)
   return array("message"=>"You must specify package","error"=>"INVALID_PACKAGE");
 
- $ret = GShell("gpkg info `".$package."`");
+ $ret = GShell("gpkg info '".$package."'",$sessid, $shellid);
  if($ret['error'])
   return $ret;
 
  if(file_exists($_BASE_PATH."var/packages/".$package.".zip"))
  {
-  $ret = GShell("unzip var/packages/".$package.".zip -list");
+  $ret = GShell("unzip var/packages/".$package.".zip -list",$sessid,$shellid);
   if($ret['error'])
    return $ret;
   $zipFiles = $ret['outarr']['files'];
@@ -1639,8 +2128,14 @@ function gpkg_fileChanged($args, $sessid, $shellid)
  $outArr['updated'] = array();
  $outArr['removed'] = array();
 
+ if(!file_exists($_BASE_PATH."var/packages/".$package."/__files/"))
+ {
+  $out.= "This package contains no files.\n";
+  return array('message'=>$out, 'outarr'=>$outArr);
+ }
+
  /* Detect new,updated and removed files */
- $ret = GShell("ls var/packages/".$package."/__files/ -list");
+ $ret = GShell("ls var/packages/".$package."/__files/ -list",$sessid,$shellid);
  if($ret['error'])
   return $ret;
 
@@ -1663,13 +2158,13 @@ function gpkg_fileChanged($args, $sessid, $shellid)
   }
 
   /* Get local file info */
-  $ret = GShell("gpkg file-info ".$file);
+  $ret = GShell("gpkg file-info `".$file."`",$sessid,$shellid);
   if($ret['error'])
    return $ret;
   $localFileInfo = $ret['outarr'];
   
   /* Get package file info */
-  $ret = GShell("gpkg file-info `".$pkgFileList[$c]."`");
+  $ret = GShell("gpkg file-info `".$pkgFileList[$c]."`",$sessid,$shellid);
   if($ret['error'])
    return $ret;
   $packageFileInfo = $ret['outarr'];
@@ -1733,10 +2228,10 @@ function gpkg_autoCheckDepends($args, $sessid, $shellid)
 
  if($package)
  {
-  $ret = GShell("gpkg info `".$package."`",$sessid,$shellid);
+  $ret = GShell("gpkg info '".$package."'",$sessid,$shellid);
   if($ret['error'])
    return $ret;
-  $ret = GShell("ls /var/packages/$package/__files/ -list -filter php,inc,js,css",$sessid,$shellid);
+  $ret = GShell("ls /var/packages/".$package."/__files/ -list -filter php,inc,js,css",$sessid,$shellid);
   if($ret['error'])
    return $ret;
   $files = $ret['outarr'];
@@ -1922,8 +2417,9 @@ function gpkg_fileFind($args, $sessid, $shellid)
  global $_BASE_PATH;
 
  $out = "";
- $outArr = array();
+ $outArr = array('match_files'=>array());
  $files = array();
+ $bypassError = false;
 
  for($c=1; $c < count($args); $c++)
   switch($args[$c])
@@ -1931,8 +2427,9 @@ function gpkg_fileFind($args, $sessid, $shellid)
    case '-package' : {$package=$args[$c+1]; $c++;} break;
    case '-all-packages' : case '--all-packages' : $allPackages=true; break;
    case '-file' : {$files[]=ltrim($args[$c+1],"/"); $c++;} break;
+   case '-dir' : {$dir=$args[$c+1]; $c++;} break;
 
-
+   case '--bypass-error' : case '--bypass-errors' : $bypassError=true; break;
    case '--verbose' : $verbose=true; break;
   }
 
@@ -1946,10 +2443,9 @@ function gpkg_fileFind($args, $sessid, $shellid)
   {
    $pkgName = $list[$c]['name'];
    $ret = GShell("ls /var/packages/".$pkgName."/__files/ -list -filter php,inc,js,css",$sessid,$shellid);
-   if($ret['error'])
-    return $ret;
+   if($ret['error']) { if($bypassError) { $out.= "Warning: ".$ret['message']."\n"; continue; } else return $ret; }
    for($i=0; $i < count($ret['outarr']); $i++)
-	$files[] = $ret['outarr'][$i];
+	$files[] = str_replace("var/packages/".$pkgName."/__files/","",$ret['outarr'][$i]);
   }
   if(count($files))
    $out.= "done!\nThere are ".count($files)." packages to be scan, please wait!\n";
@@ -1958,21 +2454,31 @@ function gpkg_fileFind($args, $sessid, $shellid)
  }
  else if($package)
  {
-  $ret = GShell("gpkg info `".$package."`",$sessid,$shellid);
-  if($ret['error'])
-   return $ret;
+  $ret = GShell("gpkg info '".$package."'",$sessid,$shellid);
+  if($ret['error']) { if($bypassError) { $out.= "Warning: ".$ret['message']."\n"; } else return $ret; }
+
   $ret = GShell("ls /var/packages/".$package."/__files/ -list -filter php,inc,js,css",$sessid,$shellid);
-  if($ret['error'])
-   return $ret;
+  if($ret['error']) { if($bypassError) { $out.= "Warning: ".$ret['message']."\n"; } else return $ret; }
+
+  for($c=0; $c < count($ret['outarr']); $c++)
+   $files[] = str_replace("var/packages/".$package."/__files/","",$ret['outarr'][$c]);
+ }
+ else if($dir)
+ {
+  $ret = GShell("ls `".$dir."` -list -filter php,inc,js,css",$sessid,$shellid);
+  if($ret['error']) { if($bypassError) { $out.= "Warning: ".$ret['message']."\n"; } else return $ret; }
   $files = $ret['outarr'];
  }
 
+ $count = 0;
  for($c=0; $c < count($files); $c++)
  {
   $filename = $files[$c];
+
   $pos = strrpos($filename,".");
   if($pos === false)
    continue;
+
   if(!file_exists($_BASE_PATH.$filename))
    return array('message'=>"File $filename does not exists.", "error"=>"FILE_DOES_NOT_EXISTS");
   $fileext = substr($filename,$pos+1);
@@ -1980,10 +2486,13 @@ function gpkg_fileFind($args, $sessid, $shellid)
   {
    case 'php' : case 'inc' : {
 	 $ret = gpkg_fileFind_PHP($filename, $args, $sessid, $shellid);
-	 if($ret['error'])
-	  return $ret;
+	 if($ret['error']) { if($bypassError) { $out.= "Warning: ".$ret['message']."\n"; break; continue; } else return $ret; }
 	 if($ret['message']) $out.= trim($ret['message'])."\n";
-
+	 if($ret['outarr']['found'])
+	 {
+	  $count++;
+	  $outArr['match_files'][] = $filename;
+	 }
 	 /* TODO: continuare da qui... */
 	} break;
 
@@ -1996,6 +2505,8 @@ function gpkg_fileFind($args, $sessid, $shellid)
 	} break;
   }
  }
+
+ $out.= "Phrase found into ".$count." files.";
 
  return array('message'=>$out, 'outarr'=>$outArr);
 }
@@ -2028,6 +2539,8 @@ function gpkg_fileFind_PHP($filename, $args, $sessid, $shellid)
  $contents = fread($h,$siz);
  fclose($h);
 
+ $matchret = false;
+
  if(count($search))
  {
   for($c=0; $c < count($search); $c++)
@@ -2037,6 +2550,7 @@ function gpkg_fileFind_PHP($filename, $args, $sessid, $shellid)
 	$outArr['search']['match_results'][$c] = true;
 	if($verbose)
 	 $out.= "Found '".$search[$c]."' into file ".$filename."\n";
+	$matchret = true;
    }
    else
    {
@@ -2045,7 +2559,126 @@ function gpkg_fileFind_PHP($filename, $args, $sessid, $shellid)
   }
  }
 
+ if($matchret)
+  $outArr['found'] = true;
+
  return array('message'=>$out, 'outarr'=>$outArr); 
 }
 //-------------------------------------------------------------------------------------------------------------------//
+function gpkg_stringFind($args, $sessid, $shellid)
+{
+ global $_BASE_PATH;
+ $out = "";
+ $outArr = array();
 
+ $_PACKAGES = array();
+ $_STRINGS = array();
+ $_LIMIT = 100;
+ $_COUNT = 0;
+
+ for($c=1; $c < count($args); $c++)
+  switch($args[$c])
+  {
+   case '-package' : {$_PACKAGES[]=$args[$c+1]; $c++;} break; // se non viene specificato, verrà effettuata la ricerca in tutti i pacchetti.
+   case '-inrow' : case '--inrow' : $inrow=true; break;	  /* se viene specificato -inrow cercherà solo in quella riga di codice dove
+															 compaiono tutte le query */
+   case '-casesensitive' : case '--case-sensitive' : $caseSensitive=true; break;
+   case '-limit' : {$_LIMIT=$args[$c+1]; $c++;} break;
+   case '-verbose' : case '--verbose' : $verbose=true; break;
+   default : $_STRINGS[] = $args[$c]; break;			  // si possono specificare più stringhe.
+  }
+
+ if(!count($_STRINGS)) return array('message'=>"You must specify the word or phrase to search.", 'error'=>"INVALID_STRING");
+
+ if(!count($_PACKAGES))
+ {
+  /* Get list of local packages */
+  $ret = GShell("ls /var/packages/ -d", $sessid, $shellid);
+  $list = $ret['outarr']['dirs'];
+  for($c=0; $c < count($list); $c++)
+  {
+   if(!in_array($list[$c]['name'],$_PACKAGES))
+	$_PACKAGES[] = $list[$c]['name'];
+  }
+  sort($_PACKAGES);
+  $out.= "There are ".count($_PACKAGES)." packages to be examined.\n";
+ }
+
+ /* START */
+
+ $fileNames = array('packageinstall.php','packageupdate.php');
+ foreach($_PACKAGES as $k => $package)
+ {
+  if($_COUNT >= $_LIMIT) break;
+  foreach($fileNames as $fk => $fileName)
+  {
+   $file = $_BASE_PATH."var/packages/".$package."/".$fileName;
+   if(file_exists($file))
+   {
+    $F = @fopen($file,"rb");
+    if(!$F) 
+    {
+	 $out.= "Warning: unable to read file var/packages/".$package."/".$fileName."\n";
+	 continue;
+    }
+    $siz = filesize($file);
+    if(!$siz) { fclose($F); continue; }
+    while(($line = fgets($F)) !== false)
+    {
+	 $result = null;
+	 $retline = $line;
+	 for($c=0; $c < count($_STRINGS); $c++)
+	 {
+	  if(!$inrow) $retline = $line;
+	  $string = $_STRINGS[$c];
+	  if($caseSensitive)	$res = stripos($line, $string);
+	  else $res = strpos($line, $string);
+	  if($res !== false)
+	  {
+	   $retline = str_replace($string, "<b>".$string."</b>", $retline);
+	   if(!$result) 
+	   {
+		$result = array(); 
+	    $result['file'] = $fileName;
+		$result['match'] = array();
+		$result['lines'] = array();
+	   }
+	   $result['match'][] = $string;
+	   $result['lines'][] = $retline;
+	  }
+	 }
+	 if(is_array($result) && $inrow)
+	  $result['line'] = $retline;
+	 else if(!is_array($result)) continue;
+	 if($inrow && (count($result['match']) != count($_STRINGS)))
+	  continue;
+	 else if(!count($result['match']))
+	  continue;
+	 else
+	 {
+	  $_COUNT++;
+	  $outArr[] = $result;
+	  if($verbose)
+	  {
+	   $out.= "File: var/packages/".$package."/".$fileName."\n";
+	   if($inrow)
+		$out.= $result['line']."\n";
+	   else
+	   {
+	    for($c=0; $c < count($result['lines']); $c++)
+	     $out.= $result['lines'][$c]."\n";
+	   }
+	   $out.= "\n";
+	  }
+	 }
+    } // EOF - WHILE //
+    fclose($F);
+   } // EOF IF FILE EXISTS
+  } // EOF 2nd FOREACH
+ } // EOF 1st FOREACH
+
+ /* FINISH */
+
+ return array('message'=>$out, 'outarr'=>$outArr); 
+}
+//-------------------------------------------------------------------------------------------------------------------//

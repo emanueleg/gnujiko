@@ -5,11 +5,11 @@
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 03-06-2013
- #PACKAGE: gcommercialdocs
+ #DATE: 19-12-2013
+ #PACKAGE: hacktvsearch-common
  #DESCRIPTION: 
- #VERSION: 2.0beta
- #CHANGELOG: 
+ #VERSION: 2.1beta
+ #CHANGELOG:  19-12-2013 : Aggiunta funzione per importare da tabella HTML
  #TODO:
  
 */
@@ -258,4 +258,92 @@ function hacktvform_emptytable_manageColumns(layerId, formId)
  sh.sendCommand("gframe -f hacktvforms/managetablecolumns --use-cache-contents -contents `"+tb.parentNode.innerHTML+"`");
 }
 
+function hacktvform_emptytable_htmlTableImport(layerId, formId)
+{
+ var tb = document.getElementById("xtb-"+layerId+"-doctable");
+ var tbfooter = document.getElementById("xtb-"+layerId+"-docfooter");
+
+ var sh = new GShell();
+ sh.OnOutput = function(o,html){
+	 if(!html) return;
+
+	 var div = document.createElement('DIV');
+	 div.style.display = "none";
+	 div.innerHTML = html;
+	 document.body.appendChild(div);
+
+	 var htb = div.getElementsByTagName("TABLE")[0];
+	 if(!htb)
+	 {
+	  if(confirm("Errore: Nessuna tabella html trovata.\nDevi copiare una tabella da una qualsiasi pagina web e incollarla nell'editor html.\nVuoi riprovare"))
+	   return hacktvform_emptytable_htmlTableImport(layerId, formId);
+	  else
+	  return;
+	 }
+
+	 var thR = null; // prima riga, header row
+	 var fields = new Array();
+	 var items = new Array();
+
+	 for(var c=0; c < htb.rows.length; c++)
+	 {
+	  if(!htb.rows[c].cells.length)
+	   continue;
+	  if(!thR)
+	  {
+	   thR = htb.rows[c];
+	   for(var j=0; j < thR.cells.length; j++)
+	   {
+		fields.push(thR.cells[j].textContent.ltrim());
+	   }
+	  }
+	  else
+	  {
+	   var item = new Array();
+	   for(var j=0; j < htb.rows[c].cells.length; j++)
+	   {
+		item[j] = htb.rows[c].cells[j].textContent.ltrim();
+	   }
+	   items.push(item);
+	  }
+	 }
+
+
+	 while(tbfooter.rows[0].cells.length > 1)
+	 {
+	  tbfooter.rows[0].deleteCell(1);
+	  tbfooter.rows[1].deleteCell(1);
+	 }
+	 tb.gmutable.EmptyTable();
+	 while(tb.gmutable.Fields.length)
+	 {
+	  tb.gmutable.DeleteField(tb.gmutable.Fields[0].name);
+	 }
+
+	 for(var c=0; c < fields.length; c++)
+	 {
+	  var f = tb.gmutable.AddField("field-"+(c+1), fields[c]);
+	  f.O.style.paddingLeft = "10px";
+	  f.O.style.paddingRight = "10px";
+	 }
+
+	 for(var c=0; c < items.length; c++)
+	 {
+	  var item = items[c];
+	  var r = tb.gmutable.AddRow();
+	  for(var j=0; j < item.length; j++)
+	  {
+	   r.cells[j+1].setValue(item[j]);
+	   r.cells[j+1].style.paddingLeft = "10px";
+	   r.cells[j+1].style.paddingRight = "10px";
+	  }
+	 }
+
+	 if(tb.gmutable.Options.autoresize)
+	  tb.gmutable.autoResize();
+
+	}
+
+ sh.sendCommand("gframe -f hacktvforms/htmleditor");
+}
 

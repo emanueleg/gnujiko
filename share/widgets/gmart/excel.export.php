@@ -1,16 +1,16 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 26-09-2013
+ #DATE: 26-02-2016
  #PACKAGE: gmart
  #DESCRIPTION: Export to file Excel.
- #VERSION: 2.0beta
- #CHANGELOG: 
+ #VERSION: 2.1beta
+ #CHANGELOG: 26-02-2016 : Bug fix ed esclusione colonne da includere.
  #TODO:
  
 */
@@ -66,7 +66,7 @@ table.default td {
  <h2>Esporta su file Excel.</h2>
  <hr/>
  <table width="100%" cellspacing="0" cellpadding="0" border="0">
- <tr><td width="300" valign="top">
+ <tr><td valign="top">
 	 <span class="smalltext">Seleziona le categorie di prodotti da esportare.</span><br/><br/>
 	 <div class='treediv'>
 	  <div class="demo source" id="tree_div">
@@ -82,7 +82,7 @@ table.default td {
 	 </div>
 	 </td>
 
-	 <td style="border-right:1px solid #eeeeee" width="25">&nbsp;</td>
+	 <!-- <td style="border-right:1px solid #eeeeee" width="25">&nbsp;</td>
 	 <td width="25">&nbsp;</td>
 
 	 <td valign="top" style="font-size:13px;font-family:arial,sans-serif">
@@ -104,7 +104,7 @@ table.default td {
 	  <label><input type='checkbox' id='col_pl_finalprice' checked='true'/>prezzo finale</label><br/>
 	  <label><input type='checkbox' id='col_pl_vatrate' checked='true'/>aliq. IVA</label><br/>
 	  <label><input type='checkbox' id='col_pl_finalpricevatincluded' checked='true'/>prezzo finale +IVA</label><br/>
-	 </td>
+	 </td> -->
  </tr>
  </table>
   <div id="footer">
@@ -142,6 +142,7 @@ function bodyOnLoad()
 		  var parentId = node.id;
 
 		  var sh = new GShell();
+		  sh.OnError = function(err){alert(err);}
 		  sh.OnOutput = function(o,a){
 			 treeobj.remove(treeobj.children(node)[0]);
 			 if(!a) return;
@@ -173,24 +174,31 @@ function submit()
  var selected = new Array();
 
  var catIds = "";
+ var catName = "";
+ var lastCatName = "";
+ var count = 0;
 
  for(var c=0; c < list.length; c++)
  {
-  if(mytree.get_text(list[c]) == "")
+  catName = mytree.get_text(list[c]);
+  if(catName == "")
    continue;
   var id = list[c].id;
   catIds+= ","+id;
+  count++;
+  lastCatName = catName;
  }
 
  if(!catIds)
   return alert("Attenzione! Non è stata selezionata nessuna categoria");
 
+ var fileName = (count > 1) ? 'Articoli' : lastCatName;
 
  var sh = new GShell();
  sh.OnError = function(msg){alert(msg);}
  sh.OnPreOutput = function(){}
  sh.OnFinish = function(o,a){gframe_close(o,a);}
- sh.sendCommand("gmart export-to-excel -ap `<?php echo $_AP; ?>` -cats `"+catIds.substr(1)+"`");
+ sh.sendCommand("gmart export-to-excel -ap `<?php echo $_AP; ?>` -cats `"+catIds.substr(1)+"` -file `"+fileName+"` --include-subcat");
 }
 
 

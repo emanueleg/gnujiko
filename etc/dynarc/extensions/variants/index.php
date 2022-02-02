@@ -1,16 +1,18 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 11-02-2013
+ #DATE: 24-10-2016
  #PACKAGE: dynarc-variants-extension
  #DESCRIPTION: Variants extension for Dynarc archives.
- #VERSION: 2.0beta
- #CHANGELOG: 
+ #VERSION: 2.3beta
+ #CHANGELOG: 24-10-2016 : MySQLi integration.
+			 03-03-2016 : Bug fix salvataggio varianti.
+			 10-06-2014 : Aggiunta funzione onarchiveempty
  #TODO: Manca da fare l'importazione,l'esportazione ed il sync.
  
 */
@@ -97,7 +99,13 @@ function dynarcextension_variants_set($args, $sessid, $shellid, $archiveInfo, $i
  if(isset($dimId)) $q.= ",dim_id='".$dimId."'";
  if($other) $q.=",var_other='".$db->Purify($other)."'";
  if($q)
-  $db->RunQuery("UPDATE dynarc_".$archiveInfo['prefix']."_variants SET ".ltrim($q,",")." WHERE item_id='".$itemInfo['id']."'");
+ {
+   $db->RunQuery("UPDATE dynarc_".$archiveInfo['prefix']."_variants SET ".ltrim($q,",")." WHERE item_id='".$itemInfo['id']."'");
+   if(!$db->Read())
+    $db->RunQuery("INSERT INTO dynarc_".$archiveInfo['prefix']."_variants (item_id,var_col,var_tint,var_siz,siz_id,var_dim,dim_id,var_other) VALUES('"
+	.$itemInfo['id']."','".$db->Purify($colors)."','".$db->Purify($tint)."','".$db->Purify($sizes)."','".$sizId."','"
+	.$db->Purify($dim)."','".$dimId."','".$db->Purify($other)."')");
+ }
  $db->Close();
  return $itemInfo;
 }
@@ -204,50 +212,6 @@ function dynarcextension_variants_get($args, $sessid, $shellid, $archiveInfo, $i
  return $itemInfo;
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function dynarcextension_variants_export($sessid, $shellid, $archiveInfo, $itemInfo)
-{
- /*$db = new AlpaDatabase();
- $db->RunQuery("SELECT COUNT(*) FROM dynarc_".$archiveInfo['prefix']."_variants WHERE item_id='".$itemInfo['id']."'");
- $db->Read();
- if(!$db->record[0])
- {
-  $db->Close();
-  return true;
- }
- $db->Close();
-
- $xml = "<variants>\n";
-
- $db = new AlpaDatabase();
- $db->RunQuery("SELECT * FROM dynarc_".$archiveInfo['prefix']."_variants WHERE item_id='".$itemInfo['id']."' ORDER BY isdefault DESC,id ASC");
- while($db->Read())
- {
-  $xml.= '<item holder="'.sanitize($db->record['holder']).'" name="'.sanitize($db->record['name']).'" abi="'
-	.$db->record['abi'].'" cab="'.$db->record['cab'].'" cin="'.$db->record['cin'].'" cc="'
-	.$db->record['cc'].'" iban="'.$db->record['iban'].'"';
-  $xml.="/>\n";
- }
- $db->Close();
- $xml.= "</variants>\n";*/
-
- return array('xml'=>$xml);
-}
-//-------------------------------------------------------------------------------------------------------------------//
-function dynarcextension_variants_import($sessid, $shellid, $archiveInfo, $itemInfo, $node)
-{
- /*$list = $node->GetElementsByTagName('item');
- $fields = array('holder','name','abi','cab','cin','cc','iban');
- for($c=0; $c < count($list); $c++)
- {
-  $n = $list[$c];
-  $extQ = "";
-  for($i=0; $i < count($fields); $i++)
-   $extQ.= ",".$fields[$i]."=\"".$n->getString($fields[$i])."\"";
-  GShell("dynarc edit-item -ap `".$archiveInfo['prefix']."` -id `".$itemInfo['id']."` -extset `variants.".ltrim($extQ,",")."`",$sessid, $shellid);
- }*/
- return true;
-}
-//-------------------------------------------------------------------------------------------------------------------//
 function dynarcextension_variants_ondeleteitem($args, $sessid, $shellid, $archiveInfo, $itemInfo)
 {
  $db = new AlpaDatabase();
@@ -268,7 +232,6 @@ function dynarcextension_variants_oncopyitem($sessid, $shellid, $archiveInfo, $s
  $db->Close();
  return $cloneInfo;
 }
-//-------------------------------------------------------------------------------------------------------------------//
 //-------------------------------------------------------------------------------------------------------------------//
 function dynarcextension_variants_oncreateitem($args, $sessid, $shellid, $archiveInfo, $itemInfo)
 {
@@ -329,10 +292,29 @@ function dynarcextension_variants_onmovecategory($args, $sessid, $shellid, $arch
  return true;
 }
 //-------------------------------------------------------------------------------------------------------------------//
-//-------------------------------------------------------------------------------------------------------------------//
 function dynarcextension_variants_oncopycategory($sessid, $shellid, $archiveInfo, $srcInfo, $cloneInfo)
 {
  return $cloneInfo;
+}
+//-------------------------------------------------------------------------------------------------------------------//
+function dynarcextension_variants_onarchiveempty($args, $sessid, $shellid, $archiveInfo)
+{
+ $db = new AlpaDatabase();
+ $db->RunQuery("TRUNCATE TABLE `dynarc_".$archiveInfo['prefix']."_variants`");
+ $db->Close();
+
+ return true;
+}
+//-------------------------------------------------------------------------------------------------------------------//
+function dynarcextension_variants_export($sessid, $shellid, $archiveInfo, $itemInfo)
+{
+ $xml = "";
+ return array('xml'=>$xml);
+}
+//-------------------------------------------------------------------------------------------------------------------//
+function dynarcextension_variants_import($sessid, $shellid, $archiveInfo, $itemInfo, $node)
+{
+ return true;
 }
 //-------------------------------------------------------------------------------------------------------------------//
 //-------------------------------------------------------------------------------------------------------------------//
@@ -379,7 +361,7 @@ function dynarcextension_variants_addSizeType($params, $sessid, $shellid, $extra
 
  $db = new AlpaDatabase();
  $db->RunQuery("INSERT INTO variant_sizes(name,xml_params) VALUES('".$db->Purify($name)."','".$db->Purify($xml)."')");
- $id = mysql_insert_id();
+ $id = $db->GetInsertId();
  $db->Close();
 
  $out.= "done! ID=".$id;
@@ -543,7 +525,7 @@ function dynarcextension_variants_addDimType($params, $sessid, $shellid, $extraP
 
  $db = new AlpaDatabase();
  $db->RunQuery("INSERT INTO variant_dim(name,xml_params) VALUES('".$db->Purify($name)."','".$db->Purify($xml)."')");
- $id = mysql_insert_id();
+ $id = $db->GetInsertId();
  $db->Close();
 
  $out.= "done! ID=".$id;

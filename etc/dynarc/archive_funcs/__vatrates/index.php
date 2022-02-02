@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2013 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 03-12-2012
+ #DATE: 04-11-2013
  #PACKAGE: companyprofile-config
  #DESCRIPTION: Archive functions for VatRates
- #VERSION: 2.1beta
- #CHANGELOG: 03-12-2012 : Completamento delle funzioni principali.
+ #VERSION: 2.2beta
+ #CHANGELOG: 04-11-2013 : Bug fix, non inseriva i nuovi campi della nuova aliquota nelle tabelle totvatreg_purchases e totvatreg_sales.
+			 03-12-2012 : Completamento delle funzioni principali.
  #TODO: 
  
 */
@@ -28,6 +29,10 @@ function dynarcfunction_vatrates_oncreateitem($args, $sessid, $shellid, $archive
  $db = new AlpaDatabase();
  for($c=0; $c < count($ret['outarr']); $c++)
   $db->RunQuery("ALTER TABLE `vat_register_".$ret['outarr'][$c]['year']."` ADD `vr_".$itemInfo['id']."_amount` FLOAT NOT NULL , ADD `vr_".$itemInfo['id']."_vat` FLOAT NOT NULL");
+
+ $db->RunQuery("ALTER TABLE `totvatreg_purchases` ADD `vr_".$itemInfo['id']."_amount` FLOAT NOT NULL , ADD `vr_".$itemInfo['id']."_vat` FLOAT NOT NULL");
+ $db->RunQuery("ALTER TABLE `totvatreg_sales` ADD `vr_".$itemInfo['id']."_amount` FLOAT NOT NULL , ADD `vr_".$itemInfo['id']."_vat` FLOAT NOT NULL");
+
  $db->Close();
  return $itemInfo;
 }

@@ -1,16 +1,20 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 14-03-2013
+ #DATE: 24-10-2016
  #PACKAGE: rubrica
  #DESCRIPTION: Banks extension for Dynarc archives.
- #VERSION: 2.2beta
- #CHANGELOG: 14-03-2013 : Completato funzioni sync import & export.
+ #VERSION: 2.6beta
+ #CHANGELOG: 24-10-2016 : MySQLi integration.
+			 23-05-2016 : Bug fix intestatario su funzione set con ID=0
+			 19-01-2015 : Aggiunto campo bicswift.
+			 23-10-2014 : Aggiornata dimensione IBAN a 31 caratteri.
+			 14-03-2013 : Completato funzioni sync import & export.
 			 03-12-2012 : Completamento delle funzioni principali.
 			 18-01-2012 : Completate funzioni copia ed elimina.
  #TODO: Rifare funzione import & export e completare funzioni syncimport & syncexport.
@@ -23,16 +27,17 @@ function dynarcextension_banks_install($params, $sessid, $shellid=0, $archiveInf
 {
  $db = new AlpaDatabase();
  $db->RunQuery("CREATE TABLE IF NOT EXISTS `dynarc_".$archiveInfo['prefix']."_banks` (
-`id` INT( 11 ) NOT NULL AUTO_INCREMENT ,
-`item_id` INT( 11 ) NOT NULL ,
-`holder` VARCHAR( 80 ) NOT NULL ,
-`name` VARCHAR( 80 ) NOT NULL ,
-`abi` VARCHAR( 5 ) NOT NULL ,
-`cab` VARCHAR( 5 ) NOT NULL ,
-`cin` VARCHAR( 1 ) NOT NULL ,
-`cc` VARCHAR( 12 ) NOT NULL ,
-`iban` VARCHAR( 27 ) NOT NULL ,
-`isdefault` TINYINT( 1 ) NOT NULL ,
+`id` INT(11) NOT NULL AUTO_INCREMENT ,
+`item_id` INT(11) NOT NULL ,
+`holder` VARCHAR(80) NOT NULL ,
+`name` VARCHAR(80) NOT NULL ,
+`abi` VARCHAR(5) NOT NULL ,
+`cab` VARCHAR(5) NOT NULL ,
+`cin` VARCHAR(1) NOT NULL ,
+`cc` VARCHAR(12) NOT NULL ,
+`iban` VARCHAR(31) NOT NULL ,
+`bic_swift` VARCHAR(11) NOT NULL ,
+`isdefault` TINYINT(1) NOT NULL ,
 PRIMARY KEY (`id`), INDEX ( `item_id` , `isdefault` ))");
  $db->Close();
  return array("message"=>"Banks extension has been installed into archive ".$archiveInfo['name']."\n");
@@ -60,6 +65,7 @@ function dynarcextension_banks_set($args, $sessid, $shellid, $archiveInfo, $item
    case 'cin' : {$cin=$args[$c+1]; $c++;} break;
    case 'cc' : {$cc=$args[$c+1]; $c++;} break;
    case 'iban' : {$iban=$args[$c+1]; $c++;} break;
+   case 'bic' : case 'swift' : case 'bicswift' : {$bicSwift=$args[$c+1]; $c++;} break;
    case 'isdefault' : {$isdefault=$args[$c+1]; $c++;} break;
   }
 
@@ -73,16 +79,17 @@ function dynarcextension_banks_set($args, $sessid, $shellid, $archiveInfo, $item
    $db->RunQuery("UPDATE dynarc_".$archiveInfo['prefix']."_banks SET isdefault=0 WHERE item_id=".$itemInfo['id']);
 
   $q = "";
-  if($holder) $q.=",holder='$holder'";
-  if($name) $q.=",name='$name'";
-  if($abi) $q.=",abi='$abi'";
-  if($cab) $q.= ",cab='$cab'";
-  if($cin) $q.=",cin='$cin'";
-  if($cc) $q.=",cc='$cc'";
-  if($iban) $q.=",iban='$iban'";
-  if(isset($isdefault)) $q.=",isdefault='$isdefault'";
+  if(isset($holder)) 			$q.=",holder='".$db->Purify($holder)."'";
+  if(isset($name)) 				$q.=",name='".$db->Purify($name)."'";
+  if(isset($abi)) 				$q.=",abi='".$abi."'";
+  if(isset($cab)) 				$q.=",cab='".$cab."'";
+  if(isset($cin)) 				$q.=",cin='".$cin."'";
+  if(isset($cc)) 				$q.=",cc='".$cc."'";
+  if(isset($bicSwift)) 			$q.=",bic_swift='".$bicSwift."'";
+  if(isset($iban)) 				$q.=",iban='".$iban."'";
+  if(isset($isdefault)) 		$q.=",isdefault='".$isdefault."'";
 
-  $db->RunQuery("UPDATE dynarc_".$archiveInfo['prefix']."_banks SET ".ltrim($q,",")." WHERE id='$id'");
+  $db->RunQuery("UPDATE dynarc_".$archiveInfo['prefix']."_banks SET ".ltrim($q,",")." WHERE id='".$id."'");
   $db->Close();
   return $itemInfo;
  }
@@ -102,9 +109,10 @@ function dynarcextension_banks_set($args, $sessid, $shellid, $archiveInfo, $item
   $name = $itemInfo['name'];
 
  $db = new AlpaDatabase();
- $db->RunQuery("INSERT INTO dynarc_".$archiveInfo['prefix']."_banks(item_id,holder,name,abi,cab,cin,cc,iban,isdefault) VALUES('"
-	.$itemInfo['id']."','$holder','$name','$abi','$cab','$cin','$cc','$iban','$isdefault')");
- $recid = mysql_insert_id();
+ $db->RunQuery("INSERT INTO dynarc_".$archiveInfo['prefix']."_banks(item_id,holder,name,abi,cab,cin,cc,iban,bic_swift,isdefault) VALUES('"
+	.$itemInfo['id']."','".$db->Purify($holder ? $holder : $itemInfo['name'])."','".$db->Purify($name)."','".$abi."','".$cab."','".$cin."','".$cc."','".$iban."','"
+	.$bicSwift."','".$isdefault."')");
+ $recid = $db->GetInsertId();
  $itemInfo['last_bank'] = array('id'=>$recid,'isdefault'=>$isdefault);
  $db->Close();
  return $itemInfo; 
@@ -141,6 +149,7 @@ function dynarcextension_banks_get($args, $sessid, $shellid, $archiveInfo, $item
    case 'cin' : $cin=true; break;
    case 'cc' : $cc=true; break;
    case 'iban' : $iban=true; break;
+   case 'bic' : case 'swift' : case 'bicswift' : $bicSwift=true; break;
   }
 
  if(!count($args))
@@ -152,13 +161,14 @@ function dynarcextension_banks_get($args, $sessid, $shellid, $archiveInfo, $item
  while($db->Read())
  {
   $a = array('id'=>$db->record['id']);
-  if($holder || $all) $a['holder'] = $db->record['holder'];
-  if($name || $all) $a['name'] = $db->record['name'];
-  if($abi || $all) $a['abi'] = $db->record['abi'];
-  if($cab || $all) $a['cab'] = $db->record['cab'];
-  if($cin || $all) $a['cin'] = $db->record['cin'];
-  if($cc || $all) $a['cc'] = $db->record['cc'];
-  if($iban || $all) $a['iban'] = $db->record['iban'];
+  if($holder || $all) 	$a['holder'] = $db->record['holder'];
+  if($name || $all) 	$a['name'] = $db->record['name'];
+  if($abi || $all) 		$a['abi'] = $db->record['abi'];
+  if($cab || $all) 		$a['cab'] = $db->record['cab'];
+  if($cin || $all) 		$a['cin'] = $db->record['cin'];
+  if($cc || $all) 		$a['cc'] = $db->record['cc'];
+  if($iban || $all) 	$a['iban'] = $db->record['iban'];
+  if($bicSwift || $all)	$a['bic_swift'] = $db->record['bic_swift'];
   $a['isdefault'] = $db->record['isdefault'];
   $itemInfo['banks'][] = $a;
  }
@@ -223,7 +233,7 @@ function dynarcextension_banks_info($params, $sessid, $shellid)
  }
 
  $outArr = array('id'=>$a['id'],'item_id'=>$a['item_id'],'holder'=>$a['holder'],'name'=>$a['name'],'abi'=>$a['abi'],'cab'=>$a['cab'],
-	'cin'=>$a['cin'],'cc'=>$a['cc'],'iban'=>$a['iban'],'isdefault'=>$a['isdefault']);
+	'cin'=>$a['cin'],'cc'=>$a['cc'],'iban'=>$a['iban'],'bic_swift'=>$a['bic_swift'],'isdefault'=>$a['isdefault']);
  return array('message'=>$out, 'outarr'=>$outArr);
 }
 //-------------------------------------------------------------------------------------------------------------------//
@@ -250,7 +260,7 @@ function dynarcextension_banks_export($sessid, $shellid, $archiveInfo, $itemInfo
  {
   $xml.= '<item holder="'.sanitize($db->record['holder']).'" name="'.sanitize($db->record['name']).'" abi="'
 	.$db->record['abi'].'" cab="'.$db->record['cab'].'" cin="'.$db->record['cin'].'" cc="'
-	.$db->record['cc'].'" iban="'.$db->record['iban'].'"';
+	.$db->record['cc'].'" iban="'.$db->record['iban'].'" bicswift="'.$db->record['bic_swift'].'"';
   $xml.="/>\n";
  }
  $db->Close();
@@ -265,7 +275,7 @@ function dynarcextension_banks_import($sessid, $shellid, $archiveInfo, $itemInfo
   return true;
 
  $list = $extNode->GetElementsByTagName('item');
- $fields = array('holder','name','abi','cab','cin','cc','iban');
+ $fields = array('holder','name','abi','cab','cin','cc','iban','bicswift');
  for($c=0; $c < count($list); $c++)
  {
   $n = $list[$c];
@@ -292,9 +302,9 @@ function dynarcextension_banks_oncopyitem($sessid, $shellid, $archiveInfo, $srcI
  $db->RunQuery("SELECT * FROM dynarc_".$archiveInfo['prefix']."_banks WHERE item_id='".$srcInfo['id']."' ORDER BY id ASC");
  while($db->Read())
  {
-  $db2->RunQuery("INSERT INTO dynarc_".$archiveInfo['prefix']."_banks(item_id,holder,name,abi,cab,cin,cc,iban,isdefault) VALUES('"
-	.$cloneInfo['id']."','".$db->record['holder']."','".$db->record['name']."','".$db->record['abi']."','"
-	.$db->record['cab']."','".$db->record['cin']."','".$db->record['cc']."','".$db->record['iban']."','".$db->record['isdefault']."')");
+  $db2->RunQuery("INSERT INTO dynarc_".$archiveInfo['prefix']."_banks(item_id,holder,name,abi,cab,cin,cc,iban,bic_swift,isdefault) VALUES('"
+	.$cloneInfo['id']."','".$db2->Purify($db->record['holder'])."','".$db2->Purify($db->record['name'])."','".$db->record['abi']."','"
+	.$db->record['cab']."','".$db->record['cin']."','".$db->record['cc']."','".$db->record['iban']."','".$db->record['bic_swift']."','".$db->record['isdefault']."')");
  }
  $db->Close();
  $db2->Close();
@@ -392,7 +402,7 @@ function dynarcextension_banks_syncexport($sessid, $shellid, $archiveInfo, $item
  {
   $xml.= '<item holder="'.sanitize($db->record['holder']).'" name="'.sanitize($db->record['name']).'" abi="'
 	.$db->record['abi'].'" cab="'.$db->record['cab'].'" cin="'.$db->record['cin'].'" cc="'
-	.$db->record['cc'].'" iban="'.$db->record['iban'].'"';
+	.$db->record['cc'].'" iban="'.$db->record['iban'].'" bicswift="'.$db->record['bic_swift'].'"';
   $xml.="/>\n";
  }
  $db->Close();
@@ -409,7 +419,7 @@ function dynarcextension_banks_syncimport($sessid, $shellid, $archiveInfo, $item
   return true;
 
  $list = $extNode->GetElementsByTagName('item');
- $fields = array('holder','name','abi','cab','cin','cc','iban');
+ $fields = array('holder','name','abi','cab','cin','cc','iban','bicswift');
  for($c=0; $c < count($list); $c++)
  {
   $n = $list[$c];

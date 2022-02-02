@@ -1,16 +1,18 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 11-02-2013
+ #DATE: 27-08-2014
  #PACKAGE: gserv
  #DESCRIPTION: Official Gnujiko services manager.
- #VERSION: 2.2beta
- #CHANGELOG: 11-02-2013 : Aggiunto il cestino.
+ #VERSION: 2.4beta
+ #CHANGELOG: 27-08-2014 : restricted access integration.
+			 14-12-2013 : bug fix.
+			 11-02-2013 : Aggiunto il cestino.
 			 13-01-2013 : Bug fix.
  #TODO:
  
@@ -25,6 +27,9 @@ $_BASE_PATH = "../";
 
 include($_BASE_PATH.'init/init1.php');
 include($_BASE_PATH.'include/session.php');
+
+if(!restrictedAccess("gserv"))
+ exit();
 
 ?>
 <html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8"><title>Servizi</title></head>
@@ -188,7 +193,7 @@ basicapp_contents_begin();
 
 <!-- PATHWAY -->
 <ul class='pathbar' style='margin-top:0px;'>
- <li class='first'><a href="<?php echo $_ABSOLUTE_URL; ?>Services/index.php?showcatalogs">Servizi</a></li>
+ <li class='first'><a href="<?php echo $_ABSOLUTE_URL; ?>Services/index.php?showcatalogs">Tutti i cataloghi</a></li>
  <li class='last'><a href="<?php echo $_ABSOLUTE_URL; ?>Services/index.php?aid=<?php echo $archiveInfo['id']; ?>"><?php echo $archiveInfo['name']; ?></a></li>
 </ul>
 <ul class='pathway' id='pathway' style="float:left;margin-top:3px;margin-left:10px;"></ul>

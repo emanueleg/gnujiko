@@ -6,11 +6,11 @@
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 04-06-2013
+ #DATE: 24-12-2013
  #PACKAGE: hacktvsearch-common
  #DESCRIPTION: Manage table columns.
- #VERSION: 2.0beta
- #CHANGELOG:
+ #VERSION: 2.1beta
+ #CHANGELOG: 24-12-2013 : Bug fix generali.
  #TODO:
  
 */
@@ -114,7 +114,8 @@ function gframe_cachecontentsload(contents)
  div.style.left = 0;
  document.body.appendChild(div);
 
- var letters = new Array("A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z");
+ var letters = new Array("A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z",
+"AA","AB","AC","AD","AE","AF","AG","AH","AI","AJ","AK","AL","AM","AN","AO","AP","AQ","AR","AS","AT","AU","AV","AW","AX","AY","AZ");
 
  var tb = div.getElementsByTagName('TABLE')[0];
 

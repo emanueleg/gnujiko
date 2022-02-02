@@ -1,16 +1,19 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 28-01-2013
+ #DATE: 23-12-2016
  #PACKAGE: gmart
  #DESCRIPTION: Edit category form.
- #VERSION: 2.2beta
- #CHANGELOG: 28-01-2013 - Bug fix vari.
+ #VERSION: 2.5beta
+ #CHANGELOG: 23-12-2016 : Integrato con scontistica predefinita per cliente.
+			 30-07-2016 : Bug fix parentid al salvataggio ed integrazione con transponder.
+			 07-01-2015 : Bug fix su cartella immagini categorie.
+			 28-01-2013 - Bug fix vari.
 			 12-01-2013 : Bug fix. 
  #DEPENDS: guploader
  #TODO:
@@ -24,12 +27,12 @@ define("VALID-GNUJIKO",1);
 
 include_once($_BASE_PATH."include/gshell.php");
 
-$ap = $_REQUEST['ap'] ? $_REQUEST['ap'] : "gmart";
-$id = $_REQUEST['id'];
+$_AP = $_REQUEST['ap'] ? $_REQUEST['ap'] : "gmart";
+$_ID = $_REQUEST['id'];
 
-if($id)
+if($_ID)
 {
- $ret = GShell("dynarc cat-info -ap `".$ap."` -id `".$id."` -extget `idoc,thumbnails.mode`",$_REQUEST['sessid'],$_REQUEST['shellid']);
+ $ret = GShell("dynarc cat-info -ap `".$_AP."` -id `".$_ID."` -extget `idoc,thumbnails.mode`",$_REQUEST['sessid'],$_REQUEST['shellid']);
  if($ret['error'])
   return;
 
@@ -60,6 +63,37 @@ if($id)
 
 $sessInfo = sessionInfo($_REQUEST['sessid']);
 
+
+// TRANSPONDER
+$_TRANSPONDER_SERVERS = null;
+if(file_exists($_BASE_PATH.$_SHELL_CMD_PATH."transponder.php"))
+{
+ $_SERVICE_TAGS = "joomshopping,virtuemart,ebay,amazon";
+ $ret = GShell("transponder server-list --service-tags '".$_SERVICE_TAGS."'", $_REQUEST['sessid'], $_REQUEST['shellid']);
+ if(!$ret['error']) $_TRANSPONDER_SERVERS = $ret['outarr'];
+
+ $_AUTOSYNC_RULES = array();
+ $ret = GShell("transponder get-autosync-rules -ap '".$_AP."' -cat '".$_ID."'", $_REQUEST['sessid'], $_REQUEST['shellid']);
+ if(!$ret['error'])	$_AUTOSYNC_RULES = $ret['outarr'];
+
+ for($c=0; $c < count($_TRANSPONDER_SERVERS); $c++)
+ {
+  $serverId = $_TRANSPONDER_SERVERS[$c]['id'];
+  $serviceTag = strtoupper($_TRANSPONDER_SERVERS[$c]['tag']);
+  $_TRANSPONDER_SERVERS[$c]['rule'] = 0;
+
+  for($i=0; $i < count($_AUTOSYNC_RULES); $i++)
+  {
+   if(($_AUTOSYNC_RULES[$i]['server_id'] == $serverId) && (strtoupper($_AUTOSYNC_RULES[$i]['service_tag']) == $serviceTag))
+   {
+	$_TRANSPONDER_SERVERS[$c]['rule'] = $_AUTOSYNC_RULES[$i]['rule'];
+	break;
+   }
+  }
+ }
+}
+
+
 ?>
 <html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8"><title>Edit category</title>
 <script>var BASE_PATH = "<?php echo $_BASE_PATH; ?>"; var ABSOLUTE_URL = "<?php echo $_ABSOLUTE_URL; ?>"; var USER_HOME = "<?php echo $_USERS_HOMES.$_SESSION['HOMEDIR']; ?>/";</script>
@@ -67,6 +101,7 @@ $sessInfo = sessionInfo($_REQUEST['sessid']);
 <link rel="stylesheet" href="<?php echo $_ABSOLUTE_URL; ?>share/widgets/gmart/edit-cat.css" type="text/css" />
 <?php
 include_once($_BASE_PATH."include/js/gshell.php");
+include_once($_BASE_PATH."var/objects/gmutable/index.php");
 ?>
 </head><body>
 
@@ -74,7 +109,7 @@ include_once($_BASE_PATH."include/js/gshell.php");
 <tr><td class="header-left"><span style="margin-left:20px;">Propriet&agrave; categoria:</span></td>
 	<td class="header-top">
 			<div class="title" id="title-outer"><span id="title" onclick="rename()"><?php echo html_entity_decode($catInfo['name'],ENT_QUOTES,'UTF-8'); ?></span></div>
-			<span id="titleedit" style="display:none;" class="editinput"><span class="editinput-inner"><input type="text" id="title-ed" value="<?php echo html_entity_decode($catInfo['name'],ENT_QUOTES,'UTF-8'); ?>" style="width:240px;"/></span></span>
+			<span id="titleedit" style="display:none;" class="spaneditinput"><span class="spaneditinput-inner"><input type="text" id="title-ed" value="<?php echo html_entity_decode($catInfo['name'],ENT_QUOTES,'UTF-8'); ?>" style="width:240px;"/></span></span>
 		</td>
 	<td class="header-right"><img src="<?php echo $_ABSOLUTE_URL; ?>share/widgets/gmart/img/widget-close.png" onclick="gframe_close()" class="close-btn"/></td></tr>
 
@@ -83,19 +118,39 @@ include_once($_BASE_PATH."include/js/gshell.php");
 	 <li class="selected" id="nav-properties" onclick="selectPage(this)"><span>Propriet&agrave;</span></li>
 	 <li id="nav-thumbnail" onclick="selectPage(this)"><span>Immagine di anteprima</span></li>
 	 <li id="nav-idocs" onclick="selectPage(this)"><span>Schede prodotti</span></li>
+	 <li id="nav-discount" onclick="selectPage(this)"><span>Scontistica</span></li>
+	 <?php
+	  if($_TRANSPONDER_SERVERS) // da modificare
+	  {
+	   ?>
+	 	<li id="nav-transponder" onclick="selectPage(this)"><span>Pubblica</span></li>
+	   <?php
+	  }
+	  ?>
 	</ul>
 
+	<!-- PROPERTIES -->
 	<div class="page" id="page-properties" style="background:url(img/folder-bg.png) center center no-repeat;">
 	 <table class="prop-table" width='100%' height='100%' cellspacing="0" cellpadding="5" border="0">
 	  <tr><td colspan="2" style="border-bottom:1px solid #cccccf;height:40px;" valign="middle">
 		   <span class="tit">Codice:</span> 
-		   <span class="editinput" style="width:130px;"><span class="editinput-inner"><input type="text" id="code" value="<?php echo $catInfo['code']; ?>" style="width:100px;"/></span></span>
+		   <span class="spaneditinput" style="width:130px;"><span class="spaneditinput-inner"><input type="text" id="code" value="<?php echo $catInfo['code']; ?>" style="width:100px;"/></span></span>
 		   <span class="tit" style="margin-left:40px;">Categoria di app.:</span>&nbsp;<select id="parent-cat-select" style="width:120px;" onchange="parentCatSelectChange(this)">
-			 <option value='0'>Cartella principale</option>
+			 <?php
+			  if($catInfo['parent_id'])
+			  {
+			   $db = new AlpaDatabase();
+			   $db->RunQuery("SELECT parent_id,name FROM dynarc_".$_AP."_categories WHERE id='".$catInfo['parent_id']."'");
+			   if($db->Read() && $db->record['parent_id'])
+				echo "<option value='".$catInfo['parent_id']."' selected='selected'>".$db->record['name']."</option>";
+			   $db->Close();
+			  }
+			 ?>
+			 <option value='0' <?php if(!$catInfo['parent_id']) echo "selected='selected'"; ?>>Cartella principale</option>
 			 <option value='other'>Altro...</option>
 			 <optgroup label="Categorie principali">
 			 <?php
-			 $ret = GShell("dynarc cat-list -ap `".$ap."`",$_REQUEST['sessid'], $_REQUEST['shellid']);
+			 $ret = GShell("dynarc cat-list -ap `".$_AP."`",$_REQUEST['sessid'], $_REQUEST['shellid']);
 			 for($c=0; $c < count($ret['outarr']); $c++)
 			  echo "<option value='".$ret['outarr'][$c]['id']."'".($ret['outarr'][$c]['id'] == $catInfo['parent_id'] ? " selected='selected'>" : ">").$ret['outarr'][$c]['name']."</option>";
 			 ?>
@@ -178,7 +233,9 @@ include_once($_BASE_PATH."include/js/gshell.php");
 		  </td></tr>
 	 </table>
 	</div>
+	<!-- EOF - PROPERTIES -->
 
+	<!-- THUMBNAIL -->
 	<div class="page" id="page-thumbnail" style="display:none;">
 	 <h3 class='lightblue'>Scegli un&lsquo;immagine da utilizzare come anteprima di questa categoria.</h3>
 	 <br/>
@@ -201,7 +258,9 @@ include_once($_BASE_PATH."include/js/gshell.php");
 		  </td></tr>
 	 </table>
 	</div>
+	<!-- EOF - THUMBNAIL -->
 
+	<!-- IDOCS -->
 	<div class="page" id="page-idocs" style="display:none;">
 	 <div class="idoc-list-container" style="height:390px;overflow:auto;">
 	 <table width='100%' border='0' class="idoc-list" cellspacing='0' cellpadding='10' id='idoc-list'>
@@ -229,6 +288,83 @@ include_once($_BASE_PATH."include/js/gshell.php");
 	 </table>
 	 </div>
 	</div>
+	<!-- EOF - IDOCS -->
+
+	<!-- DISCOUNT -->
+	<div class="page" id="page-discount" style="display:none;">
+	 <div>
+	  <table width='100%' border='0' cellspacing='0' cellpadding='10'>
+	   <tr><td><h3 class='lightblue'>Scontistiche per cliente</h3></td>
+		   <td align='right'><img src="<?php echo $_ABSOLUTE_URL; ?>share/widgets/gmart/img/add-btn-orange.png" class="add-idoc-btn" onclick="discountAdd()" title="Aggiungi"/></td>
+	   </tr>
+	  </table>
+	 </div>
+
+	 <div class="gmutable" style="width:500px;height:320px;border:0px;">
+	  <table id="predefdiscount-table" class='gmutable' width='492' cellspacing="0" cellpadding="0" border="0">
+	   <tr><th width='20'><input type="checkbox" onchange="PREDEFDISCTB.selectAll(this.checked)"/></th>
+		   <th id='predefdiscount-subject' editable='true' style="text-align:left;">CLIENTE</th>
+		   <th width='70' id='predefdiscount-percentage' editable='true' format="percentage">SCONTO</th>
+	   </tr>
+
+	   <?php
+		$db = new AlpaDatabase();
+		$qry = "SELECT d.id, d.percentage, d.item_id, r.name FROM dynarc_rubrica_predefdiscount AS d";
+		$qry.= " LEFT JOIN dynarc_rubrica_items AS r ON r.id=d.item_id";
+		$qry.= " WHERE d.ap='".$_AP."' AND d.cat_id='".$_ID."' ORDER BY r.name ASC";
+		$db->RunQuery($qry);
+		while($db->Read())
+		{
+		 echo "<tr id='".$db->record['id']."'><td align='center'><input type='checkbox'/></td>";
+		 echo "<td><span class='graybold'>".$db->record['name']."</span></td>";
+		 echo "<td><span class='graybold'>".($db->record['percentage'] ? $db->record['percentage'] : '0')."%</span></td></tr>";
+		}
+		$db->Close();
+	   ?>
+
+	  </table>
+	 </div>
+	 <div style="border-top:1px solid #dadada;height:20px;line-height:20px">
+	  <img src="<?php echo $_ABSOLUTE_URL; ?>share/icons/16x16/trash.gif" style='cursor:pointer;margin-top:2px;vertical-align:top'/> 
+	  <span class='smalltext' style='cursor:pointer' onclick='discountDeleteSelected()'>Elimina selezionati</span>
+	 </div>
+	</div>
+	<!-- EOF - DISCOUNT -->
+
+	<!-- TRANSPONDER -->
+	<?php
+	if($_TRANSPONDER_SERVERS)
+	{
+	 ?>
+	 <div class="page" id="page-transponder" style="display:none;">
+	  <h3 class='lightblue'>Seleziona su quali server pubblicare questa cartella</h3>
+	  <br/>
+	  <div style="overflow:auto;height:350px">
+	   <table id='transponder-rules' width='100%' class='transponder-list' cellspacing='0' cellpadding='2' border='0'>
+	    <tr><th>SERVER</th>
+		    <th width='230'>SERVIZIO E AZIONI</th>
+	    </tr>
+	    <?php
+		 for($c=0; $c < count($_TRANSPONDER_SERVERS); $c++)
+		 {
+		  $serverInfo = $_TRANSPONDER_SERVERS[$c];
+		  echo "<tr data-serverid='".$serverInfo['id']."' data-servicetag='".$serverInfo['tag']."' data-defrule='".$serverInfo['rule']."'>";
+		  echo "<td><div style='width:250px;height:60px;overflow:hidden;vertical-align:middle;display:table-cell'><b>".$serverInfo['name']."</b><br/><span class='smalltext' style='color:#666666'>".$serverInfo['host']."</span></div></td>";
+		  echo "<td><b>".$serverInfo['tagname']."</b><br/>";
+		  echo "<input type='radio' name='transp-".$serverInfo['id']."-ruleinherit'".(!$serverInfo['rule'] ? " checked='true'" : "")."/>eredita ";
+		  echo "<input type='radio' name='transp-".$serverInfo['id']."-ruleinherit'".(($serverInfo['rule'] == 1) ? " checked='true'" : "")."/>pubblica ";
+		  echo "<input type='radio' name='transp-".$serverInfo['id']."-ruleinherit'".(($serverInfo['rule'] == 2) ? " checked='true'" : "")."/>escludi</td>";
+		  echo "</tr>";
+		 }
+	    ?>
+	   </table>
+	  </div>
+	 </div>
+    <?php
+	}
+	?>
+	<!-- EOF - TRANSPONDER -->
+
 
 	</div></td></tr>
 
@@ -247,9 +383,69 @@ include_once($_BASE_PATH."include/js/gshell.php");
 </table>
 
 <script>
-var ARCHIVE_PREFIX = "<?php echo $ap; ?>";
-var CAT_ID = <?php echo $id ? $id : "0"; ?>;
+var ARCHIVE_PREFIX = "<?php echo $_AP; ?>";
+var CAT_ID = <?php echo $_ID ? $_ID : "0"; ?>;
+var PARENT_ID = <?php echo $catInfo['parent_id'] ? $catInfo['parent_id'] : '0'; ?>;
+var OLD_PARENT_ID = <?php echo $catInfo['parent_id'] ? $catInfo['parent_id'] : '0'; ?>;
 var LAST_UPLOADED_FILENAME = "";
+var TRANSPONDER = <?php echo $_TRANSPONDER_SERVERS ? 'true' : 'false'; ?>;
+var PREDEFDISCTB = null;
+
+function bodyOnLoad()
+{
+ /* CUSTOM PRICING TABLE */
+ PREDEFDISCTB = new GMUTable(document.getElementById('predefdiscount-table'), {autoresize:false, autoaddrows:false});
+ PREDEFDISCTB.NEW_ROWS = new Array();
+ PREDEFDISCTB.UPDATED_ROWS = new Array();
+ PREDEFDISCTB.DELETED_ROWS = new Array();
+
+
+ PREDEFDISCTB.OnBeforeAddRow = function(r){
+	 r.cells[0].innerHTML = "<input type='checkbox'/"+">"; r.cells[0].style.textAlign='center';
+	 r.cells[1].innerHTML = "<span class='graybold'></span>";
+	 r.cells[2].innerHTML = "<span class='graybold'></span>";
+	 r.cells[2].style.textAlign='center';
+
+	 this.NEW_ROWS.push(r);
+	}
+
+ PREDEFDISCTB.OnCellEdit = function(r,cell,value,data){
+	 if(r.id && (this.UPDATED_ROWS.indexOf(r) < 0))
+	  this.UPDATED_ROWS.push(r);
+	 cell.data = data;
+	}
+
+ PREDEFDISCTB.OnDeleteRow = function(r){
+	 if(r.id)
+	 {
+	  if(this.UPDATED_ROWS.indexOf(r) >= 0)
+	   this.UPDATED_ROWS.splice(this.UPDATED_ROWS.indexOf(r),1);
+	  this.DELETED_ROWS.push(r);
+	 }
+	 else
+	  this.NEW_ROWS.splice(this.NEW_ROWS.indexOf(r),1);
+	}
+
+
+ PREDEFDISCTB.FieldByName['predefdiscount-subject'].enableSearch("dynarc item-find -ap rubrica -field name `","` -limit 10 --order-by 'name ASC'","id","name","items",true);
+
+}
+
+function discountAdd()
+{
+ var r = PREDEFDISCTB.AddRow();
+ r.edit();
+}
+
+function discountDeleteSelected()
+{
+ var sel = PREDEFDISCTB.GetSelectedRows();
+ if(!sel.length) return alert("Nessun contatto selezionato");
+ if(!confirm("Sei sicuro di voler rimuovere i contatti selezionati dalla lista delle scontistiche di questa categoria?"))
+  return;
+
+ PREDEFDISCTB.DeleteSelectedRows();
+}
 
 function selectPage(li)
 {
@@ -291,7 +487,7 @@ function uploadImage()
  sh.OnOutput = function(o,a){
 	 if(!a) return;
 
-	 var dstPath = "image/gmart/categories/thumbnails/";
+	 var dstPath = "image/"+ARCHIVE_PREFIX+"/categories/thumbnails/";
 
 	 var sh2 = new GShell();
 	 sh2.OnFinish = function(){
@@ -319,7 +515,6 @@ function uploadImage()
 	 LAST_UPLOADED_FILENAME = USER_HOME+dstFileName;
 	  
 	 sh2.sendCommand("gd resize -i `"+dstFileName+"` -o `"+dstPath+"category-<?php echo $catInfo['id']; ?>-thumb."+a['files'][0]['extension']+"` -w 128");
-	 //sh2.sendCommand("dynarc edit-cat -ap `gmart` -id `<?php echo $catInfo['id']; ?>` -extset `thumbnails.src='"+USER_HOME+dstFileName+"'`");
 	}
  sh.sendCommand("gframe -f imageupload -params `destpath=tmp`");
 }
@@ -398,12 +593,12 @@ function submit()
  if(document.getElementById('group_id').value)
   qry+= " -groupid "+document.getElementById('group_id').value;
 
- var parentId = document.getElementById('parent-cat-select').value;
- if((parentId != "other") && (parentId != <?php echo $catInfo['parent_id'] ? $catInfo['parent_id'] : "0"; ?>))
-  qry+= " -parent `"+document.getElementById('parent-cat-select').value+"`";
+ /*var parentId = document.getElementById('parent-cat-select').value;
+ if((parentId != "other") && (parentId != <?php echo $catInfo['parent_id'] ? $catInfo['parent_id'] : "0"; ?>))*/
+ if(PARENT_ID != OLD_PARENT_ID)
+  qry+= " -parent `"+PARENT_ID+"`";
 
  var set = new Array();
- var extset = new Array();
 
  /* SAVE THUMBNAIL */
  if(document.getElementById('thumbnail-no').checked == true)
@@ -421,8 +616,78 @@ function submit()
   qry+= " -set `"+q.substr(1)+"`";
  }
 
+ if(PREDEFDISCTB.DELETED_ROWS.length)
+ {
+  var ids = "";
+  for(var c=0; c < PREDEFDISCTB.DELETED_ROWS.length; c++)
+   ids+= ","+PREDEFDISCTB.DELETED_ROWS[c].id;
+
+  qry+= " && dynarc exec-func ext:predefdiscount.delete -params `id="+ids.substr(1)+"`";
+ }
+ if(PREDEFDISCTB.NEW_ROWS.length)
+ {
+  var subjIds = "";
+  var percs = "";
+  for(var c=0; c < PREDEFDISCTB.NEW_ROWS.length; c++)
+  {
+   var r = PREDEFDISCTB.NEW_ROWS[c];
+   if(!r.cell['predefdiscount-subject'].data) continue;
+   subjIds+= ","+r.cell['predefdiscount-subject'].data['id'];
+   percs+= ","+parseFloat(r.cell['predefdiscount-percentage'].getValue());
+  }
+  if(subjIds)
+   qry+= " && dynarc exec-func ext:predefdiscount.newbycat -params `ap="+ARCHIVE_PREFIX+"&cat=<?php echo $catInfo['id']; ?>&subjid="+subjIds.substr(1)+"&perc="+percs.substr(1)+"`";
+ }
+ if(PREDEFDISCTB.UPDATED_ROWS.length)
+ {
+  var subjIds = "";
+  var percs = "";
+  var ids = "";
+  for(var c=0; c < PREDEFDISCTB.UPDATED_ROWS.length; c++)
+  {
+   var r = PREDEFDISCTB.UPDATED_ROWS[c];
+   ids+= ","+r.id;
+   subjIds+= ","+(r.cell['predefdiscount-subject'].data ? r.cell['predefdiscount-subject'].data['id'] : 0);
+   percs+= ","+parseFloat(r.cell['predefdiscount-percentage'].getValue());
+  }
+
+  qry+= " && dynarc exec-func ext:predefdiscount.edit -params `id="+ids.substr(1)+"&subjid="+subjIds.substr(1)+"&perc="+percs.substr(1)+"`";
+ }
+
+
+ /* SAVE TRANSPONDER RULES */
+ if(TRANSPONDER)
+ {
+  var tQ = "";
+  var tb = document.getElementById('transponder-rules');
+  for(var c=1; c < tb.rows.length; c++)
+  {
+   var serverId = tb.rows[c].getAttribute('data-serverid');
+   var serviceTag = tb.rows[c].getAttribute('data-servicetag');
+   var defRule = parseFloat(tb.rows[c].getAttribute('data-defrule'));
+   var rule = 0;
+   var radiolist = tb.rows[c].cells[1].getElementsByTagName('input');
+   if(radiolist[1].checked == true) rule=1;
+   else if(radiolist[2].checked == true) rule=2;
+   if(rule != defRule)
+	tQ+= " -serverid '"+serverId+"' -servicetag '"+serviceTag+"' -rule '"+rule+"'";
+  }
+ }
+
  var sh = new GShell();
- sh.OnOutput = function(o,a){gframe_close(o,a);}
+ sh.OnError = function(err){alert(err);}
+ sh.OnOutput = function(o,a){
+	 if(TRANSPONDER && tQ)
+	 {
+	  var sh2 = new GShell();
+	  sh2.OnError = function(err){alert(err);}
+	  sh2.OnOutput = function(){gframe_close(o,a);}
+	  sh2.sendCommand("transponder set-autosync-rules -at gmart -ap '"+ARCHIVE_PREFIX+"' -cat '<?php echo $catInfo['id']; ?>'"+tQ);
+	 }
+	 else
+	  gframe_close(o,a);
+	}
+
  sh.sendCommand(qry);
 }
 
@@ -432,6 +697,7 @@ function deleteCategory()
   return;
  
  var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
  sh.OnOutput = function(o,a){
 	 gframe_close(o,a);	 
 	}
@@ -443,9 +709,27 @@ function parentCatSelectChange(sel)
  if(sel.value == "other")
  {
   var sh = new GShell();
+  sh.OnError = function(err){alert(err);}
   sh.OnOutput = function(o,catId){
 	 if(!catId) return;
+	 if(catId == CAT_ID)
+	 {
+	  sel.value = OLD_PARENT_ID;
+	  return alert("Non puoi inserire questa categoria all'interno di se stessa! Seleziona un'altra categoria di appartenenza.");
+	 }
+
+	 PARENT_ID = catId;
+	 for(var c=0; c < sel.options.length; c++)
+	 {
+	  if(sel.options[c].value == catId)
+	  {
+	   sel.value = catId;
+	   return;
+	  }
+	 }
+
 	 var sh2 = new GShell();
+     sh2.OnError = function(err){alert(err);}
 	 sh2.OnOutput = function(o,a){
 		 var opt = document.createElement('OPTION');
 		 opt.value = a['id'];
@@ -457,6 +741,16 @@ function parentCatSelectChange(sel)
 	}
   sh.sendCommand("gframe -f dynarc.categorySelect -params `ap="+ARCHIVE_PREFIX+"`");
  }
+ else
+ {
+  if(sel.value == CAT_ID)
+  {
+   sel.value = OLD_PARENT_ID;
+   return alert("Non puoi inserire questa categoria all'interno di se stessa! Seleziona un'altra categoria di appartenenza.");
+  }
+  PARENT_ID = sel.value;
+ }
+
 }
 
 function idocApply(inp)
@@ -477,6 +771,7 @@ function idocApply(inp)
  }
 
  var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
  sh.sendCommand("dynarc exec-func ext:idoc.editdefault -params `ap="+ARCHIVE_PREFIX+"&cat=<?php echo $catInfo['id']; ?>&idocaid="+aid+"&idocid="+id+"&all="+(all ? "true" : "false")+"`");
 }
 </script>

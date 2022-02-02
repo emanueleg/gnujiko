@@ -32,7 +32,7 @@ if($_POST['request'])
 {
  define("VALID-GNUJIKO-SHELLREQUEST",1);
  include('gshell_httprequest.php');
- return;
+ exit();
 }
 
 if(!isLogged())

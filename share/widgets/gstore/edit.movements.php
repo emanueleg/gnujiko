@@ -1,16 +1,18 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 29-11-2012
+ #DATE: 22-05-2016
  #PACKAGE: gstore
- #DESCRIPTION: Official Gnujiko Store Manager.
- #VERSION: 2.0beta
- #CHANGELOG:
+ #DESCRIPTION: Modifica giacenze articoli
+ #VERSION: 2.3beta
+ #CHANGELOG: 22-05-2016 : Bugfix salvataggio prenotati e ordinati.
+			 23-03-2016 : Aggiornata funzione submit.
+			 08-04-2014 : Allargata la finestra
  #TODO:
  
 */
@@ -69,7 +71,7 @@ table.footertable td {
 }
 
 table.movements {
-	width: 580px;
+	width: 860px;
 }
 
 table.movements th {
@@ -105,13 +107,13 @@ table#itemstable td {background: #fafade;}
 
 <?php
 
-$form = new GForm("Modifica giacenze articoli", "MB_OK|MB_ABORT", "simpleform", "default", "orange", 640, 480);
+$form = new GForm("Modifica giacenze articoli", "MB_OK|MB_ABORT", "simpleform", "default", "orange", 900, 480);
 $form->Begin($_ABSOLUTE_URL."share/widgets/gstore/img/edit.png");
 echo "<div id='contents'>";
 
 ?>
 
-<div class="gmutable" style="width:600px;height:360px;background:#ffffff;border:0px;">
+<div class="gmutable" style="width:860px;height:360px;background:#ffffff;border:0px;">
  <table id="itemstable" class="movements" cellspacing="2" cellpadding="2" border="0">
  <tr><th width='60'>CODICE</th>
 	 <th style='text-align:left;'>ARTICOLO</th>
@@ -163,6 +165,7 @@ function OnFormSubmit()
   return gframe_close();
 
  var cmd = "";
+ var ret = new Array();
 
  for(var c=1; c < tmp.rows.length; c++)
  {
@@ -170,19 +173,33 @@ function OnFormSubmit()
    continue;
   var r = tmp.rows[c];
 
-  var q = ""; var storeQty = 0;
+  var a = new Array();
+  a['ap'] = r.getAttribute('refap');
+  a['id'] = r.id;
+  a['tot_qty'] = 0;
+
   for(var i=2; i < r.cells.length-2; i++)
   {
-   q+= ",store_"+r.cells[i].getAttribute('storeid')+"_qty='"+parseFloat(r.cells[i].innerHTML)+"'";
-   storeQty+= parseFloat(r.cells[i].innerHTML);
+   var sid = r.cells[i].getAttribute('storeid');
+   var qty = parseFloat(r.cells[i].innerHTML);
+   cmd+= " && store update-qty -store '"+sid+"' -qty '"+qty+"' -ap '"+r.getAttribute('refap')+"' -id '"+r.id+"'";
+   a['store_'+sid+'_qty'] = qty;
+   a['tot_qty']+= qty;
   }
-  q+= ",booked='"+parseFloat(r.cells[r.cells.length-2].innerHTML)+"',incoming='"+parseFloat(r.cells[r.cells.length-1].innerHTML)+"',storeqty='"+storeQty+"'";
-  cmd+= " && dynarc edit-item -ap `"+r.getAttribute('refap')+"` -id `"+r.id+"` -set `"+q.substr(1)+"`";
+
+  cmd+= " && dynarc edit-item -ap '"+a['ap']+"' -id '"+a['id']+"' -set `booked='"+parseFloat(r.cells[r.cells.length-2].innerHTML)+"',incoming='"+parseFloat(r.cells[r.cells.length-1].innerHTML)+"'`";
+
+  ret.push(a);
  }
  
 
  var sh = new GShell();
- sh.OnOutput = function(o,a){gframe_close(o,a);}
+ sh.showProcessMessage("Aggiornamento dati", "Attendere prego, &egrave; in corso l&lsquo;aggiornamento dei magazzini");
+ sh.OnError = function(err){this.processMessage.error(err);}
+ sh.OnOutput = function(o,a){
+	 this.hideProcessMessage();
+	 gframe_close(o,ret);
+	}
  sh.sendCommand(cmd.substr(4));
 }
 

@@ -11,7 +11,9 @@
 
 
 
+/* 20-02-2017 (edit by Alpatech) : Aggiunta opzione ByPass pre-output
 /* 04-07-2012 (edit by Alpatech) : Aggiunto gshPreOutput alle righe 414 e 1205 */
+/* 07-03-2014 (edit by Alpatech) : Attivato bypass degli errori. */
 
 if (!defined('__CLASS_HTML2PDF__')) {
 
@@ -406,7 +408,7 @@ if (!defined('__CLASS_HTML2PDF__')) {
             }
 
             // convert HTMl to PDF
-			global $_SESSID, $_SHELLID, $_PREOFF, $_CHUNK_SIZE, $_PROGRESS;
+			global $_SESSID, $_SHELLID, $_PREOFF, $_CHUNK_SIZE, $_PROGRESS, $_BYPASS_PREOUTPUT;
 			$_PREOFF = false;
 
             $this->parsingCss->readStyle($html);
@@ -419,8 +421,11 @@ if (!defined('__CLASS_HTML2PDF__')) {
 			 $_CHUNK_SIZE = ceil($steps/100);
 			 $steps = 100;
 			}
-			$interface = array("name"=>"progressbar","steps"=>$steps);
-			gshPreOutput($_SHELLID,"Export to PDF...", "ESTIMATION", "", "PASSTHRU", $interface);
+			if(!$_BYPASS_PREOUTPUT)
+			{
+			 $interface = array("name"=>"progressbar","steps"=>$steps);
+			 gshPreOutput($_SHELLID,"Export to PDF...", "ESTIMATION", "", "PASSTHRU", $interface);
+			}
 
             $this->_makeHTMLcode();
         }
@@ -1205,11 +1210,11 @@ if (!defined('__CLASS_HTML2PDF__')) {
          */
         protected function _makeHTMLcode()
         {
-		 global $_SESSID, $_SHELLID, $_PREOFF, $_CHUNK_SIZE, $_PROGRESS;
+		 global $_SESSID, $_SHELLID, $_PREOFF, $_CHUNK_SIZE, $_PROGRESS, $_BYPASS_PREOUTPUT;
 
             // foreach elements of the parsing
             for ($this->_parsePos=0; $this->_parsePos<count($this->parsingHtml->code); $this->_parsePos++) {
-				if(!$_PREOFF)
+				if(!$_PREOFF && !$_BYPASS_PREOUTPUT)
 				{
 				 $_PROGRESS++;
 				 if($_PROGRESS >= $_CHUNK_SIZE)
@@ -1339,6 +1344,7 @@ if (!defined('__CLASS_HTML2PDF__')) {
          */
         protected function _drawImage($src, $subLi=false)
         {
+		 global $_BYPASS_PDF_ERRORS;
             // get the size of the image
             // WARNING : if URL, "allow_url_fopen" must turned to "on" in php.ini
             $infos=@getimagesize($src);
@@ -1346,10 +1352,10 @@ if (!defined('__CLASS_HTML2PDF__')) {
             // if the image does not exist, or can not be loaded
             if (count($infos)<2) {
                 // if the test is activ => exception
-                /*if ($this->_testIsImage) {
-                    throw new HTML2PDF_exception(6, $src);
-                }*/
-
+				if(!$_BYPASS_PDF_ERRORS && $this->_testIsImage) 
+				{
+                 throw new HTML2PDF_exception(6, $src);
+                }
                 // else, display a gray rectangle
                 $src = null;
                 $infos = array(16, 16);
@@ -1513,6 +1519,7 @@ if (!defined('__CLASS_HTML2PDF__')) {
          */
         protected function _drawRectangle($x, $y, $w, $h, $border, $padding, $margin, $background)
         {
+		 global $_BYPASS_PDF_ERRORS;
             // if we are in a subpart or if height is null => return false
             if ($this->_subPart || $this->_isSubPart || $h===null) return false;
 
@@ -1608,10 +1615,12 @@ if (!defined('__CLASS_HTML2PDF__')) {
                 $imageInfos=@getimagesize($iName);
 
                 // if the image can not be loaded
-                if (count($imageInfos)<2) {
-                    /*if ($this->_testIsImage) {
-                        throw new HTML2PDF_exception(6, $iName);
-                    }*/
+                if (count($imageInfos)<2) 
+				{
+				 if(!$_BYPASS_PDF_ERRORS && $this->_testIsImage) 
+				 {
+                  throw new HTML2PDF_exception(6, $iName);
+                 }
                 } else {
                     // convert the size of the image from pixel to the unit of the PDF
                     $imageWidth    = 72./96.*$imageInfos[0]/$this->pdf->getK();

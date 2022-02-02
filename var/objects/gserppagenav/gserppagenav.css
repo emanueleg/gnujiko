@@ -1,5 +1,7 @@
 div.GSERPPageNav {
 	height: 22px;
+	-moz-user-select: none;
+	-webkit-user-select: none;
 }
 
 div.GSERPPageNav a, div.GSERPPageNav span {
@@ -11,6 +13,7 @@ div.GSERPPageNav a, div.GSERPPageNav span {
     background: #fff;
 	cursor: pointer;
 	-moz-user-select: none;
+	-webkit-user-select: none;
 	font-size: 10px;
 	font-family: Arial;
 	color: #105CB6;
@@ -23,11 +26,14 @@ div.GSERPPageNav span.current {
     color: #fff;
 	cursor: default;
 	-moz-user-select: none;
+	-webkit-user-select: none;
 }
 
 div.GSERPPageNav a {
     border: 1px solid #9AAFE5;
     text-decoration: none;
+	-moz-user-select: none;
+	-webkit-user-select: none;
 }
 
 div.GSERPPageNav a:hover {
@@ -36,10 +42,14 @@ div.GSERPPageNav a:hover {
 
 div.GSERPPageNav a.nextprev {
     font-weight: bold;
+	-moz-user-select: none;
+	-webkit-user-select: none;
 }
 
 div.GSERPPageNav span.nextprev {
 	border: 1px solid #ddd;
 	color: #999;
+	-moz-user-select: none;
+	-webkit-user-select: none;
 }
 

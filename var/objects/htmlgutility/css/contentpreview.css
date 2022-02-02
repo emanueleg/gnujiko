@@ -1,0 +1,63 @@
+div.gcontentpreview {
+ display: block;
+ margin: 0px;
+ padding: 0px;
+ position: absolute;
+ top: 0px;
+ left: 0px;
+ z-index: 10000;
+ background: #ffffff;
+ box-shadow: 0px 0px 10px #888888;
+}
+
+div.gcontentpreview-canvas-outer {
+ overflow: auto;
+ height: 600px;
+}
+
+div.gcontentpreview-canvas {
+ margin: 10px;
+ margin-bottom: 2px;
+ background-color: #ffffff;
+ border: 1px solid #f1f1f1;
+}
+
+div.gcontentpreview-footer {
+ height: 36px;
+ background: #f1f1f1;
+ text-align: center;
+ font-family: arial, sans-serif;
+ font-size: 12px;
+ color: #555555;
+ line-height: 36px;
+}
+
+img.gcontentpreview-btnclose {
+ position: absolute;
+ right: -16px;
+ top: -16px;
+ cursor: pointer;
+}
+
+img.gcontentpreview-button {
+ float: right;
+ cursor: pointer;
+ margin-right: 10px;
+}
+
+div.gcontentpreview-screen-mask {
+ position: absolute;
+ top: 0px;
+ left: 0px;
+ width: 100%;
+ height: 100%;
+ opacity: 0.3;
+ -moz-opacity: 0.3;
+ -webkit-opacity: 0.3;
+ background: #375fab;
+ border: 0px;
+ margin: 0px;
+ padding: 0px;
+ z-index: 9000;
+}
+

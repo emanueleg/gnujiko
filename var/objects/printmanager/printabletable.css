@@ -1,0 +1,43 @@
+table.printabletable td {
+	font-family: Arial, sans-serif;
+	font-size: 8pt;
+	height: 8mm;
+	border-bottom: 1px solid #d8d8d8;
+	vertical-align: middle;
+}
+
+table.printabletable tr.th td {
+	font-weight: bold;
+	border-top: 1px solid #d8d8d8;
+	border-bottom: 1px solid #d8d8d8;
+	height: 8mm;
+	vertical-align: middle;
+}
+
+div.defaultheader {
+	font-family: arial, sans-serif;
+	font-size: 9pt;
+	color: #000;
+}
+
+div.defaultheader h3 {
+	font-family: arial, sans-serif;
+	font-size: 14pt;
+	color: #333;
+	height: 10mm;
+	line-height: 10mm;
+	vertical-align: middle;
+	margin: 0px;
+}
+
+div.defaultfooter {
+	border: 4px solid #2668a9;
+	border-radius: 4px;
+}
+
+table.footertable td {
+	font-family: arial, sans-serif;
+	font-size: 8pt;
+	height: 5mm;
+	vertical-align: middle;
+}

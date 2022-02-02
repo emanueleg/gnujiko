@@ -1,0 +1,22 @@
+table.collapsetable td {
+	height: 50px;
+	vertical-align: middle;
+}
+
+table.collapsetable div.title {
+	font-family: Arial, sans-serif;
+	font-size: 14px;
+	color: #222;
+	height: 16px;
+	line-height: 16px;
+	font-weight: bold;
+}
+
+table.collapsetable div.subtitle {
+	font-family: Arial, sans-serif;
+	font-size: 10px;
+	color: #777;
+	height: 16px;
+	line-height: 16px;
+}
+

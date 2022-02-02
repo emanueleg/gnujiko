@@ -1,16 +1,19 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 15-04-2013
+ #DATE: 23-07-2016
  #PACKAGE: gnujiko-base
  #DESCRIPTION: Common file and directory functions
- #VERSION: 2.3beta
- #CHANGELOG: 15-04-2013 : Bug fix in function gftpwrite.
+ #VERSION: 2.6beta
+ #CHANGELOG: 23-07-2016 : Creata classe GFTP con funzioni da completare.
+			 13-11-2015 : Aggiunta funzione ftp_rmdirr.
+			 07-11-2015 : Aggiunta funzione ftp_is_dir.
+			 15-04-2013 : Bug fix in function gftpwrite.
 			 11-04-2013 : Sistemato i permessi ai files.
 			 15-02-2013 : Bug fix in function gfwrite.
 			 10-02-2012 : New functions: gfwrite and gftpwrite.
@@ -447,5 +450,155 @@ function gftpwrite($fileName, $buffer, $chmod=0755, $connpersistent=false, $debu
  return true; 
 }
 //----------------------------------------------------------------------------------------------------------------------//
+function ftp_is_dir($ftpConn, $dir) 
+{
+ $currentDir = ftp_pwd($ftpConn);
+ if(@ftp_chdir($ftpConn,$dir))
+ {
+  ftp_chdir($ftpConn,$currentDir);
+  return true;
+ }
+ return false;
+} 
+//----------------------------------------------------------------------------------------------------------------------//
+function ftp_rmdirr($ftpConn, $dir)
+{
+ if(!(@ftp_rmdir($ftpConn, $dir) || @ftp_delete($ftpConn, $dir)))
+ {
+  $list = @ftp_nlist($ftpConn, $dir);
+  if(!empty($list))
+  {
+   foreach($list as $value)
+	ftp_rmdirr($ftpConn, $value);
+  }
+  if(!@ftp_rmdir($ftpConn, $dir))
+   return false;
+ }
+
+ return true;
+}
+//----------------------------------------------------------------------------------------------------------------------//
+//----------------------------------------------------------------------------------------------------------------------//
+//----------------------------------------------------------------------------------------------------------------------//
+class GFTP
+{
+ var $ftpHost, $ftpLogin, $ftpPassword, $ftpBasePath;
+ var $defaultChmod, $debug, $error, $conn;
+
+ function GFTP($host="", $login="", $password="", $basepath="")
+ {
+  $this->ftpHost = $host;
+  $this->ftpLogin = $login;
+  $this->ftpPassword = $password;
+  $this->ftpBasePath = $basepath ? "/".ltrim(dirname($basepath)."/".basename($basepath), "/")."/" : "";
+
+  $this->defaultChmod = 0644;
+
+  $this->debug = "";
+  $this->error = "";
+  $this->conn = null;
+
+ }
+ //-------------------------------------------------------------------------------------------------------------------//
+ function connect($host=null, $login=null, $password=null, $basepath=null)
+ {
+  if(isset($host)) 			$this->ftpHost = $host;
+  if(isset($login))			$this->ftpLogin = $login;
+  if(isset($password))		$this->ftpPassword = $password;
+  if(isset($basepath))		$this->ftpBasePath = $basepath ? "/".ltrim(dirname($basepath)."/".basename($basepath), "/")."/" : "";
+
+  $this->debug.= "Connect to server ".$this->ftpHost."...";
+  $this->conn = @ftp_connect($this->ftpHost);
+  if(!$this->conn)
+   return $this->returnError("failed!\nUnable to connect to host ".$this->ftpHost, "FTP_CONNECTION_FAILED");
+   
+  if(!@ftp_login($this->conn,$this->ftpLogin,$this->ftpPassword)) 
+   return $this->returnError("failed!\nUnable to connect with user ".$this->ftpLogin.". User or password are wrong!", "FTP_LOGIN_FAILED");
+
+  if($this->ftpBasePath)
+  {
+   if(!@ftp_chdir($this->conn, $this->ftpBasePath))
+	return $this->returnError("failed!\nUnable to change directory to ".$this->ftpBasePath, "FTP_CHDIR_FAILED");
+  }
+
+  return true;
+ }
+ //-------------------------------------------------------------------------------------------------------------------//
+ function upload($sourceFile, $target="", $chmod=null)
+ {
+  global $_BASE_PATH;
+
+  if(!file_exists($_BASE_PATH.$sourceFile)) return $this->returnError("File ".$sourceFile." does not exists.", "SOURCE_FILE_DOES_NOT_EXISTS");
+  $fp = fopen($_BASE_PATH.$sourceFile,"r");
+  if(!$fp) return $this->returnError("FTP error: Unable to read source file ".$sourceFile, 'SOURCE_FILE_READ_FAILED');
+
+  $destFileName = "";
+  $destFilePath = "";
+  if(!$chmod) $chmod = $this->defaultChmod;
+
+  if($target)
+  {
+   if(strpos($target, ".") !== false)
+   {
+	$destFileName = basename($target);
+    $destFilePath = dirname($target);
+   }
+   else
+   {
+	$destFileName = basename($sourceFile);
+	$destFilePath = $target;
+   }
+  }
+  else
+   $destFileName = basename($sourceFile);
+
+  if($destFilePath && !@ftp_chdir($this->conn, $this->ftpBasePath.$destFilePath))
+  {
+   $p = explode("/", $destFilePath);
+   $path = "";
+   for($c=0; $c < count($p); $c++)
+   {
+    $basepath = $path;
+    $path.= $p[$c]."/";
+    if(@ftp_chdir($this->conn, $this->ftpBasePath.$path))
+     @ftp_chdir($this->conn, $this->ftpBasePath.$path);
+    else
+    {
+     if(@ftp_mkdir($this->conn, $this->ftpBasePath.$path))
+ 	  @ftp_chdir($this->conn, $this->ftpBasePath.$path);
+     else
+	  return $this->returnError("Unable to create directory ".$path, "FTP_MKDIR_FAILED");
+     @ftp_chmod($this->conn, $chmod, $this->ftpBasePath.$path);
+    }
+   }
+  }
+  
+  $target = ($destFilePath ? $destFilePath."/" : "").$destFileName;
+  
+  if(!@ftp_fput($this->conn, $this->ftpBasePath."/".$target, $fp, FTP_BINARY))
+   return $this->returnError("Unable to copy ".$sourceFile." to ".$target." via FTP.", "FTP_COPY_FAILED");
+  @ftp_chmod($this->conn, $chmod, $this->ftpBasePath."/".$target);
+
+  $this->debug = "Upload ".$sourceFile." to ".$target." ...done!\n";
+
+  return true;
+ }
+ //-------------------------------------------------------------------------------------------------------------------//
+
+ //-------------------------------------------------------------------------------------------------------------------//
+ function returnError($message="", $error="")
+ {
+  if($message) $this->debug.= $message;
+  if($error) $this->error = $error;
+  return false;
+ }
+ //-------------------------------------------------------------------------------------------------------------------//
+
+
+
+}
+//----------------------------------------------------------------------------------------------------------------------//
+
+
 
 

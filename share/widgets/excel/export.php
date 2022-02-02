@@ -1,18 +1,20 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 21-05-2013
+ #DATE: 11-12-2014
  #PACKAGE: excel-importexport-gui
  #DESCRIPTION: Export to Excel
- #VERSION: 2.0beta
- #CHANGELOG: 
+ #VERSION: 2.2beta
+ #CHANGELOG: 11-12-2014 : Bug fix.
+			 23-10-2014 : Completata funzione di esportazione.
  #DEPENDS: 
  #TODO:
+ #USAGE: gframe -f excel/export -params `file=filename` -c `<table>....</table>`
  
 */
 
@@ -24,47 +26,7 @@ define("VALID-GNUJIKO",1);
 
 include_once($_BASE_PATH."include/gshell.php");
 
-if($_REQUEST['file'])
-{
- //$_REQUEST['file'] = ltrim($_REQUEST['file'], $_USERS_HOMES."/".$_SESSION['HOMEDIR']."/");
- /*$ret = GShell("excel read -f `".$_REQUEST['file']."` -limit 5",$_REQUEST['sessid'], $_REQUEST['shellid']);
- $fields = $ret['outarr']['fields'];
- $list = $ret['outarr']['items'];*/
-}
-
-/*if(!$_REQUEST['parser'] && $_REQUEST['ap'])
- $_REQUEST['parser'] = $_REQUEST['ap'];*/
-
-/*function autocheckField($keyName, $keyValue, $fieldName, $fieldValue)
-{
- global $_PARSER_INFO;
- $fieldName = strtolower(trim($fieldName));
- $fieldValue = strtolower(trim($fieldValue));
-
- if($keyName == $fieldName)
-  return true;
- if($keyValue == $fieldValue)
-  return true;
-
- if(!$_PARSER_INFO['keydict'])
-  return false;
-
- $dict = $_PARSER_INFO['keydict'][$keyName];
- if(!$dict || !count($dict))
-  return false;
-
- for($c=0; $c < count($dict); $c++)
- {
-  if(($dict[$c] == $fieldName) || ($dict[$c] == $fieldValue))
-   return true;
-  if(strpos($fieldName,$dict[$c]) !== false)
-   return true;
-  if(strpos($fieldValue,$dict[$c]) !== false)
-   return true;
- }
- 
- return false;
-}*/
+$fileName = $_REQUEST['file'] ? $_REQUEST['file'] : ($_REQUEST['title'] ? $_REQUEST['title'] : 'untitled');
 
 ?>
 <html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8"><title>Export to Excel</title>
@@ -87,6 +49,7 @@ include_once($_BASE_PATH."include/js/gshell.php");
 
  <!-- EXCEL TABLE -->
  <div class="excel-table-container">
+  <div id="loading" style="text-align:center"><img src="<?php echo $_ABSOLUTE_URL; ?>share/widgets/excel/img/loading.gif" style="margin-top:100px"/></div>
  <table class="excel-table" cellspacing="0" cellpadding="0" border="0" id="excel-table">
  <?php
  echo "<tr>";
@@ -98,19 +61,6 @@ include_once($_BASE_PATH."include/js/gshell.php");
  for($c=0; $c < count($fields); $c++)
   echo "<td class='head'".($c==0 ? " style='border-left: 1px solid #dadada'" : "").">".$fields[$c]['value']."</td>";
  echo "</tr>";
-
-
- /*for($r=1; $r < count($list); $r++)
- {
-  echo "<tr>";
-  for($c=0; $c < count($fields); $c++)
-  {
-   $field = $fields[$c]['name'];
-   $value = $list[$r][$field];
-   echo "<td".($c==0 ? " style='border-left: 1px solid #dadada'" : "").">".($value ? $value : "&nbsp;")."</td>";
-  }
-  echo "</tr>";
- }*/
  ?>
  </table>
  </div>
@@ -119,7 +69,9 @@ include_once($_BASE_PATH."include/js/gshell.php");
 
  <div class="excel-footer">
   <a href='#' onclick='gframe_close()' class='graybutton' style='float:left;'>Annulla</a>
-  <a href='#' onclick='submit()' class='bluebutton' style='float:right;'>Procedi &raquo;</a>
+  <a href='#' onclick='submit()' class='bluebutton' style='float:right;margin-left:20px'>Procedi &raquo;</a>
+  <input type='text' class='edit' style='width:150px;float:right;margin-left:5px' id='filename' value="<?php echo $fileName; ?>"/>
+  <span class='smalltext' style='float:right;'>Nome del file: </span>
  </div>
 
 </div>
@@ -136,6 +88,7 @@ function bodyOnLoad()
 
 function gframe_cachecontentsload(contents)
 {
+ document.getElementById('loading').style.display="none";
  var div = document.createElement('DIV');
  div.innerHTML = contents;
  div.style.display = "none";
@@ -144,9 +97,12 @@ function gframe_cachecontentsload(contents)
  div.style.left = 0;
  document.body.appendChild(div);
 
- var letters = new Array("A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z");
+ var letters = new Array("A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z",
+	"AA","AB","AC","AD","AE","AF","AG","AH","AI","AJ","AK","AL","AM","AN","AO","AP","AQ","AR","AS","AT","AU","AV","AW","AX","AY","AZ");
 
  var tb = div.getElementsByTagName('TABLE')[0];
+ if(!tb)
+  return alert("Error: HTML table not found.");
  var xtb = document.getElementById('excel-table');
 
  var str = "";
@@ -160,7 +116,7 @@ function gframe_cachecontentsload(contents)
  for(var c=excludeFirstColumn; c < tb.rows[0].cells.length; c++)
  {
   str+= "<th"+(idx==0 ? " style='border-left: 1px solid #0197fd;'" : "")+"><input type='checkbox' checked='true' onclick='selectColumn("+idx+",this)'/"+">"+letters[idx]+"</th>";
-  str2+= "<td class='head'"+(idx==0 ? " style='border-left: 1px solid #dadada'" : "")+">"+tb.rows[0].cells[c].innerHTML+"</td>";
+  str2+= "<td class='head'"+(idx==0 ? " style='border-left: 1px solid #dadada'" : "")+" format='"+(tb.rows[0].cells[c].getAttribute('format') ? tb.rows[0].cells[c].getAttribute('format') : 'string')+"'>"+tb.rows[0].cells[c].innerHTML+"</td>";
   idx++;
  }
  xtb.rows[0].innerHTML = str;
@@ -181,7 +137,7 @@ function gframe_cachecontentsload(contents)
    else
 	value = tb.rows[c].cells[i].innerHTML;
 
-   cell.innerHTML = value;
+   cell.innerHTML = value ? value : "&nbsp;";
   }
 
  }
@@ -190,9 +146,24 @@ function gframe_cachecontentsload(contents)
 
 function submit()
 {
+ var filename = document.getElementById('filename').value;
+ if(!filename)
+  return alert("Devi specificare un nome file valido");
+
  var ufrah = document.getElementById('userfirstrowasheader').checked ? 0 : 1;
  var tb = document.getElementById('excel-table');
  var htmltable = "<table>";
+
+ // detect formats //
+ var formats = "";
+ var r = tb.rows[1];
+ for(var c=0; c < r.cells.length; c++)
+ {
+  if((r.cells[c].className == "disabled") || (r.cells[c].className == "head-disabled"))
+   continue;
+  formats+= ","+(r.cells[c].getAttribute('format') ? r.cells[c].getAttribute('format') : 'string');
+ }
+ if(formats) formats = formats.substr(1);
 
  for(var c=(ufrah+1); c < tb.rows.length; c++)
  {
@@ -214,13 +185,9 @@ function submit()
  var sh = new GShell();
  sh.OnError = function(err,code){alert(err);}
  sh.OnPreOutput = function(){}
- sh.OnOutput = function(o,a){
-	 if(!a) return;
-	 document.location.href = ABSOLUTE_URL+"getfile.php?file="+a['filename'];
-	 window.setTimeout(function(){gframe_close(o,a);},1000);
-	}
+ sh.OnOutput = function(o,a){gframe_close(o,a);}
 
- var cmd = "excel write -f `<?php echo $_REQUEST['file']; ?>` -s `Sheet1` -htmltable `"+htmltable+"`";
+ var cmd = "excel write -f `"+filename+"` -s `Sheet1` -htmltable `"+htmltable+"` -formats '"+formats+"'";
  sh.sendCommand(cmd);
 }
 

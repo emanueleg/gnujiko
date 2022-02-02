@@ -1,16 +1,19 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 22-10-2013
+ #DATE: 02-02-2016
  #PACKAGE: apm-gui
  #DESCRIPTION: Process form form APM.
- #VERSION: 2.3beta
- #CHANGELOG: 22-10-2013 : Autenticazione.
+ #VERSION: 2.6beta
+ #CHANGELOG: 02-02-2016 : Aggiunto messaggio account restrictions.
+			 16-03-2015 : Lancia comando update-cache una volta finito di installare i pacchetti.
+			 14-03-2015 : Return 1 on success.
+			 22-10-2013 : Autenticazione.
 			 05-02-2013 : Bug fix on check depends.
 			 02-01-2012 : Multi language.
  #TODO: 
@@ -134,7 +137,7 @@ function widget_apminstall_abort()
 
 function widget_apminstall_close()
 {
- gframe_close("done!");
+ gframe_close("done!",1);
 }
 
 function bodyOnLoad()
@@ -169,6 +172,11 @@ function bodyOnLoad()
 			 document.location.reload();
 			}
 		 sh2.sendCommand("gframe -f apm.accountreg -params `invalidtoken=true`");	
+		} break;
+	  case "ACCOUNT_RESTRICTIONS" : {
+		 var sh2 = new GShell();
+		 sh2.OnOutput = function(o,a){gframe_close();}
+		 sh2.sendCommand("gframe -f apm.accessdenied -params `errormessage="+err+"`");			 
 		} break;
 	  default : alert(err);
 	 }
@@ -228,7 +236,11 @@ function bodyOnLoad()
 	 document.getElementById('progressbar').getElementsByTagName('DIV')[0].className = "green";
 	 document.getElementById('abort-btn').style.display='none';
 	 document.getElementById('close-btn').style.display='';
-	 alert("<?php echo i18n('The changes have been applied with success!'); ?>");
+
+	 var sh2 = new GShell();
+	 sh2.OnError = function(err){alert(err);}
+	 sh2.OnOutput = function(){alert("<?php echo i18n('The changes have been applied with success!'); ?>");}
+	 sh2.sendCommand("system check-for-updates -force --set-last-update now");
 	}
 
  var tb = document.getElementById('packagelist');

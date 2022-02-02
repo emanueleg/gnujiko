@@ -1,18 +1,22 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2017 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 10-04-2013
+ #DATE: 27-03-2017
  #PACKAGE: system-config-gui
  #DESCRIPTION: User edit form
- #VERSION: 2.1beta
- #CHANGELOG: 10-04-2013 : Bug fix.
+ #VERSION: 2.5beta
+ #CHANGELOG: 27-03-2017 : Aggiunto accesso a commesse (CommGest)
+			 25-02-2016 : Bug fix accesso al gruppo tickets.
+			 07-10-2014 : Aggiunto ricevute fiscali e DDT fornitore.
+			 03-10-2014 : Aggiunto tickets e memberinvoices sui privilegi.
+			 10-04-2013 : Bug fix.
 			 25-01-2012 : Possibilità di modificare gli attributi anche dell'utente root. Prima era disabilitata.
- #TODO:
+ #TODO: Aggiungere tutti gli altri gruppi mancanti (tickets, lottomatica, gmaterials, gparts, gproducts, ...)
  
 */
 
@@ -193,6 +197,10 @@ if($userInfo['username'] != "root")
    echo "<input type='checkbox' id='group_idoc'".(_userInGroup("idoc",$userInfo['id']) ? ' checked=\"true\"' : '')."/> ".i18n("Accesso alle schede tecniche")."<br/>";
   if(_getGID("dynarc"))
    echo "<input type='checkbox' id='group_dynarc'".(_userInGroup("dynarc",$userInfo['id']) ? ' checked=\"true\"' : '')."/> ".i18n("Accesso agli archivi")."<br/>";
+  if(_getGID("tickets"))
+   echo "<input type='checkbox' id='group_tickets'".(_userInGroup("tickets",$userInfo['id']) ? ' checked=\"true\"' : '')."/> ".i18n("Accesso ai ticket")."<br/>";
+  if(_getGID("commgest"))
+   echo "<input type='checkbox' id='group_commgest'".(_userInGroup("commgest",$userInfo['id']) ? ' checked=\"true\"' : '')."/> ".i18n("Accesso alle commesse (CommGest)")."<br/>";
 
   if(_getGID("commercialdocs"))
    echo "<input type='checkbox' id='group_commercialdocs'".(_userInGroup("commercialdocs",$userInfo['id']) ? ' checked=\"true\"' : '')."/> ".i18n("Accesso ai documenti commerciali")."<br/>";
@@ -202,8 +210,12 @@ if($userInfo['username'] != "root")
    echo "&nbsp;&nbsp;<input type='checkbox' id='group_commdocs-orders'".(_userInGroup("commdocs-orders",$userInfo['id']) ? ' checked=\"true\"' : '')."/> ".i18n("Creare ordini")."<br/>";
   if(_getGID("commdocs-ddt"))
    echo "&nbsp;&nbsp;<input type='checkbox' id='group_commdocs-ddt'".(_userInGroup("commdocs-ddt",$userInfo['id']) ? ' checked=\"true\"' : '')."/> ".i18n("Creare documenti di trasporto")."<br/>";
+  if(_getGID("commdocs-ddtin"))
+   echo "&nbsp;&nbsp;<input type='checkbox' id='group_commdocs-ddtin'".(_userInGroup("commdocs-ddtin",$userInfo['id']) ? ' checked=\"true\"' : '')."/> ".i18n("Registrare DDT Fornitore")."<br/>";
   if(_getGID("commdocs-invoices"))
    echo "&nbsp;&nbsp;<input type='checkbox' id='group_commdocs-invoices'".(_userInGroup("commdocs-invoices",$userInfo['id']) ? ' checked=\"true\"' : '')."/> ".i18n("Creare fatture")."<br/>";
+  if(_getGID("commdocs-receipts"))
+   echo "&nbsp;&nbsp;<input type='checkbox' id='group_commdocs-receipts'".(_userInGroup("commdocs-receipts",$userInfo['id']) ? ' checked=\"true\"' : '')."/> ".i18n("Creare ricevute fiscali")."<br/>";
   if(_getGID("commdocs-creditsnote"))
    echo "&nbsp;&nbsp;<input type='checkbox' id='group_commdocs-creditsnote'".(_userInGroup("commdocs-creditsnote",$userInfo['id']) ? ' checked=\"true\"' : '')."/> ".i18n("Creare note di credito")."<br/>";
   if(_getGID("commdocs-debitsnote"))
@@ -216,6 +228,8 @@ if($userInfo['username'] != "root")
    echo "&nbsp;&nbsp;<input type='checkbox' id='group_commdocs-vendororders'".(_userInGroup("commdocs-vendororders",$userInfo['id']) ? ' checked=\"true\"' : '')."/> ".i18n("Creare ordini fornitore")."<br/>";
   if(_getGID("commdocs-agentinvoices"))
    echo "&nbsp;&nbsp;<input type='checkbox' id='group_commdocs-agentinvoices'".(_userInGroup("commdocs-agentinvoices",$userInfo['id']) ? ' checked=\"true\"' : '')."/> ".i18n("Creare fatture agente")."<br/>";
+  if(_getGID("commdocs-memberinvoices"))
+   echo "&nbsp;&nbsp;<input type='checkbox' id='group_commdocs-memberinvoices'".(_userInGroup("commdocs-memberinvoices",$userInfo['id']) ? ' checked=\"true\"' : '')."/> ".i18n("Creare fatture socio")."<br/>";
   if(_getGID("commdocs-intervreports"))
    echo "&nbsp;&nbsp;<input type='checkbox' id='group_commdocs-intervreports'".(_userInGroup("commdocs-intervreports",$userInfo['id']) ? ' checked=\"true\"' : '')."/> ".i18n("Creare rapporti di intervento")."<br/>";
   ?>

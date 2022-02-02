@@ -1,15 +1,18 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2015 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 18-03-2013
+ #DATE: 28-12-2015
  #PACKAGE: gframe
  #DESCRIPTION: Utility for shot messages, forms and widgets.
- #VERSION: 2.2beta
- #CHANGELOG: 18-03-2013 : Aggiunto extraParams
+ #VERSION: 2.6beta
+ #CHANGELOG: 28-12-2015 : Aggiunta funzione Reload su iframe.
+			 13-12-2014 : Bug fix.
+			 11-12-2014 : Aggiunto parametro command.
+			 18-03-2013 : Aggiunto extraParams
 			 07-06-2012 : AutoResize function created.
 			 01-06-2012 : Bug fix.
 			 26-05-2012 : Bug fix in function gframe_hideScreenMask.
@@ -34,6 +37,7 @@ function shell_gframe(args, sessid, sh)
  var paramValue = "";
  var contents = "";
  var extraParams = new Array();
+ var runCommand = "";
 
  var rsURL = "";
  var rsLogin = "";
@@ -46,6 +50,7 @@ function shell_gframe(args, sessid, sh)
   {
    case '-title' : case '-t' : { var title = args[c+1]; c++;} break;
    case '-contents' : case '-c' : { contents = args[c+1]; c++;} break;
+   case '-command' : case '-cmd' : { runCommand = args[c+1]; c++;} break;
    case '-f' : { var form = args[c+1]; c++;} break;
    case '-url' : { var url = args[c+1]; c++;} break;
    case '-width' : case '-w' : { var width = args[c+1]; c++;} break;
@@ -107,6 +112,7 @@ function shell_gframe(args, sessid, sh)
 
  var iframe = doc.createElement('IFRAME');
  iframe.name = "gframe-"+window.top.ACTIVE_FRAMES.length;
+
  window.top.ACTIVE_FRAMES[iframe.name.replace('gframe-','')] = iframe;
 
  if(!fullscreen && !appendToObj)
@@ -180,7 +186,7 @@ function shell_gframe(args, sessid, sh)
 	 var oFrame = this._getFrameObj();
 	 if(!oFrame)
 	  return alert("GFRAME Error: No frame found into document.");
-
+	 this.URLVARS = this.getVars();
 	 if(!width)
 	 {
 	  /* Adjust width */
@@ -227,22 +233,49 @@ function shell_gframe(args, sessid, sh)
 	 IH+= "function gframe_autoresize(){window.top.ACTIVE_FRAMES["+this.name.replace('gframe-','')+"].AutoResize();}\n";
 	 IH+= "function gframe_move(x,y){window.top.ACTIVE_FRAMES["+this.name.replace('gframe-','')+"].Move(x,y);}\n";
 	 IH+= "function gframe_fullscreen(){return window.top.ACTIVE_FRAMES["+this.name.replace('gframe-','')+"].FullScreen();}\n";
+	 IH+= "function gframe_setvar(variable,value){return window.top.ACTIVE_FRAMES["+this.name.replace('gframe-','')+"].setVar(variable,value);}\n";
+	 IH+= "function gframe_unsetvar(variable){return window.top.ACTIVE_FRAMES["+this.name.replace('gframe-','')+"].unsetVar(variable);}\n";
+	 IH+= "function gframe_getvar(variable){return window.top.ACTIVE_FRAMES["+this.name.replace('gframe-','')+"].getVar(variable);}\n";
+	 IH+= "function gframe_getvars(){return window.top.ACTIVE_FRAMES["+this.name.replace('gframe-','')+"].getVars();}\n";
+	 IH+= "function gframe_reload(){return window.top.ACTIVE_FRAMES["+this.name.replace('gframe-','')+"].Reload();}\n";
 	 script.innerHTML = IH;
 	 oFrame.document.getElementsByTagName('HEAD').item(0).appendChild(script);
 
 	 if(oFrame.bodyOnLoad)
 	  oFrame.bodyOnLoad(extraParams);
 
-	 if(useCacheContents)
+	 if(runCommand && (runCommand != ""))
+	 {
+	  var oThis = this;
+	  var sh2 = new GShell();
+	  sh2.OnError = function(err){alert(err);}
+	  sh2.OnOutput = function(o,a){
+		 if(oFrame.gframe_cachecontentsload)
+		  oFrame.gframe_cachecontentsload(o);
+	 	 oThis.style.visibility = "visible";
+	 	 if(sh)
+	  	  sh.preOutput("Frame loaded",oFrame,"LOADED");
+		}
+	  sh2.sendCommand(runCommand);
+	 }
+	 else if(useCacheContents)
 	 {
 	  if(oFrame.gframe_cachecontentsload)
+	  {
 	   oFrame.gframe_cachecontentsload(contents);
+	   this.style.visibility = "visible";
+	   if(sh)
+	    sh.preOutput("Frame loaded",oFrame,"LOADED");
+	  }
 	  else
 	   alert("Gnujiko Warning (for the programmer): The contents exceded the maximum URL request (2048 byte). In order to get contents you must create a javascript function called gframe_cachecontentsload(cnts); The contents will be send automatically into cnts variable.");
 	 }
-	 
-	 this.style.visibility = "visible";
-	 sh.preOutput("Frame loaded",oFrame,"LOADED");
+	 else
+	 {
+	  this.style.visibility = "visible";
+	  if(sh)
+	   sh.preOutput("Frame loaded",oFrame,"LOADED");
+	 }
 	}
 
  iframe.Close = function(msg,outArr){
@@ -310,13 +343,36 @@ function shell_gframe(args, sessid, sh)
 	 return {width:scrW, height:scrH};
 	}
 
+ iframe.Reload = function(){
+	 var href = this.src;
+	 var startHREF = href;
+	 var x = href.indexOf("?");
+	 if(x > -1)
+	 {
+	  startHREF = href.substr(0,x);
+	 }
+	 var endHREF = "";
+	 for(var k in this.URLVARS)
+	  endHREF+= "&"+k+"="+this.URLVARS[k];
+
+	 this.src = startHREF+"?"+endHREF.substr(1);
+	}
+
+ iframe.setVar = function(variable, value){this.URLVARS[variable] = value;}
+ iframe.unsetVar = function(variable){delete this.URLVARS[variable];}
+ iframe.getVar = function(variable){return this.URLVARS[variable];}
+ iframe.getVars = function(){
+	 var vars = {};
+	 var parts = this.src.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value){vars[key] = value;});
+	 return vars;
+	}
 
  if(url)
   iframe.src = url;
  else if(rsURL)
  {
   if(rsSessid && rsShellid)
-   iframe.src = ((rsURL.substr(rsURL.length-1) == "/") ? rsURL : rsURL+"/")+"share/widgets/"+form+".php?sessid="+rsSessid+"&shellid="+rsShellid+"&gframename="+iframe.name.replace('grame-','')+"&title="+title+(!useCacheContents ? "&contents="+escape(contents) : "&contents=loading...")+(width ? "&width="+width : "")+(height ? "&height="+height : "")+"&screenwidth="+scrW+"&screenheight="+scrH+(params ? "&"+params : "");
+   iframe.src = ((rsURL.substr(rsURL.length-1) == "/") ? rsURL : rsURL+"/")+"share/widgets/"+form+".php?sessid="+rsSessid+"&shellid="+rsShellid+"&gframename="+iframe.name.replace('gframe-','')+"&title="+title+(!useCacheContents ? "&contents="+escape(contents) : "&contents=loading...")+(width ? "&width="+width : "")+(height ? "&height="+height : "")+"&screenwidth="+scrW+"&screenheight="+scrH+(params ? "&"+params : "");
   else
   {
    var shtmp = new GShell();
@@ -325,13 +381,13 @@ function shell_gframe(args, sessid, sh)
 	 if(!a) return sh.error("Unknown error!","UNKNOWN_ERROR");
 	 rsSessid = a['sessid'];
 	 rsShellid = a['shellid'];
-	 iframe.src = ((rsURL.substr(rsURL.length-1) == "/") ? rsURL : rsURL+"/")+"share/widgets/"+form+".php?sessid="+rsSessid+"&shellid="+rsShellid+"&gframename="+iframe.name.replace('grame-','')+"&title="+title+(!useCacheContents ? "&contents="+escape(contents) : "&contents=loading...")+(width ? "&width="+width : "")+(height ? "&height="+height : "")+"&screenwidth="+scrW+"&screenheight="+scrH+(params ? "&"+params : "");
+	 iframe.src = ((rsURL.substr(rsURL.length-1) == "/") ? rsURL : rsURL+"/")+"share/widgets/"+form+".php?sessid="+rsSessid+"&shellid="+rsShellid+"&gframename="+iframe.name.replace('gframe-','')+"&title="+title+(!useCacheContents ? "&contents="+escape(contents) : "&contents=loading...")+(width ? "&width="+width : "")+(height ? "&height="+height : "")+"&screenwidth="+scrW+"&screenheight="+scrH+(params ? "&"+params : "");
 	}
    shtmp.sendCommand("rsh test -url `"+rsURL+"` -l `"+rsLogin+"` -p `"+rsPasswd+"`");
   }
  }
  else
-  iframe.src = url ? url : ABSOLUTE_URL+"share/widgets/"+form+".php?sessid="+sessid+"&shellid="+sh.ShellID+"&gframename="+iframe.name.replace('grame-','')+"&title="+title+(!useCacheContents ? "&contents="+escape(contents) : "&contents=loading...")+(width ? "&width="+width : "")+(height ? "&height="+height : "")+"&screenwidth="+scrW+"&screenheight="+scrH+(params ? "&"+params : "");
+  iframe.src = url ? url : ABSOLUTE_URL+"share/widgets/"+form+".php?sessid="+sessid+"&shellid="+sh.ShellID+"&gframename="+iframe.name.replace('gframe-','')+"&title="+title+(!useCacheContents ? "&contents="+escape(contents) : "&contents=loading...")+(width ? "&width="+width : "")+(height ? "&height="+height : "")+"&screenwidth="+scrW+"&screenheight="+scrH+(params ? "&"+params : "");
 
 }
 //-------------------------------------------------------------------------------------------------------------------//

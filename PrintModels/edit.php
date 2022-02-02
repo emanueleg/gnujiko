@@ -1,16 +1,19 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 23-01-2013
+ #DATE: 23-02-2016
  #PACKAGE: printmodels-config
  #DESCRIPTION: Editor for print models.
- #VERSION: 2.1beta
- #CHANGELOG: 23-01-2013 : Bug fix for absolute URL with images & link.
+ #VERSION: 2.4beta
+ #CHANGELOG: 23-02-2016 : Aggiunto campo orientamento.
+			 02-05-2015 : Possibilità di aggiungere prima e ultima pagina.
+			 23-03-2015 : Aggiunto campo format.
+			 23-01-2013 : Bug fix for absolute URL with images & link.
  #TODO:
  
 */
@@ -30,12 +33,15 @@ include_once($_BASE_PATH."include/company-profile.php");
 
 $_AP = $_REQUEST['ap'] ? $_REQUEST['ap'] : "printmodels";
 $id = $_REQUEST['id'];
-$ret = GShell("dynarc item-info -ap `".$_AP."` -id `".$id."` -extget css -get thumbdata");
+$ret = GShell("dynarc item-info -ap `".$_AP."` -id `".$id."` -extget `printmodelinfo,css`");
 $docInfo = $ret['outarr'];
 
 $_BACKGROUND_IMAGE = "";
 if($docInfo['thumbdata'] && (strpos($docInfo['thumbdata'],"data:") === false))
  $_BACKGROUND_IMAGE = $docInfo['thumbdata'];
+
+if(!$docInfo['format']) $docInfo['format'] = "A4";
+if(!$docInfo['orientation']) $docInfo['orientation'] = "P";
 
 //-------------------------------------------------------------------------------------------------------------------//
 ?>
@@ -132,7 +138,9 @@ include($_BASE_PATH."var/objects/htmlgutility/screenshot.php");
 	<ul class='idoc-tab'>
 	 <li id='idoc-tab-html' class='selected'><a href='#' onclick='idocTab_showHTML()'>HTML</a></li>
 	 <li id='idoc-tab-css'><a href='#' onclick='idocTab_showCSS()'>CSS</a></li>
-	 <li id='idoc-tab-prop' style='display:none;'><a href='#' onclick='idocTab_showProp()'>Properties</a></li>
+	 <li id='idoc-tab-prop'><a href='#' onclick='idocTab_showProp()'>Properties</a></li>
+	 <li id='idoc-tab-firstpage'><a href='#' onclick='idocTab_showFirstPage()'>Prima pagina</a></li>
+	 <li id='idoc-tab-lastpage'><a href='#' onclick='idocTab_showLastPage()'>Ultima pagina</a></li>
 	</ul>
 
 	<!-- HTML -->
@@ -164,7 +172,22 @@ include($_BASE_PATH."var/objects/htmlgutility/screenshot.php");
 	 ?>
 	 Titolo: <input type='text' id='idoc_title' value="<?php echo $docInfo['name']; ?>"/><br/>
 	 Alias: <input type='text' id='idoc_alias' value="<?php echo $docInfo['aliasname']; ?>"/><br/>
-	 Dimensioni: W:<input type='text' size='3' id='idoc_width' value="<?php echo $params['width']; ?>"/> H:<input type='text' size='3' id='idoc_height' value="<?php echo $params['height']; ?>"/><br/>
+	 Formato: <input type='text' id='idoc_format' value="<?php echo $docInfo['format']; ?>"/><br/>
+	 Orientamento: <select id='idoc_orientation'>
+		 <option value='P' <?php if($docInfo['orientation'] == 'P') echo "selected='selected'"; ?>>Verticale</option>
+		 <option value='L' <?php if($docInfo['orientation'] == 'L') echo "selected='selected'"; ?>>Orrizzontale</option>
+		</select>
+	 <!-- Dimensioni: W:<input type='text' size='3' id='idoc_width' value="<?php echo $params['width']; ?>"/> H:<input type='text' size='3' id='idoc_height' value="<?php echo $params['height']; ?>"/><br/> -->
+	</div>
+
+	<!-- FIRST PAGE -->
+	<div id='idoc-tab-firstpage-div' style='height:100%;display:none'>
+	<textarea style="width:100%;height:90%;" id="idoc-firstpage-editor"><?php echo str_replace("{ABSOLUTE_URL}",$_ABSOLUTE_URL,$docInfo['firstpage_content']); ?></textarea>
+	</div>
+
+	<!-- LAST PAGE -->
+	<div id='idoc-tab-lastpage-div' style='height:100%;display:none'>
+	<textarea style="width:100%;height:90%;" id="idoc-lastpage-editor"><?php echo str_replace("{ABSOLUTE_URL}",$_ABSOLUTE_URL,$docInfo['lastpage_content']); ?></textarea>
 	</div>
 
 	</td></tr>
@@ -196,6 +219,13 @@ var _lastTCA = null;
 var NEW_NAME = null;
 var BACKGROUND_IMAGE = "<?php echo $_BACKGROUND_IMAGE; ?>";
 
+var fpED = null;	// first page editor
+var lpED = null;	// last page editor
+var fpEDinit = false;
+var lpEDinit = false;
+
+var selectedEdName = "html";
+
 function desktopOnLoad()
 {
  oFCKeditor = new FCKeditor('idoc-html-editor') ;
@@ -215,7 +245,6 @@ function desktopOnLoad()
 	 var oFCKIFrame = window.frames[0].window.frames[0];
 	 oFCKIFrame.document.body.style.background = "#ffffff url("+ABSOLUTE_URL+filename+") center center no-repeat";
 	}
-
 }
 
 function desktopOnUnload()
@@ -282,47 +311,159 @@ function idocTab_showHTML()
 {
  document.getElementById('idoc-tab-css-div').style.display='none';
  document.getElementById('idoc-css-editor').style.display='none';
+ document.getElementById('idoc-firstpage-editor').style.display='none';
+ document.getElementById('idoc-lastpage-editor').style.display='none';
 
  document.getElementById('idoc-tab-html-div').style.display='';
-
  document.getElementById('idoc-tab-prop-div').style.display='none';
+ document.getElementById('idoc-tab-firstpage-div').style.display='none';
+ document.getElementById('idoc-tab-lastpage-div').style.display='none';
 
  document.getElementById('idoc-tab-html').className = "selected";
  document.getElementById('idoc-tab-css').className = "";
  document.getElementById('idoc-tab-prop').className = "";
+ document.getElementById('idoc-tab-firstpage').className = "";
+ document.getElementById('idoc-tab-lastpage').className = "";
 
+ selectedEdName = "html";
 }
 
 function idocTab_showCSS()
 {
  document.getElementById('idoc-tab-html-div').style.display='none';
  document.getElementById('idoc-html-editor').style.display='none';
+ document.getElementById('idoc-firstpage-editor').style.display='none';
+ document.getElementById('idoc-lastpage-editor').style.display='none';
 
  document.getElementById('idoc-tab-css-div').style.display='';
  document.getElementById('idoc-css-editor').style.display='';
 
  document.getElementById('idoc-tab-prop-div').style.display='none';
+ document.getElementById('idoc-tab-firstpage-div').style.display='none';
+ document.getElementById('idoc-tab-lastpage-div').style.display='none';
 
  document.getElementById('idoc-tab-html').className = "";
  document.getElementById('idoc-tab-css').className = "selected";
  document.getElementById('idoc-tab-prop').className = "";
+ document.getElementById('idoc-tab-firstpage').className = "";
+ document.getElementById('idoc-tab-lastpage').className = "";
 
  document.getElementById('idoc-css-editor').focus();
+
+ selectedEdName = "html";
 }
 
 function idocTab_showProp()
 {
  document.getElementById('idoc-tab-html-div').style.display='none';
  document.getElementById('idoc-html-editor').style.display='none';
+ document.getElementById('idoc-firstpage-editor').style.display='none';
+ document.getElementById('idoc-lastpage-editor').style.display='none';
 
  document.getElementById('idoc-tab-css-div').style.display='none';
  document.getElementById('idoc-css-editor').style.display='none';
+ document.getElementById('idoc-tab-firstpage-div').style.display='none';
+ document.getElementById('idoc-tab-lastpage-div').style.display='none';
 
  document.getElementById('idoc-tab-html').className = "";
  document.getElementById('idoc-tab-css').className = "";
  document.getElementById('idoc-tab-prop').className = "selected";
+ document.getElementById('idoc-tab-firstpage').className = "";
+ document.getElementById('idoc-tab-lastpage').className = "";
 
  document.getElementById('idoc-tab-prop-div').style.display='';
+
+ selectedEdName = "html";
+}
+
+function idocTab_showFirstPage()
+{
+ document.getElementById('idoc-html-editor').style.display='none';
+ document.getElementById('idoc-css-editor').style.display='none';
+ //document.getElementById('idoc-firstpage-editor').style.display='';
+ //document.getElementById('idoc-lastpage-editor').style.display='none';
+
+ document.getElementById('idoc-tab-html-div').style.display='none';
+ document.getElementById('idoc-tab-css-div').style.display='none';
+ document.getElementById('idoc-tab-prop-div').style.display='none';
+ document.getElementById('idoc-tab-firstpage-div').style.display='';
+ document.getElementById('idoc-tab-lastpage-div').style.display='none';
+
+ document.getElementById('idoc-tab-html').className = "";
+ document.getElementById('idoc-tab-css').className = "";
+ document.getElementById('idoc-tab-prop').className = "";
+ document.getElementById('idoc-tab-firstpage').className = "selected";
+ document.getElementById('idoc-tab-lastpage').className = "";
+
+ // INIT EDITOR
+ if(!fpEDinit)
+ {
+  fpED = new FCKeditor('idoc-firstpage-editor') ;
+  fpED.BasePath = "<?php echo $_ABSOLUTE_URL; ?>var/objects/fckeditor/";
+  fpED.Config['SkinPath'] = sSkinPath ;
+  fpED.Config['PreloadImages'] =
+				sSkinPath + 'images/toolbar.start.gif' + ';' +
+				sSkinPath + 'images/toolbar.end.gif' + ';' +
+				sSkinPath + 'images/toolbar.bg.gif' + ';' +
+				sSkinPath + 'images/toolbar.buttonarrow.gif' ;
+  fpED.Config['EditorAreaStyles'] = document.getElementById('idoc-css-editor').value;
+  fpED.Width = "814px";
+  fpED.Height = document.getElementById('idoc-firstpage-editor').offsetHeight;
+  fpED.ReplaceTextarea();
+
+  fpED.setBackgroundImage = function(filename){
+	 var oFCKIFrame = window.frames[0].window.frames[0];
+	 oFCKIFrame.document.body.style.background = "#ffffff url("+ABSOLUTE_URL+filename+") center center no-repeat";
+	}
+  fpEDinit = true;
+ }
+
+ selectedEdName = "firstpage";
+}
+
+function idocTab_showLastPage()
+{
+ document.getElementById('idoc-html-editor').style.display='none';
+ document.getElementById('idoc-css-editor').style.display='none';
+ //document.getElementById('idoc-firstpage-editor').style.display='none';
+ //document.getElementById('idoc-lastpage-editor').style.display='';
+
+ document.getElementById('idoc-tab-html-div').style.display='none';
+ document.getElementById('idoc-tab-css-div').style.display='none';
+ document.getElementById('idoc-tab-prop-div').style.display='none';
+ document.getElementById('idoc-tab-firstpage-div').style.display='none';
+ document.getElementById('idoc-tab-lastpage-div').style.display='';
+
+ document.getElementById('idoc-tab-html').className = "";
+ document.getElementById('idoc-tab-css').className = "";
+ document.getElementById('idoc-tab-prop').className = "";
+ document.getElementById('idoc-tab-firstpage').className = "";
+ document.getElementById('idoc-tab-lastpage').className = "selected";
+
+ // INIT EDITOR
+ if(!lpEDinit)
+ {
+  lpED = new FCKeditor('idoc-lastpage-editor') ;
+  lpED.BasePath = "<?php echo $_ABSOLUTE_URL; ?>var/objects/fckeditor/";
+  lpED.Config['SkinPath'] = sSkinPath ;
+  lpED.Config['PreloadImages'] =
+				sSkinPath + 'images/toolbar.start.gif' + ';' +
+				sSkinPath + 'images/toolbar.end.gif' + ';' +
+				sSkinPath + 'images/toolbar.bg.gif' + ';' +
+				sSkinPath + 'images/toolbar.buttonarrow.gif' ;
+  lpED.Config['EditorAreaStyles'] = document.getElementById('idoc-css-editor').value;
+  lpED.Width = "814px";
+  lpED.Height = document.getElementById('idoc-lastpage-editor').offsetHeight;
+  lpED.ReplaceTextarea();
+
+  lpED.setBackgroundImage = function(filename){
+	 var oFCKIFrame = window.frames[0].window.frames[0];
+	 oFCKIFrame.document.body.style.background = "#ffffff url("+ABSOLUTE_URL+filename+") center center no-repeat";
+	}
+  lpEDinit = true;
+ }
+
+ selectedEdName = "lastpage";
 }
 
 function idoc_delete()
@@ -348,17 +489,28 @@ function urlencode(str)
 function idoc_save()
 {
  var htmlContents = FCKeditorAPI.GetInstance('idoc-html-editor').GetXHTML();
+ var firstpageContents = fpEDinit ? FCKeditorAPI.GetInstance('idoc-firstpage-editor').GetXHTML() : "";
+ var lastpageContents = lpEDinit ? FCKeditorAPI.GetInstance('idoc-lastpage-editor').GetXHTML() : "";
+
  var cssContents = document.getElementById('idoc-css-editor').value;
  var cssID = <?php echo $docInfo['css'][0]['id'] ? $docInfo['css'][0]['id'] : "0"; ?>;
  
  var title = NEW_NAME ? NEW_NAME : document.getElementById('idoc_title').value;
  var alias = document.getElementById('idoc_alias').value;
+ var format = document.getElementById('idoc_format').value;
+ var orientation = document.getElementById('idoc_orientation').value;
  //var params = "width="+document.getElementById('idoc_width').value+"&height="+document.getElementById('idoc_height').value;
 
 
  /* REPLACE ABSOLUTE URL */
  var URL = "<?php echo $_ABSOLUTE_URL; ?>";
  htmlContents = htmlContents.replace(new RegExp(URL, 'g'), "{ABSOLUTE_URL}");
+ firstpageContents = firstpageContents.replace(new RegExp(URL, 'g'), "{ABSOLUTE_URL}");
+ lastpageContents = lastpageContents.replace(new RegExp(URL, 'g'), "{ABSOLUTE_URL}");
+
+ /*var set = "format='"+format+"'";
+ if(BACKGROUND_IMAGE)
+  set+= ",thumbdata='"+BACKGROUND_IMAGE+"'";*/
 
  var sh = new GShell();
  sh.OnOutput = function(){
@@ -377,18 +529,33 @@ function idoc_save()
 	 sh2.sendCommand("gframe -f printmodel.screenshot -params `ap=<?php echo $_AP; ?>&id=<?php echo $docInfo['id']; ?>` --fullscreen");
 	}
 
- sh.sendCommand("dynarc edit-item -ap `<?php echo $_AP; ?>` -id `<?php echo $docInfo['id']; ?>` -name `"+title+"` -alias `"+alias+"` -desc `"+htmlContents+"` -extset `css."+(cssID ? "id="+cssID+"," : "")+"content='''"+cssContents+"'''`"+(BACKGROUND_IMAGE ? " -set `thumbdata='"+BACKGROUND_IMAGE+"'`" : "")); 
+ sh.sendCommand("dynarc edit-item -ap `<?php echo $_AP; ?>` -id `<?php echo $docInfo['id']; ?>` -name `"+title+"` -alias `"+alias+"` -desc `"+htmlContents+"` -extset `printmodelinfo.format='"+format+"',orientation='"+orientation+"',thumbdata='"+BACKGROUND_IMAGE+"',firstpagecontent='''"+firstpageContents+"''',lastpagecontent='''"+
+lastpageContents+"''',css."+(cssID ? "id="+cssID+"," : "")+"content='''"+cssContents+"'''`"); 
 }
 
 function idoc_preview()
 {
  var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
  sh.OnOutput = function(o,a){
 	 if(!a) return;
-	 var sh2 = new GShell();
-	 sh2.sendCommand("dynarc edit-item -ap `<?php echo $_AP; ?>` -id `<?php echo $docInfo['id']; ?>` -set `thumbdata='"+a+"'`");
+	 if(selectedEdName == "html")
+	 {
+	  var sh2 = new GShell();
+	  sh2.OnError = function(err){alert(err);}
+	  sh2.sendCommand("dynarc edit-item -ap `<?php echo $_AP; ?>` -id `<?php echo $docInfo['id']; ?>` -set `thumbdata='"+a+"'`");
+	 }
 	}
- sh.sendCommand("gframe -f printmodel.preview -params `ap=<?php echo $_AP; ?>&id=<?php echo $docInfo['id']; ?>` --fullscreen");
+
+ var cmd = "gframe -f printmodel.preview -params `ap=<?php echo $_AP; ?>&id=<?php echo $docInfo['id']; ?>";
+ switch(selectedEdName)
+ {
+  case 'firstpage' : cmd+= "&preview=firstpage"; break;
+  case 'lastpage' : cmd+= "&preview=lastpage"; break;
+ }
+ cmd+= "` --fullscreen";
+
+ sh.sendCommand(cmd);
 }
 
 function selectBackgroundImage()
@@ -412,7 +579,13 @@ function insertImage(path)
  if(!path)
   return showToolPage("image");
 
- var oFCK = FCKeditorAPI.GetInstance('idoc-html-editor');
+ switch(selectedEdName)
+ {
+  case 'firstpage' : var oFCK = FCKeditorAPI.GetInstance('idoc-firstpage-editor'); break;
+  case 'lastpage' : var oFCK = FCKeditorAPI.GetInstance('idoc-lastpage-editor'); break;
+  default : var oFCK = FCKeditorAPI.GetInstance('idoc-html-editor'); break;
+ }
+ 
  var html = "<img src='"+ABSOLUTE_URL+path+"'/\>";
  oFCK.InsertHtml(html);
 }
@@ -462,7 +635,13 @@ function parserKeyChange(sel)
 
 function keyChanged(ed)
 {
- var oFCK = FCKeditorAPI.GetInstance('idoc-html-editor');
+ switch(selectedEdName)
+ {
+  case 'firstpage' : var oFCK = FCKeditorAPI.GetInstance('idoc-firstpage-editor'); break;
+  case 'lastpage' : var oFCK = FCKeditorAPI.GetInstance('idoc-lastpage-editor'); break;
+  default : var oFCK = FCKeditorAPI.GetInstance('idoc-html-editor'); break;
+ }
+
  var selectedElement = oFCK.Selection.GetSelectedElement();
  var parentElement = oFCK.Selection.GetBoundaryParentElement(true);
  var selection = (oFCK.EditorWindow.getSelection ? oFCK.EditorWindow.getSelection() : oFCK.EditorDocument.selection);
@@ -485,7 +664,13 @@ function keyTypeChanged(type)
 {
  var key = document.getElementById('key').value;
 
- var oFCK = FCKeditorAPI.GetInstance('idoc-html-editor');
+ switch(selectedEdName)
+ {
+  case 'firstpage' : var oFCK = FCKeditorAPI.GetInstance('idoc-firstpage-editor'); break;
+  case 'lastpage' : var oFCK = FCKeditorAPI.GetInstance('idoc-lastpage-editor'); break;
+  default : var oFCK = FCKeditorAPI.GetInstance('idoc-html-editor'); break;
+ }
+
  var selectedElement = oFCK.Selection.GetSelectedElement();
  var parentElement = oFCK.Selection.GetBoundaryParentElement(true);
  if(!selectedElement)
@@ -624,7 +809,13 @@ function uploadImage()
 {
  var dstPath = "image/printmodels/";
 
- var oFCK = FCKeditorAPI.GetInstance('idoc-html-editor');
+ switch(selectedEdName)
+ {
+  case 'firstpage' : var oFCK = FCKeditorAPI.GetInstance('idoc-firstpage-editor'); break;
+  case 'lastpage' : var oFCK = FCKeditorAPI.GetInstance('idoc-lastpage-editor'); break;
+  default : var oFCK = FCKeditorAPI.GetInstance('idoc-html-editor'); break;
+ }
+
  var selectedElement = oFCK.Selection.GetSelectedElement();
  var parentElement = oFCK.Selection.GetBoundaryParentElement(true);
  if(!selectedElement)
@@ -858,7 +1049,14 @@ function moveColumnLeft(div)
    col.parentNode.insertBefore(col,tb.getElementsByTagName('COLGROUP')[0].getElementsByTagName('COL')[idx-1]);
   }
  }
- var oFCK = FCKeditorAPI.GetInstance('idoc-html-editor');
+
+ switch(selectedEdName)
+ {
+  case 'firstpage' : var oFCK = FCKeditorAPI.GetInstance('idoc-firstpage-editor'); break;
+  case 'lastpage' : var oFCK = FCKeditorAPI.GetInstance('idoc-lastpage-editor'); break;
+  default : var oFCK = FCKeditorAPI.GetInstance('idoc-html-editor'); break;
+ }
+
  fckOnSelectionChange(oFCK);
 }
 
@@ -881,7 +1079,14 @@ function moveColumnRight(div)
    col.parentNode.insertBefore(tb.getElementsByTagName('COLGROUP')[0].getElementsByTagName('COL')[idx+1],col);
   }
  }
- var oFCK = FCKeditorAPI.GetInstance('idoc-html-editor');
+
+ switch(selectedEdName)
+ {
+  case 'firstpage' : var oFCK = FCKeditorAPI.GetInstance('idoc-firstpage-editor'); break;
+  case 'lastpage' : var oFCK = FCKeditorAPI.GetInstance('idoc-lastpage-editor'); break;
+  default : var oFCK = FCKeditorAPI.GetInstance('idoc-html-editor'); break;
+ }
+
  fckOnSelectionChange(oFCK);
 }
 

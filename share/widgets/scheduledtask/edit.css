@@ -1,0 +1,13 @@
+table.smalltable th {
+ font-family: arial, sans-serif;
+ font-size: 12px;
+ color: #000000;
+}
+
+table.smalltable td {
+ font-family: arial, sans-serif;
+ font-size: 12px;
+ color: #000000;
+ height: 20px;
+}
+

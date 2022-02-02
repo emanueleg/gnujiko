@@ -1,16 +1,20 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 25-03-2013
+ #DATE: 24-10-2016
  #PACKAGE: gnujiko-base
  #DESCRIPTION: GShell HTTP Request file
- #VERSION: 2.3beta
- #CHANGELOG: 25-03-2013 : Bug fix on function restoreSession
+ #VERSION: 2.7beta
+ #CHANGELOG: 24-10-2016 : Sostituita funzione mysql escape string con funzione db->EscapeString() per integrazione con mysqli.
+			 14-03-2016 : Aggiunta funzione testcommand e bug fix su funzione command.
+			 11-03-2016 : Bug fix slash su funzione command
+			 06-02-2016 : Bug fix on restore session.
+			 25-03-2013 : Bug fix on function restoreSession
 			 08-01-2012 : Bug fix in login function with deactivated users.
  #TODO:
  
@@ -18,7 +22,14 @@
 if(!defined("VALID-GNUJIKO-SHELLREQUEST"))
 {
  header('Location:./');
- return;
+ exit();
+}
+
+
+if($_POST['request'] == "testcommand")
+{
+ _testCommand($_POST['command'], $_POST['sessid'], $_POST['shellid'], $_POST['launch']);
+ exit();
 }
 
 header('Content-Type: application/xml; charset:UTF-8');
@@ -41,7 +52,7 @@ $xmloutput.="</xml>";
 
 
 echo $xmloutput;
-return;
+exit();
 
 function test($sessid=0, $shellid=0)
 {
@@ -72,16 +83,17 @@ function _newSession($sessid, $shellid=0)
  }
 
  $db = new AlpaDatabase();
- $db->RunQuery("INSERT INTO gnujiko_session(uname,login_time,time,session_id,uid,gid,dev,devid) VALUES('$uname','$time','$time','$sessid','$uid','$gid','$dev','$devid')");
+ $db->RunQuery("INSERT INTO gnujiko_session(uname,login_time,time,session_id,uid,gid,dev,devid) VALUES('"
+	.$uname."','".$time."','".$time."','".$sessid."','".$uid."','".$gid."','".$dev."','".$devid."')");
  $db->Close();
- return "<request type='newsession' result='true' uname='$uname' sessid='$sessid' hostname='$_SOFTWARE_NAME'/>";
+ return "<request type='newsession' result='true' uname='".$uname."' sessid='".$sessid."' hostname='".$_SOFTWARE_NAME."'/>";
 }
 //-------------------------------------------------------------------------------------------------------------------//
 function _closeSession($sessid,$lastsessid,$shellid=0)
 {
  global $_BASE_PATH, $_ABSOLUTE_URL, $_SOFTWARE_NAME;
  $db = new AlpaDatabase();
- $db->RunQuery("SELECT * FROM gnujiko_session WHERE session_id='$sessid'");
+ $db->RunQuery("SELECT * FROM gnujiko_session WHERE session_id='".$sessid."'");
  if($db->Read())
  {
   /* Remove user data shell */
@@ -90,35 +102,36 @@ function _closeSession($sessid,$lastsessid,$shellid=0)
 
   if($lastsessid)
   {
-   $db->RunQuery("DELETE FROM gnujiko_session WHERE session_id='$sessid'");
+   $db->RunQuery("DELETE FROM gnujiko_session WHERE session_id='".$sessid."'");
    $sessInfo = sessionInfo($lastsessid);
    if($sessInfo['id']) // update session time //
    {
     $db2 = new AlpaDatabase();
-    $db2->RunQuery("UPDATE gnujiko_session SET time='".time()."' WHERE session_id='$lastsessid'");
+    $db2->RunQuery("UPDATE gnujiko_session SET time='".time()."' WHERE session_id='".$lastsessid."'");
     $db2->Close();
-    $ret = "<request type='closesession' result='true' uname='".$sessInfo['uname']."' sessid='$lastsessid' hostname='$_SOFTWARE_NAME'/>";
+    $ret = "<request type='closesession' result='true' uname='".$sessInfo['uname']."' sessid='".$lastsessid."' hostname='".$_SOFTWARE_NAME."'/>";
    }
   }
   else if($db->record['dev'] && $db->record['devid'])
   {
    $db2 = new AlpaDatabase();
    $db2->RunQuery("DELETE FROM gnujiko_session WHERE dev='".$db->record['dev']."' AND devid='".$db->record['devid']."' AND uname='root'");
-   $db2->RunQuery("SELECT * FROM gnujiko_session WHERE dev='".$db->record['dev']."' AND devid='".$db->record['devid']."' AND session_id != '$sessid' ORDER BY login_time DESC LIMIT 1");
+   $db2->RunQuery("SELECT * FROM gnujiko_session WHERE dev='".$db->record['dev']."' AND devid='".$db->record['devid']."' AND session_id != '"
+	.$sessid."' ORDER BY login_time DESC LIMIT 1");
    if($db2->Read())
     $ret = "<request type='closesession' result='true' uname='".$db2->record['uname']."' sessid='".$db2->record['session_id']."' hostname='$_SOFTWARE_NAME'/>";
    else
-	$ret = "<request type='closesession' result='true' uname='www-data' sessid='0' hostname='$_SOFTWARE_NAME'/>";
+	$ret = "<request type='closesession' result='true' uname='www-data' sessid='0' hostname='".$_SOFTWARE_NAME."'/>";
   }
   else
-   $ret = "<request type='closesession' result='true' uname='www-data' sessid='0' hostname='$_SOFTWARE_NAME'/>";
+   $ret = "<request type='closesession' result='true' uname='www-data' sessid='0' hostname='".$_SOFTWARE_NAME."'/>";
  }
  else
-  $ret = "<request type='closesession' result='true' uname='www-data' sessid='0' hostname='$_SOFTWARE_NAME'/>";
+  $ret = "<request type='closesession' result='true' uname='www-data' sessid='0' hostname='".$_SOFTWARE_NAME."'/>";
  $db->Close();
 
  $db = new AlpaDatabase();
- $db->RunQuery("DELETE FROM gnujiko_session WHERE session_id='$sessid'");
+ $db->RunQuery("DELETE FROM gnujiko_session WHERE session_id='".$sessid."'");
  $db->Close();
 
  return $ret;
@@ -131,15 +144,16 @@ function _login($sessid,$usrname,$passwd,$shellid=0)
  $dev = "shell";
  $devid = $shellid;
 
- $username = mysql_escape_string(trim($usrname));
- $password = mysql_escape_string(trim($passwd));
- 
  $db = new AlpaDatabase();
- $db->RunQuery("SELECT * FROM gnujiko_users WHERE username='$username'");
+
+ $username = $db->EscapeString(trim($usrname));
+ $password = $db->EscapeString(trim($passwd));
+ 
+ $db->RunQuery("SELECT * FROM gnujiko_users WHERE username='".$username."'");
  if(!$db->Read())
  {
   $db->Close();
-  return "<request type='login' result='false' message='User $username does not exists!' error='USER_DOES_NOT_EXISTS'/>";
+  return "<request type='login' result='false' message='User ".$username." does not exists!' error='USER_DOES_NOT_EXISTS'/>";
  }
  if($db->record['disabled'])
  {
@@ -161,9 +175,29 @@ function _login($sessid,$usrname,$passwd,$shellid=0)
  $sessid = md5($uid.$uname.$time);
  
  $db = new AlpaDatabase();
- $db->RunQuery("INSERT INTO gnujiko_session(uname,login_time,time,session_id,uid,gid,dev,devid) VALUES('$uname','$time','$time','$sessid','$uid','$gid','$dev','$devid')");
+ $db->RunQuery("INSERT INTO gnujiko_session(uname,login_time,time,session_id,uid,gid,dev,devid) VALUES('"
+	.$uname."','".$time."','".$time."','".$sessid."','".$uid."','".$gid."','".$dev."','".$devid."')");
  $db->Close();
  return "<request type='login' result='true' uname='$uname' sessid='$sessid' hostname='$_SOFTWARE_NAME'/>";
+}
+//-------------------------------------------------------------------------------------------------------------------//
+function _testCommand($cmd, $sessid=0, $shellid=0, $launch=0)
+{
+ global $_BASE_PATH, $_ABSOLUTE_URL, $_SOFTWARE_NAME;
+
+ echo "URL ENCODED COMMAND: ".$cmd."\n\n";
+
+ $cmd = rawurldecode(stripslashes($cmd));
+ echo "RAWURL DECODED COMMAND: ".$cmd."\n\n";
+
+ if($launch)
+ {
+  echo "MESSAGGIO GSHELL: ";
+  $ret = GShell($cmd, $sessid, $shellid);
+  echo $ret['message'];
+ }
+
+ return;
 }
 //-------------------------------------------------------------------------------------------------------------------//
 function _command($cmd,$sessid,$shellid=0,$retsessid=null,$retuname=null)
@@ -233,15 +267,16 @@ function _sudo($cmd, $sessid, $shellid=0, $lastsudosessid=0, $sudopasswd="")
  $dev = "shell";
  $devid = $shellid;
 
- $username = "root";
- $password = mysql_escape_string(trim($sudopasswd));
- 
  $db = new AlpaDatabase();
- $db->RunQuery("SELECT * FROM gnujiko_users WHERE username='$username'");
+
+ $username = "root";
+ $password = $db->EscapeString(trim($sudopasswd));
+ 
+ $db->RunQuery("SELECT * FROM gnujiko_users WHERE username='".$username."'");
  if(!$db->Read())
  {
   $db->Close();
-  return "<request type='sudo' result='false' msg='User $username does not exists!' error='USER_DOES_NOT_EXISTS'/>";
+  return "<request type='sudo' result='false' msg='User ".$username." does not exists!' error='USER_DOES_NOT_EXISTS'/>";
  }
  $cryptpass = md5($password.$db->record['regtime']);
  if($db->record['password'] != $cryptpass)
@@ -255,7 +290,8 @@ function _sudo($cmd, $sessid, $shellid=0, $lastsudosessid=0, $sudopasswd="")
  $sessid = md5($uid.$uname.$time);
  
  $db = new AlpaDatabase();
- $db->RunQuery("INSERT INTO gnujiko_session(uname,login_time,time,session_id,uid,gid,dev,devid) VALUES('$uname','$time','$time','$sessid','$uid','$gid','$dev','$devid')");
+ $db->RunQuery("INSERT INTO gnujiko_session(uname,login_time,time,session_id,uid,gid,dev,devid) VALUES('"
+	.$uname."','".$time."','".$time."','".$sessid."','".$uid."','".$gid."','".$dev."','".$devid."')");
  $db->Close();
  // EOF create new session for root //
 
@@ -393,13 +429,14 @@ function _restoreSession($sessid, $shellid=0, $usrname="", $passwd="")
  if(!$usrname)
   $usrname = $_SESSION['UNAME'];
 
- $username = mysql_escape_string(trim($usrname));
- $password = mysql_escape_string(trim($passwd));
+ $db = new AlpaDatabase();
+
+ $username = $db->EscapeString(trim($usrname));
+ $password = $db->EscapeString(trim($passwd));
 
  if(!$username || ($username == ""))
   $username = $db->record['uname'];
  
- $db = new AlpaDatabase();
  $db->RunQuery("SELECT * FROM gnujiko_users WHERE username='$username'");
  if(!$db->Read())
  {
@@ -420,8 +457,14 @@ function _restoreSession($sessid, $shellid=0, $usrname="", $passwd="")
  $uname = $db->record['username'];
  
  $db = new AlpaDatabase();
- $db->RunQuery("INSERT INTO gnujiko_session(uname,login_time,time,session_id,uid,gid,dev,devid) VALUES('$uname','$time','$time','$sessid','$uid','$gid','$dev','$devid')");
+ $db->RunQuery("INSERT INTO gnujiko_session(uname,login_time,time,session_id,uid,gid,dev,devid) VALUES('".$uname."','"
+	.$time."','".$time."','".$sessid."','".$uid."','".$gid."','".$dev."','".$devid."')");
  $db->Close();
+
+ setcookie("username",$uname,strtotime("+1 week"), "/");
+ setcookie("session_id",$sessid,strtotime("+1 week"), "/");
+
+
  return "<request type='restoresession' result='true'/>";
 }
 //-------------------------------------------------------------------------------------------------------------------//

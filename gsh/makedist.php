@@ -11,7 +11,8 @@
  #DESCRIPTION: Official Gnujiko Distro Maker.
  #VERSION: 2.0beta
  #CHANGELOG: 
- #TODO:
+
+ #TODO: Ho aggiunto l'opzione -charset , ma non funziona come speravo su utf8, perchè gli indici sul database non possono superare i 1000byte, se metti utf8 e magari fai l'indice su un VARCHAR(255) da errore #1071 - Specified key was too long; max key length is 1000 byte, perchè 255 * 2 * 3 = 1530 (moltiplicato * 3 perchè l'utf8 è più pesante di latin1).
  
 */
 
@@ -33,12 +34,12 @@ function shell_makedist($args, $sessid, $shellid=0)
   {
    case '-name' : case '-title' : {$distName=$args[$c+1]; $c++;} break;
    case '-ver' : case '-version' : {$distVer=$args[$c+1]; $c++;} break;
+   case '-charset' : {$charset=$args[$c+1]; $c++;} break;
 
    /* OPTIONS */
    case '--no-zip' : $noZip=true; break;
    case '--no-remove-temp' : $noRemoveTemp=true; break;
   }
-
 
  /* Creo la cartella dove andrò a copiare tutti i files e le cartelle di Gnujiko */
  $out = "Creating a directory for the new disto...";
@@ -107,6 +108,8 @@ function shell_makedist($args, $sessid, $shellid=0)
 
  $bkoptions = array();
  $bkoptions["gnujiko_session"] = "CREATEONLY";
+ if($charset)
+  $bkoptions["charset"] = $charset;
 
  $sql = $db->Backup("*",$bkoptions);
  if(!gfwrite($_BASE_PATH."tmp/mydist/installation/install.sql",$sql))

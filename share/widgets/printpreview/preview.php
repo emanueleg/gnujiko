@@ -1,16 +1,21 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 23-01-2013
+ #DATE: 23-02-2016
  #PACKAGE: printmodels-config
  #DESCRIPTION: 
- #VERSION: 2.2beta
- #CHANGELOG: 23-01-2013 : Bug fix for absolute URL with images & link.
+ #VERSION: 2.7beta
+ #CHANGELOG: 23-02-2016 : Integrazione con orientamento orrizzontale.
+			 02-05-2015 : Aggiunta prima e ultima pagina.
+			 20-01-2015 : Bug fix.
+			 18-03-2014 : Aggiunto funzione pageWithoutTable, altrimenti non stampava tutti quei modelli privi di tabella.
+			 03-12-2013 : Aggiunto urlencode su parametri con CMD.
+			 23-01-2013 : Bug fix for absolute URL with images & link.
 			 13-01-2013 : Bug fix with localhost images.
  #TODO:
  
@@ -35,6 +40,45 @@ $_START = $_REQUEST['start'] ? $_REQUEST['start'] : 0;
 include_once($_BASE_PATH."include/company-profile.php");
 $_DECIMALS = $_COMPANY_PROFILE['accounting']['decimals_pricing'];
 
+//-------------------------------------------------------------------------------------------------------------------//
+function printpreview_getPageSize($modelInfo)
+{
+ $pageWidth = 210;	// default A4
+ $pageHeight = 297; // default A4
+
+ switch(strtoupper($modelInfo['format']))
+ {
+  case 'A0' : {$w=841; $h=1189;} break;
+  case 'A1' : {$w=594; $h=841;} break;
+  case 'A2' : {$w=420; $h=594;} break;
+  case 'A3' : {$w=297; $h=420;} break;
+
+  case 'A5' : {$w=148; $h=210;} break;
+  case 'A6' : {$w=105; $h=148;} break;
+  case 'A7' : {$w=74; $h=105;} break;
+  case 'A8' : {$w=52; $h=74;} break;
+  case 'A9' : {$w=37; $h=52;} break;
+  case 'A10' : {$w=26; $h=37;} break;
+
+  default : {$w=210; $h=297;} break; // A4
+ }
+ switch(strtoupper($modelInfo['orientation']))
+ {
+  case 'L' : {
+	 $pageWidth = $h;
+	 $pageHeight = $w;
+	} break;
+
+  default : {
+	 $pageWidth = $w;
+	 $pageHeight = $h;
+	} break;
+ }
+
+ return array('width'=>$pageWidth, 'height'=>$pageHeight);
+}
+//-------------------------------------------------------------------------------------------------------------------//
+
 ?>
 <html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8"><title>Gnujiko - Preview</title>
 </head><body onload="bodyOnLoad()">
@@ -44,25 +88,54 @@ include_once($_BASE_PATH."include/js/gshell.php");
 $contents = "";
 
 /* Get model */
-$ret = GShell("dynarc item-info -ap `".$_MODEL_AP."` -id `".$_MODEL_ID."` -extget css -get thumbdata",$_REQUEST['sessid'],$_REQUEST['shellid']);
+$ret = GShell("dynarc item-info -ap `".$_MODEL_AP."` -id `".$_MODEL_ID."` -extget `printmodelinfo,css`",$_REQUEST['sessid'],$_REQUEST['shellid']);
 $modelInfo = $ret['outarr'];
+
+$_PAGE_SIZE = printpreview_getPageSize($modelInfo);
 
 if($_PARSER)
 {
  /* Get params */
- $privateParams = array("sessid","shellid","modelap","modelcat","modelid","parser","ap","id","title","destfolder","page");
+ $privateParams = array("sessid","shellid","modelap","modelcat","modelid","modelalias","parser","ap","id","title","destfolder","page");
  $extraParams = "";
  while(list($k,$v) = each($_REQUEST))
  {
   if(!in_array($k,$privateParams))
+  {
+   if($k == "cmd")
+	$v = urlencode($v);
    $extraParams.= "&".$k."=".$v;
+  }
  }
 
- $ret = GShell("dynarc item-info -ap `".$_MODEL_AP."` -id `".$_MODEL_ID."` || parserize -p `".$_PARSER."` -params `ap=".$_AP."&id=".$_ID.($_REQUEST['page'] ? "&page=".$_REQUEST['page'] : "").$extraParams."` *.desc",$_REQUEST['sessid'],$_REQUEST['shellid']);
- $contents = $ret['message'];
+ $_PREVIEW_TYPE = $_REQUEST['preview'];
+
+ switch($_PREVIEW_TYPE)
+ {
+  case 'firstpage' : {
+	 $ret = GShell("parserize -p `".$_PARSER."` -params `ap=".$_AP."&id=".$_ID.$extraParams."` `".$modelInfo['firstpage_content']."`",$_REQUEST['sessid'],$_REQUEST['shellid']);
+	 $contents = $ret['message'];
+	} break;
+
+  case 'lastpage' : {
+	 $ret = GShell("parserize -p `".$_PARSER."` -params `ap=".$_AP."&id=".$_ID.$extraParams."` `".$modelInfo['lastpage_content']."`",$_REQUEST['sessid'],$_REQUEST['shellid']);
+	 $contents = $ret['message'];
+	} break;
+
+  default : {
+	 $ret = GShell("dynarc item-info -ap `".$_MODEL_AP."` -id `".$_MODEL_ID."` || parserize -p `".$_PARSER."` -params `ap=".$_AP."&id=".$_ID.($_REQUEST['page'] ? "&page=".$_REQUEST['page'] : "").$extraParams."` *.desc",$_REQUEST['sessid'],$_REQUEST['shellid']);
+	 $contents = $ret['message'];
+	} break;
+ }
+
+
 }
 else
+{
  $contents = $modelInfo['desc'];
+ $firstPageContents = $modelInfo['firstpage_content'];
+ $lastPageContents = $modelInfo['lastpage_content'];
+}
 
 /* UPDATE LOCALHOST IMAGES */
 $contents = str_replace("{ABSOLUTE_URL}",$_ABSOLUTE_URL,$contents);
@@ -84,7 +157,7 @@ if(strpos($modelInfo['thumbdata'],"data:") === false)
 <style type='text/css'>
 <?php  echo $modelInfo['css'][0]['content']; ?>
 </style>
-<table class="___printpreviewpagetable" align='center' valign='middle' cellspacing="0" cellpadding="0" border="0" style="width:210mm;height:297mm;">
+<table class="___printpreviewpagetable" align='center' valign='middle' cellspacing="0" cellpadding="0" border="0" style="width:<?php echo $_PAGE_SIZE['width']; ?>mm;height:<?php echo $_PAGE_SIZE['height']; ?>mm;">
 <tr><td valign="top" id="___printpreviewpagecontents"><?php echo $contents; ?></td></tr>
 </table>
 
@@ -95,27 +168,31 @@ if($_PARSER && file_exists($_BASE_PATH."share/widgets/printpreview/parser/".$_PA
 
 <script>
 var DECIMALS = <?php echo $_DECIMALS ? $_DECIMALS : "2"; ?>;
+var PREVIEW_TYPE = "<?php echo $_PREVIEW_TYPE; ?>";
 
 function bodyOnLoad()
 {
- if(typeof(loadPreview) == "function")
-  loadPreview();
-
- /*var sh = new GShell();
- sh.OnOutput = function(o,a){
-	 overflowCheck(a);
-	}
- sh.sendCommand("dynarc item-info -ap `commercialdocs` -id `<?php echo $_ID; ?>` -extget `cdinfo,cdelements`");*/
+ if(PREVIEW_TYPE == "firstpage")
+  firstPageLoaded();
+ else if(PREVIEW_TYPE == "lastpage")
+  lastPageLoaded();
+ else
+ {
+  if(typeof(loadPreview) == "function")
+   loadPreview();
+  else
+   pageWithoutTable();
+ }
 }
 
 function autoInsertRows(itemList)
 {
  var tb = document.getElementById('itemlist');
  if(!tb)
-  return;
+  return pageWithoutTable();
 
  if(!itemList)
-  return;
+  return pageWithoutTable();
 
  // use last row as footer //
  var fR = tb.rows[tb.rows.length-1];
@@ -142,6 +219,7 @@ function autoInsertRows(itemList)
  var fRHstart = fRH;
  var start = <?php echo $_START ? $_START : "0"; ?>;
  var elidx = 0;
+ var completed = true;
 
  for(var c=start; c < itemList.length; c++)
  {
@@ -204,6 +282,7 @@ function autoInsertRows(itemList)
    var page = {start:start, elements:elidx, freespace:px2mm(fRH)};
    if(window.parent && (typeof(window.parent.previewMessage) == "function"))
 	window.parent.previewMessage("PAGEBREAK",page);
+   completed = false;
    break;
   }
   elidx++;
@@ -231,7 +310,31 @@ function autoInsertRows(itemList)
  var contents = "<style type='text/css'>"+document.body.getElementsByTagName('STYLE')[1].innerHTML+"</style>" + document.getElementById("___printpreviewpagecontents").innerHTML;
  var page = {start:start, elements:elidx, freespace:px2mm(fRH), contents:contents};
  if(window.parent && (typeof(window.parent.previewMessage) == "function"))
-  window.parent.previewMessage("PAGEINFO",page);
+  window.parent.previewMessage("PAGEINFO",page,completed);
+}
+
+function pageWithoutTable()
+{
+ var contents = "<style type='text/css'>"+document.body.getElementsByTagName('STYLE')[1].innerHTML+"</style>" + document.getElementById("___printpreviewpagecontents").innerHTML;
+ var page = {start:0, elements:0, freespace:0, contents:contents};
+ if(window.parent && (typeof(window.parent.previewMessage) == "function"))
+  window.parent.previewMessage("PAGEINFO",page, true);
+}
+
+function firstPageLoaded()
+{
+ var contents = "<style type='text/css'>"+document.body.getElementsByTagName('STYLE')[1].innerHTML+"</style>" + document.getElementById("___printpreviewpagecontents").innerHTML;
+ var page = {start:0, elements:0, freespace:0, contents:contents, type:'firstpage'};
+ if(window.parent && (typeof(window.parent.previewMessage) == "function"))
+  window.parent.previewMessage("FIRSTPAGE",page, false);
+}
+
+function lastPageLoaded()
+{
+ var contents = "<style type='text/css'>"+document.body.getElementsByTagName('STYLE')[1].innerHTML+"</style>" + document.getElementById("___printpreviewpagecontents").innerHTML;
+ var page = {start:0, elements:0, freespace:0, contents:contents, type:'lastpage'};
+ if(window.parent && (typeof(window.parent.previewMessage) == "function"))
+  window.parent.previewMessage("LASTPAGE",page, false);
 }
 
 function px2mm(px)

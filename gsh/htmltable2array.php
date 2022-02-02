@@ -1,16 +1,16 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 21-05-2013
+ #DATE: 03-02-2014
  #PACKAGE: htmltable2array
  #DESCRIPTION: Convert HTML table into array for manipulation with other gshell commands.
- #VERSION: 2.0beta
- #CHANGELOG:
+ #VERSION: 2.1beta
+ #CHANGELOG: 03-02-2014 : Aggiunto parametro --strip-tags
  #TODO:
  
 */
@@ -29,6 +29,8 @@ function shell_htmltable2array($args, $sessid, $shellid=0)
  $sessInfo = sessionInfo($sessid);
  $out = "";
  $outArr = array();
+
+ $stripTags = false;
  
  if($sessInfo['uname'] == "root")
   $basepath = $_BASE_PATH;
@@ -47,6 +49,7 @@ function shell_htmltable2array($args, $sessid, $shellid=0)
   {
    case '-f' : {$fileName=$args[$c+1]; $c++;} break;
    case '-c' : case '-content' : case '-contents' : {$contents=$args[$c+1]; $c++;} break;
+   case '--strip-tags' : $stripTags=true; break;
   }
  }
 
@@ -80,7 +83,7 @@ function shell_htmltable2array($args, $sessid, $shellid=0)
   {
    $buffer.= $tmp;
    gshPreOutput($shellid,"Extracting ".$idx." rows...", "PROGRESS", $fileName);
-   $rowInfo = htmltable2array_getRow($buffer);
+   $rowInfo = htmltable2array_getRow($buffer, 0, $stripTags);
    if(!$rowInfo)
     continue;
 
@@ -90,7 +93,7 @@ function shell_htmltable2array($args, $sessid, $shellid=0)
     $idx++;
     $p = $rowInfo['nextpointer'];
     $buffer = substr($buffer, $p); 
-    $rowInfo = htmltable2array_getRow($buffer);
+    $rowInfo = htmltable2array_getRow($buffer, 0, $stripTags);
    }
   }
   fclose($fp);
@@ -101,7 +104,7 @@ function shell_htmltable2array($args, $sessid, $shellid=0)
   $buffer = $contents;
   $p=0;
 
-  while($rowInfo = htmltable2array_getRow($buffer))
+  while($rowInfo = htmltable2array_getRow($buffer, 0, $stripTags))
   {
    $outArr[] = array("cells"=>$rowInfo['items']);
    $p = $rowInfo['nextpointer'];
@@ -114,7 +117,7 @@ function shell_htmltable2array($args, $sessid, $shellid=0)
  return array("message"=>$out, "outarr"=>$outArr);
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function htmltable2array_getRow($contents, $pointer=0)
+function htmltable2array_getRow($contents, $pointer=0, $stripTags=false)
 {
  $pos = stripos($contents, "<TR", $pointer);
  if($pos === false)
@@ -141,12 +144,12 @@ function htmltable2array_getRow($contents, $pointer=0)
  $innerHTML = substr($contents, $spInner, ($epInner-$spInner));
  $nextPointer = $epOuter;
 
- $cells = htmltable2array_getCells($innerHTML);
+ $cells = htmltable2array_getCells($innerHTML, 0, $stripTags);
 
  return array('nextpointer'=>$nextPointer, 'html'=>$html, 'inner'=>$innerHTML, 'items'=>$cells);
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function htmltable2array_getCells($contents, $pointer=0)
+function htmltable2array_getCells($contents, $pointer=0, $stripTags=false)
 {
  $retArr = array();
  $tag = "TD";
@@ -185,6 +188,8 @@ function htmltable2array_getCells($contents, $pointer=0)
 
   $html = substr($contents, $spOuter, ($epOuter-$spOuter));
   $innerHTML = substr($contents, $spInner, ($epInner-$spInner));
+  if($stripTags)
+   $innerHTML = strip_tags($innerHTML);
   if((strtolower($innerHTML) == "&nbsp;") || (strtolower($innerHTML) == "<br>") || (strtolower($innerHTML) == "<br/>"))
    $innerHTML = "";
   $nextPointer = $epOuter;

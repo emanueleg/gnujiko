@@ -5,11 +5,11 @@
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 26-02-2013
+ #DATE: 13-11-2013
  #PACKAGE: gnujiko-desktop-base
  #DESCRIPTION: Gnujiko Desktop handler.
- #VERSION: 2.0beta
- #CHANGELOG:
+ #VERSION: 2.1beta
+ #CHANGELOG: 13-11-2013 : Sostituito SDD_HANDLER con SIMPDD_HANDLER.
  #TODO:
  
 */
@@ -47,8 +47,8 @@ function GnujikoDesktopHandler()
  this.ModuleMenu.onmouseout = function(){this.mouseinto=false;}
  this._moduleMenuButton.menu = this.ModuleMenu;
  this._moduleMenuButton.onclick = function(){
-	 var module = SDD_HANDLER.hintedObject;
-	 var pos = SDD_HANDLER._getABSobjPos(module,document.getElementById('desktop-page-container'));
+	 var module = SIMPDD_HANDLER.hintedObject;
+	 var pos = SIMPDD_HANDLER._getABSobjPos(module,document.getElementById('desktop-page-container'));
 	 pos.x+= module.offsetWidth;
 	 pos.x-= (this.menu.offsetWidth-2);
 	 this.menu.style.left = pos.x;
@@ -77,7 +77,7 @@ GnujikoDesktopHandler.prototype.registerModule = function(moduleObj, moduleInfo)
  moduleObj.plugs = new Array();
  moduleObj.plugByName = new Array();
 
- SDD_HANDLER.setDraggableObject(moduleObj, moduleInfo.handle ? document.getElementById(moduleInfo.handle) : null);
+ SIMPDD_HANDLER.setDraggableObject(moduleObj, moduleInfo.handle ? document.getElementById(moduleInfo.handle) : null);
  if(moduleInfo.plugs && moduleInfo.plugs.length) // register module plugs
  {
   for(var i=0; i < moduleInfo.plugs.length; i++)
@@ -109,9 +109,9 @@ GnujikoDesktopHandler.prototype.registerModule = function(moduleObj, moduleInfo)
 	}
 
  moduleObj.onhint = function(){
-	 if(SDD_HANDLER.draginprogress)
+	 if(SIMPDD_HANDLER.draginprogress)
 	  return;
-	 var pos = SDD_HANDLER._getABSobjPos(this,document.getElementById('desktop-page-container'));
+	 var pos = SIMPDD_HANDLER._getABSobjPos(this,document.getElementById('desktop-page-container'));
 
 	 /* show menu button */
 	 var img = oThis._moduleMenuButton;
@@ -181,7 +181,7 @@ GnujikoDesktopHandler.prototype.unregisterModule = function(module)
  this._moduleMenuButton.style.display = "none";
  this.ModuleMenu.style.visibility = "hidden";
 
- SDD_HANDLER.unsetDraggableObject(module);
+ SIMPDD_HANDLER.unsetDraggableObject(module);
 }
 //-------------------------------------------------------------------------------------------------------------------//
 GnujikoDesktopHandler.prototype.registerPlug = function(plugObj, moduleObj)

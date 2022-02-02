@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 11-02-2013
+ #DATE: 26-06-2016
  #PACKAGE: gmart
  #DESCRIPTION: Trash form
- #VERSION: 2.2beta
- #CHANGELOG: 
+ #VERSION: 2.4beta
+ #CHANGELOG: 26-06-2016 : Bugfix trash empty.
+			 02-03-2016 : Aggiunto process message
  #TODO: Da fare il multi-lingua.
  
 */
@@ -142,7 +143,10 @@ function restoreSelected()
   return;
 
  var sh = new GShell();
+ sh.showProcessMessage("Ripristino in corso","Attendere prego, &egrave; in corso l&lsquo;operazione di ripristino");
+ sh.OnError = function(err){this.processMessage.error(err);}
  sh.OnOutput = function(){
+	 this.hideProcessMessage();
 	 alert("Gli elementi selezionati sono stati ripristinati.");
 	 document.location.href="index.php";
 	}
@@ -170,7 +174,10 @@ function deleteSelected()
   return;
 
  var sh = new GShell();
+ sh.showProcessMessage("Rimozione dal cestino","Attendere prego, &egrave; in corso la rimozione degli elementi selezionati dal cestino");
+ sh.OnError = function(err){this.processMessage.error(err);}
  sh.OnOutput = function(){
+	 this.hideProcessMessage();
 	 alert("Gli elementi selezionati sono stati rimossi dal cestino.");
 	 document.location.href="index.php";
 	}
@@ -181,8 +188,12 @@ function emptyTrash()
 {
  if(!confirm("Sei sicuro di voler svuotare il cestino?"))
   return;
+
  var sh = new GShell();
+ sh.showProcessMessage("Svuotamento cestino","Attendere prego, &egrave; in corso lo svuotamento del cestino");
+ sh.OnError = function(err){this.processMessage.error(err);}
  sh.OnOutput = function(){
+	 this.hideProcessMessage();
 	 alert("Il cestino è stato svuotato");
 	 document.location.href="index.php";
 	}

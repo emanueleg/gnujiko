@@ -1,24 +1,32 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 04-10-2013
+ #DATE: 04-12-2016
  #PACKAGE: gmart
  #DESCRIPTION: List view for GMart
- #VERSION: 2.4beta
- #CHANGELOG: 04-10-2013 : Bug fix, non calcolava lo sconto
+ #VERSION: 2.6beta
+ #CHANGELOG: 04-12-2016 : Integrato con Amazon MWS.
+			 08-04-2014 : Bug fix su valori predefiniti.
+			 04-10-2013 : Bug fix, non calcolava lo sconto
 			 24-07-2013 : Modifiche varie.
 			 04-02-2013 : Bug fix.
  #TODO:
  
 */
 
+global $_SHELL_CMD_PATH;
+
 $_SELECTED_IDS = array();
 $_SELECTED_KIDS = array();
+
+$amazonExists = false;
+if(file_exists($_BASE_PATH.$_SHELL_CMD_PATH."amazonmws.php"))
+ $amazonExists = true;
 
 if($_REQUEST['selected'])
 {
@@ -47,11 +55,15 @@ if(count($_PRICELISTS))
 	<th width='80' style='text-align:right;'>PREZZO</th>
 	<th width='30'>DISP.</th>
 	<th width='30'>ORD.</th>
+	<?php
+	 if($amazonExists)
+	  echo "<th width='30'><img src='".$_ABSOLUTE_URL."share/icons/16x16/amazon.png'/></th>";
+	?>
 </tr>
 <?php 
 $rpp = $_REQUEST['limit'] ? $_REQUEST['limit'] : 20;
 $from = $_REQUEST['pg'] ? ($rpp*($_REQUEST['pg']-1)) : 0;
-$ret = GShell("dynarc item-list -ap `".$_AP."`".($_REQUEST['catid'] ? " -cat `".$_REQUEST['catid']."`" : "")." -extget `gmart,thumbnails,coding,storeinfo,pricing`".($_PLGET ? " -get `".$_PLGET."`" : "")." -limit ".($from ? $from : "0").",".$rpp." --return-serp-info",$_REQUEST['sessid'],$_REQUEST['shellid']);
+$ret = GShell("dynarc item-list -ap `".$_AP."`".($_REQUEST['catid'] ? " -cat `".$_REQUEST['catid']."`" : "")." -extget `gmart,thumbnails,coding,storeinfo,pricing`".($_PLGET ? " -get `".$_PLGET.($amazonExists ? ',mws_last_update,mws_published' : '')."`" : ($amazonExists ? ' -get `mws_last_update,mws_published`' : ''))." -limit ".($from ? $from : "0").",".$rpp." --return-serp-info",$_REQUEST['sessid'],$_REQUEST['shellid']);
 
 $list = $ret['outarr']['items'];
 $count = $ret['outarr']['count'];
@@ -74,10 +86,10 @@ for($c=0; $c < count($list); $c++)
  echo "<div class='info'><i>code:</i> <b>".$item['code_str']."</b></div></td>";
  echo "<td><div class='description'>".$item['desc']."</div></td>";
 
- $baseprice = $item["pricelist_".$_PLID."_baseprice"] ? $item["pricelist_".$_PLID."_baseprice"] : $item['baseprice'];
- $markuprate = $item["pricelist_".$_PLID."_mrate"] ? $item["pricelist_".$_PLID."_mrate"] : $_PLINFO['markuprate'];
- $discount = $item["pricelist_".$_PLID."_discount"] ? $item["pricelist_".$_PLID."_discount"] : 0;
- $vat = $item["pricelist_".$_PLID."_vat"] ? $item["pricelist_".$_PLID."_vat"] : $_PLINFO['vat'];
+ $baseprice = isset($item["pricelist_".$_PLID."_baseprice"]) ? $item["pricelist_".$_PLID."_baseprice"] : $item['baseprice'];
+ $markuprate = isset($item["pricelist_".$_PLID."_mrate"]) ? $item["pricelist_".$_PLID."_mrate"] : $_PLINFO['markuprate'];
+ $discount = isset($item["pricelist_".$_PLID."_discount"]) ? $item["pricelist_".$_PLID."_discount"] : 0;
+ $vat = isset($item["pricelist_".$_PLID."_vat"]) ? $item["pricelist_".$_PLID."_vat"] : $_PLINFO['vat'];
  $finalPrice = $baseprice ? $baseprice + (($baseprice/100)*$markuprate) : 0;
  $finalPrice = $finalPrice ? $finalPrice - (($finalPrice/100)*$discount) : 0;
  $finalPriceVI = $finalPrice ? $finalPrice + (($finalPrice/100)*$vat) : 0;
@@ -90,6 +102,9 @@ for($c=0; $c < count($list); $c++)
  else
   echo "<span class='black'>".$dis."</span>";
  echo "</td><td align='center'><span class='black'>".$item['incoming']."</span></td>";
+
+ if($amazonExists)
+  echo "<td>".($item['mws_published'] ? "<img src='".$_ABSOLUTE_URL."share/icons/16x16/amazon.png' title=\"Pubblicato su Amazon, ultimo aggiornamento il ".date('d/m/Y H:i',strtotime($item['mws_last_update']))."\"/>" : "&nbsp;")."</td>";
  echo "</tr>";
 }
 ?>
@@ -131,6 +146,7 @@ if($count)
 ?>
 
 <script>
+var amazonExists = <?php echo $amazonExists ? 'true' : 'false'; ?>;
 var AP = "<?php echo $_AP ? $_AP : 'gmart'; ?>";
 var CAT_ID = <?php echo $_REQUEST['catid'] ? $_REQUEST['catid'] : "0"; ?>;
 var COUNT = <?php echo $count ? $count : "0"; ?>;
@@ -178,6 +194,7 @@ function nextPage()
  sh.OnOutput = function(o,a){
 	 if(a && a['items'])
 	 {
+	  var date = new Date();
 	  for(var c=0; c < a['items'].length; c++)
 	  {
 	   var item = a['items'][c];
@@ -210,7 +227,19 @@ function nextPage()
 		html+= "<span class='red'><b>0</b></span></td>";
 	   else
 		html+= "<span class='black'>"+dis+"</span>";
-	   html+= "</td><td align='center'><span class='black'>"+item['incoming']+"</span></td></tr>";
+	   html+= "</td><td align='center'><span class='black'>"+item['incoming']+"</span></td>";
+		
+	   if(amazonExists)
+	   {
+		if(parseFloat(item['mws_published']) > 0)
+		{
+		 date.setFromISO(item['mws_last_update']);
+		 html+= "<td><img src='"+ABSOLUTE_URL+"share/icons/16x16/amazon.png' title='Pubblicato su Amazon, ultimo aggiornamento il "+date.printf('d/m/Y H:i')+"'/"+"></td>";
+		}
+		else
+		 html+= "<td>&nbsp;</td>";
+	   }
+	   html+= "</tr>";
 	  }
 	 }
 	 div.innerHTML = html;
@@ -234,7 +263,7 @@ function nextPage()
 	  document.getElementById('footerpagesel').value = (CURRENT_PAGE-1);  
 	 }
 	}
- sh.sendCommand("dynarc item-list -ap `"+AP+"`"+(CAT_ID ? " -cat `"+CAT_ID+"`" : "")+" -extget `gmart,thumbnails,coding,storeinfo,pricing`"+(PLGET ? " -get `"+PLGET+"`" : "")+" -limit "+(RESULTS_PER_PAGE*CURRENT_PAGE)+","+RESULTS_PER_PAGE);
+ sh.sendCommand("dynarc item-list -ap `"+AP+"`"+(CAT_ID ? " -cat `"+CAT_ID+"`" : "")+" -extget `gmart,thumbnails,coding,storeinfo,pricing`"+(PLGET ? " -get `"+PLGET+(amazonExists ? ',mws_last_update,mws_published' : '')+"`" : (amazonExists ? ' -get `mws_last_update,mws_published`' : ''))+" -limit "+(RESULTS_PER_PAGE*CURRENT_PAGE)+","+RESULTS_PER_PAGE);
 
 }
 

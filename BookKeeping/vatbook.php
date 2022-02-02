@@ -1,17 +1,19 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 
- #PACKAGE: 
- #DESCRIPTION: 
- #VERSION: 
- #CHANGELOG:
- #TODO: Da fare query di refresh quando si cambia l'anno
+ #DATE: 06-07-2016
+ #PACKAGE: bookkeeping
+ #DESCRIPTION: VAT Book
+ #VERSION: 2.3beta
+ #CHANGELOG: 06-07-2016 : Bug fix iva a credito - iva a debito.
+			 04-05-2016 : Aggiunto campo IVA non dovuta.
+			 08-04-2014 : Bug fix vari
+ #TODO: 
  
 */
 
@@ -81,7 +83,15 @@ $from = strtotime($_REQUEST['from']);
 		<th width='80' style="border-left: 1px solid #dadada"><small>IMPONIBILE</small></th>
 		<th width='60' style="border-left: 1px solid #eeeeee"><small>COD. IVA</small></th>
 		<th width='80' style="border-left: 1px solid #dadada"><small>IMP. OMAGGI</small></th>
-		<th width='80' style="border-left: 1px solid #eeeeee"><small>IVA DETRAIBILE</small></th>
+		<th width='80' style="border-left: 1px solid #eeeeee"><small>
+		<?php
+		if($_REQUEST['show'] == "purchasesregister")
+		 echo "IVA A CREDITO";
+		else
+		 echo "IVA A DEBITO";
+		?>
+		</small></th>
+		<th width='80' style="border-left: 1px solid #eeeeee"><small>IVA NON DOVUTA</small></th>
 		<th width='10'>&nbsp;</th>
 	</tr>
 </table>
@@ -96,7 +106,7 @@ $from = strtotime($_REQUEST['from']);
 	/* Get vat list */
 	$_VAT_INFOS = array();
 	$_VAT_USED = array();
-	$ret = GShell("dynarc item-list -ap `vatrates` -get `code_str,vat_type,percentage`");
+	$ret = GShell("dynarc item-list -ap `vatrates` -get `vat_type,percentage`");
 	for($c=0; $c < count($ret['outarr']['items']); $c++)
 	{
 	 $itm = $ret['outarr']['items'][$c];
@@ -106,9 +116,10 @@ $from = strtotime($_REQUEST['from']);
 	$qry = "vatregister list";
     switch($_REQUEST['show'])
 	{
-	 case 'purchasesregister' : $qry.= " -type 1"; break;
-     case 'salesregister' : $qry.= " -type 2"; break;
-	 default: $qry.= " -type 1"; break;
+	 case 'purchasesregister' : $qry.= " -type 1 -docct PURCHASEINVOICES"; break;
+     case 'salesregister' : $qry.= " -type 2 -docct INVOICES"; break;
+     case 'receiptregister' : $qry.= " -type 2 -docct RECEIPTS"; break;
+	 default: $qry.= " -type 1 -docct PURCHASEINVOICES"; break;
 	}
 	if($_REQUEST['from'])
 	 $qry.= " -from '".date('Y-m-d',strtotime($_REQUEST['from']))."'";
@@ -128,7 +139,7 @@ $from = strtotime($_REQUEST['from']);
 	 $serpInfo = $ret['outarr']['serpinfo'];
 	}
 
-	$totals = ($_REQUEST['show'] == "salesregister") ? $ret['outarr']['tot_sales'] : $ret['outarr']['tot_purchases'];
+	$totals = ($_REQUEST['show'] == "purchasesregister") ? $ret['outarr']['tot_purchases'] : $ret['outarr']['tot_sales'];
 
 	for($i=0; $i < count($list); $i++)
 	{
@@ -168,6 +179,7 @@ $from = strtotime($_REQUEST['from']);
 	  $_VAT_USED[$itm['vatrates'][$c]['id']]['vat']+= $itm['vatrates'][$c]['vat'];
 	 }
 	 echo "&nbsp;</td>"; // iva detraibile
+	 echo "<td width='80' class='currency'>".number_format($itm['vat_nd'],2,',','.')."&nbsp;</td>";
 
 	 echo "</tr>";
 	}
@@ -210,6 +222,7 @@ $from = strtotime($_REQUEST['from']);
 $totAmount = 0;
 $totGifts = 0;
 $totDeductible = 0;
+$totND = 0;
 for($c=0; $c < count($totals); $c++)
 {
  $v = $totals[$c];
@@ -218,6 +231,7 @@ for($c=0; $c < count($totals); $c++)
   continue;
  $totAmount+= $v['amount'];
  $totDeductible+= $v['vat'];
+ $totND+= $v['vat_nd'];
 }
 
 ?>
@@ -244,7 +258,15 @@ for($c=0; $c < count($totals); $c++)
 		<td width='80' style='text-align:right;'>Imponibile</td>
 		<td width='60'>&nbsp;</td>
 		<td width='80' style='text-align:right;'>Imp. omaggi</td>
-		<td width='80' style='text-align:right;'>IVA detraibile</td>
+		<td width='80' style='text-align:right;'>
+		<?php
+		 if($_REQUEST['show'] == "purchasesregister")
+		  echo "IVA a debito";
+		 else
+		  echo "IVA a credito";
+		?>
+		</td>
+		<td width='80' style='text-align:right;'>IVA non dovuta</td>
 		<td width='8'>&nbsp;</td></tr>
 	
 	<?php
@@ -259,8 +281,9 @@ for($c=0; $c < count($totals); $c++)
 	 echo "<td>".$_VAT_INFOS[$k]['name']."</td>";
 	 echo "<td align='right'>".number_format($v['amount'],2,',','.')."</td>";
 	 echo "<td>&nbsp;</td>";
-	 echo "<td>&nbsp;</td>";
+	 echo "<td>&nbsp;</td>"; // tot omaggi
 	 echo "<td align='right'>".number_format($v['vat'],2,',','.')."</td>";
+	 echo "<td align='right'>".number_format($v['vat_nd'],2,',','.')."</td>";
 	 echo "<td>&nbsp;</td>";
 	 echo "</tr>";
 	}
@@ -269,7 +292,8 @@ for($c=0; $c < count($totals); $c++)
 	echo "<td style='border-top:1px solid #dadada' align='right'>".number_format($totAmount,2,',','.')."</td>";
 	echo "<td style='border-top:1px solid #dadada'>&nbsp;</td>";
 	echo "<td style='border-top:1px solid #dadada' align='right'>".number_format($totGifts,2,',','.')."</td>";
-	echo "<td style='border-top:1px solid #dadada' align='right'>".number_format($totDeductible,2,',','.')."</td>";
+	echo "<td style='border-top:1px solid #dadada' align='right'><b>".number_format($totDeductible,2,',','.')."</b></td>";
+	echo "<td style='border-top:1px solid #dadada' align='right'><b>".number_format($totND,2,',','.')."</b></td>";
 	echo "<td>&nbsp;</td></tr>";
 	?>
 	<tr><td colspan='8'>&nbsp;</td></tr>
@@ -283,6 +307,8 @@ var RESULTS_PER_PAGE = <?php echo $serpInfo['resultsperpage'] ? $serpInfo['resul
 var CURRENT_PAGE = <?php echo $_REQUEST['pg'] ? $_REQUEST['pg'] : "1"; ?>;
 var PAGES_COUNT = 1;
 var SELECTED_CATALOG = "";
+var YEAR = "<?php echo date('Y',strtotime($_REQUEST['from'])); ?>";
+var MONTH = "<?php echo date('n',strtotime($_REQUEST['from'])); ?>";
 
 var VAT_CODES = new Array();
 <?php
@@ -315,8 +341,6 @@ function desktopOnLoad()
 
  new GPopupMenu(document.getElementById('monthmenu'), document.getElementById('monthmenulist'));
  new GPopupMenu(document.getElementById('yearmenu'), document.getElementById('yearmenulist'));
- //var mE = EditSearch.init(document.getElementById('search'),"dynarc search -ap `rubrica` -fields code_str,name `","` -limit 10 --order-by 'code_str,name ASC'","id","name","items",true,"name");
-
 }
 
 function onSearchQry(items,resArr,retVal)
@@ -473,11 +497,6 @@ function selectAllRows(cb)
   else if(!cb.checked && (SELECTED_ROWS.indexOf(r) > -1))
    SELECTED_ROWS.splice(SELECTED_ROWS.indexOf(r),1);
  }
-
- /*if(SELECTED_ROWS.length)
-  document.getElementById('selectionmenu').style.visibility = "visible";
- else
-  document.getElementById('selectionmenu').style.visibility = "hidden";*/
 }
 
 function selectRow(cb)
@@ -488,31 +507,11 @@ function selectRow(cb)
   SELECTED_ROWS.push(r);
  else if(!cb.checked && (SELECTED_ROWS.indexOf(r) > -1))
   SELECTED_ROWS.splice(SELECTED_ROWS.indexOf(r),1);
-
- /*if(SELECTED_ROWS.length)
-  document.getElementById('selectionmenu').style.visibility = "visible";
- else
-  document.getElementById('selectionmenu').style.visibility = "hidden";*/
 }
 
 function updateQry()
 {
  var href = ABSOLUTE_URL+"BookKeeping/index.php?page=vatbook&show=<?php echo $_REQUEST['show'] ? $_REQUEST['show'] : 'purchasesregister'; ?>&filter=<?php echo $_REQUEST['filter']; ?>";
- /*var ed = document.getElementById('search');
- href+="&search="+ed.value;
- switch(document.getElementById('filter').value)
- {
-  case 'subject' : {
-	 if(ed.value && ed.data)
-	  href+= "&subjectid="+ed.data['id'];
-	 else if(ed.value)
-	  href+= "&subject="+ed.value;
-	} break;
-  default : {
-	 if(ed.value)
-	  href+= "&description="+ed.value;
-	} break;
- }*/
 
  var from = document.getElementById('from');
  var to = document.getElementById('to');
@@ -522,7 +521,6 @@ function updateQry()
   href+= "&to="+strdatetime_to_iso(to.value);
 
  document.location.href=href;
-
 }
 
 function selectMonth(month, li)
@@ -530,6 +528,7 @@ function selectMonth(month, li)
  var date = new Date();
  date.setDate(1);
  date.setMonth(month);
+ date.setYear(YEAR);
  var dateFrom = date.printf('Y-m-01');
  date.NextMonth();
  var dateTo = date.printf('Y-m-01');
@@ -541,8 +540,19 @@ function selectMonth(month, li)
 
 function selectYear(year)
 {
+ YEAR = year;
  document.getElementById('yearmenu').getElementsByTagName('SPAN')[0].innerHTML = year;
- /* TODO: fare query di refresh */
+
+ var date = new Date();
+ date.setDate(1);
+ date.setMonth(MONTH-1);
+ date.setYear(YEAR);
+ var dateFrom = date.printf('Y-m-01');
+ date.NextMonth();
+ var dateTo = date.printf('Y-m-01');
+
+ var href = ABSOLUTE_URL+"BookKeeping/index.php?page=vatbook&show=<?php echo $_REQUEST['show'] ? $_REQUEST['show'] : 'purchasesregister'; ?>&filter=<?php echo $_REQUEST['filter']; ?>&from="+dateFrom+"&to="+dateTo;
+ document.location.href=href;
 }
 
 function showDocInfo(ap,id)

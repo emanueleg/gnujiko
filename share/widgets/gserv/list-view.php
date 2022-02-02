@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2017 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 04-02-2013
+ #DATE: 21-04-2017
  #PACKAGE: gserv
  #DESCRIPTION: List view for GServ
- #VERSION: 2.1beta
- #CHANGELOG: 04-02-2013 : Bug fix.
+ #VERSION: 2.2beta
+ #CHANGELOG: 21-04-2017 : Bug fix su aliquota IVA a zero.
+			 04-02-2013 : Bug fix.
  #TODO:
  
 */
@@ -65,9 +66,9 @@ for($c=0; $c < count($list); $c++)
  echo "<div class='info'><i>code:</i> <b>".$item['code_str']."</b></div></td>";
  echo "<td><div class='description'>".$item['desc']."</div></td>";
 
- $baseprice = $item["pricelist_".$_PLID."_baseprice"] ? $item["pricelist_".$_PLID."_baseprice"] : $item['baseprice'];
+ $baseprice = isset($item["pricelist_".$_PLID."_baseprice"]) ? $item["pricelist_".$_PLID."_baseprice"] : $item['baseprice'];
  $markuprate = $item["pricelist_".$_PLID."_mrate"];// ? $item["pricelist_".$_PLID."_mrate"] : $_PLINFO['markuprate'];
- $vat = $item["pricelist_".$_PLID."_vat"] ? $item["pricelist_".$_PLID."_vat"] : $_PLINFO['vat'];
+ $vat = isset($item["pricelist_".$_PLID."_vat"]) ? $item["pricelist_".$_PLID."_vat"] : $_PLINFO['vat'];
  $finalPrice = $baseprice ? $baseprice + (($baseprice/100)*$markuprate) : 0;
  $finalPriceVI = $finalPrice ? $finalPrice + (($finalPrice/100)*$vat) : 0;
 

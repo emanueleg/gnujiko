@@ -1,16 +1,19 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2017 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 19-06-2013
+ #DATE: 20-07-2017
  #PACKAGE: apm
  #DESCRIPTION: Alpatech Package Manager. Graphical management of Gnujiko applications packages.
- #VERSION: 2.1beta
- #CHANGELOG: 19-06-2013 : Bug fix in apm update. Aggiunta funzione apm_http_get per scaricare l'xml dei pacchetti.
+ #VERSION: 2.7beta
+ #CHANGELOG: 20-07-2017 : Bug fix in function apm_http_get.
+			 08-11-2015 : Aggiunto parametro --if-not-exists su funzione add-repository.
+			 16-03-2015 : Bug fix in function apm_http_get.
+			 19-06-2013 : Bug fix in apm update. Aggiunta funzione apm_http_get per scaricare l'xml dei pacchetti.
 			 21-11-2012 : Bug fix in function apm_invalidArguments().
 			 24-01-2012 : Aggiunta funzione section-list e creata tabella gnujiko_package_sections.
 			 02-01-2012 : Bug fix in essential package and version compare.
@@ -76,9 +79,6 @@ function apm_update($args, $sessid, $shellid)
   $xml = new GXML();
   $rep = $repositoryList[$c];
 
-  //$xmlBuffer = apm_http_get($rep['url']."/dists/".$rep['ver']."/".$rep['section']."/info/index.php");
-
-  //if(($rep['type'] == 'url') && (!$xml->LoadFromFile($rep['url']."/dists/".$rep['ver']."/".$rep['section']."/info/index.php")) )
   if(($rep['type'] == 'url') && (!$xml->LoadFromString(apm_http_get($rep['url']."/dists/".$rep['ver']."/".$rep['section']."/info/index.php"))))
    return array("message"=>"Unable to retrieve package list from repository ".$rep['url']." ".$rep['ver']." ".$rep['section'],"error"=>"RETRIEVE_PACKAGE_LIST_FAILED");
   /*else if ($rep['type'] == 'media')
@@ -156,9 +156,14 @@ function apm_addRepository($args, $sessid, $shellid)
    case '-url' : {$url=$args[$c+1]; $c++;} break;
    case '-ver' : {$ver=$args[$c+1]; $c++;} break;
    case '-sec' : {$sec=$args[$c+1]; $c++;} break;
+
+   case '--if-not-exists' : $ifNotExists=true; break;
   }
+
  if(!$url || !$ver || !$sec)
   return array("message"=>"You must specify all params (-url, -ver and -sec)", "error"=>"INVALID_PARAMS");
+
+ $outArr = array('url'=>$url,'ver'=>$ver,'section'=>$sec);
  
  // verify if already exists //
  $ret = GShell("apm repository-list",$sessid, $shellid);
@@ -171,7 +176,12 @@ function apm_addRepository($args, $sessid, $shellid)
   $rep = array();
   $rep = $list[$c];
   if(($rep['url'] == $url) && ($rep['ver'] == $ver) && ($rep['section'] == $sec))
-   return array('message'=>"Repository already exists", "error"=>"REPOSITORY_ALREADY_EXISTS");
+  {
+   if($ifNotExists)
+    return array('message'=>"Repository already exists", "outarr"=>$outArr);
+   else
+    return array('message'=>"Repository already exists", "error"=>"REPOSITORY_ALREADY_EXISTS");
+  }
  }
 
  global $_BASE_PATH;
@@ -180,7 +190,7 @@ function apm_addRepository($args, $sessid, $shellid)
   return array('message'=>"Unable to write to etc/apm/sources.list", "error"=>"UNABLE_TO_WRITE");
  @fwrite($h,rtrim($url,"/")." ".$ver." ".$sec."\r\n");
  @fclose($h);
- $outArr = array('url'=>$url,'ver'=>$ver,'section'=>$sec);
+ 
  $out.= "done!\n";
  return array('message'=>$out, 'outarr'=>$outArr);
 }
@@ -307,13 +317,22 @@ function apm_http_get($url,$shellid=0,$msgType="",$msgRef="", $mode="")
  $url_stuff = parse_url($url);
  $port = isset($url_stuff['port']) ? $url_stuff['port'] : 80;
 
- $fp = fsockopen($url_stuff['host'], $port);
+ $buffer = "";
+ $fp = @fsockopen($url_stuff['host'], $port);
+ if(!$fp) return false;
 
- $query  = 'GET ' . $url_stuff['path'] . " HTTP/1.0\n";
+ /*$query  = 'GET ' . $url_stuff['path'] . " HTTP/1.0\n";
  $query .= 'Host: ' . $url_stuff['host'];
- $query .= "\n\n";
+ $query .= "\n\n";*/
+ 
+ $header = array(
+	 'GET '.$url_stuff['path']." HTTP/1.1",
+	 'Host: '.$url_stuff['host'],
+	 'User-agent: Gnujiko'
+	);
 
- fwrite($fp, $query);
+ //fwrite($fp, $query);
+ fputs($fp, join("\r\n", $header)."\r\n\r\n");
 
  $fileSize = 0;
  $needPreOutput = false;
@@ -346,8 +365,10 @@ function apm_http_get($url,$shellid=0,$msgType="",$msgRef="", $mode="")
  preg_match('/Content-Length: ([0-9]+)/', $buffer, $parts);
  $buffer = substr($buffer, - $parts[1]);
  $p = strpos($buffer, "<?xml");
- if($p !== false)
-  $buffer = substr($buffer,$p);
+ if($p !== false) $buffer = substr($buffer,$p);
+ $p = strpos($buffer, "</xml>");
+ if($p !== false) $buffer = substr($buffer, 0, $p+6);
+
  return $buffer;
 }
 //-------------------------------------------------------------------------------------------------------------------//

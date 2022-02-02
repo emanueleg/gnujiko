@@ -197,7 +197,7 @@ function desktopOnUnload()
 
 function gframe_cachecontentsload(contents)
 {
- CACHE_CONTENTS = contents;
+ CACHE_CONTENTS = contents.replace("{ABSOLUTE_URL}",ABSOLUTE_URL);
  oFCKeditor = new FCKeditor('idoc-html-editor') ;
  oFCKeditor.BasePath	= "<?php echo $_BASE_PATH; ?>var/objects/fckeditor/";
  oFCKeditor.Config['SkinPath'] = sSkinPath ;
@@ -324,7 +324,7 @@ function urlencode(str)
 
 function idoc_save()
 {
- var htmlContents = FCKeditorAPI.GetInstance('idoc-html-editor').GetXHTML();
+ var htmlContents = FCKeditorAPI.GetInstance('idoc-html-editor').GetXHTML().replace(ABSOLUTE_URL,"{ABSOLUTE_URL}");
  var jsContents = document.getElementById('idoc-js-editor').value;
  var cssContents = document.getElementById('idoc-css-editor').value;
  var jsID = <?php echo $docInfo['javascript'][0]['id'] ? $docInfo['javascript'][0]['id'] : "0"; ?>;

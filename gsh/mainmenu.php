@@ -1,16 +1,16 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 09-01-2012
+ #DATE: 24-10-2016
  #PACKAGE: system-config-gui
  #DESCRIPTION: Default Gnujiko Main Menu
- #VERSION: 2.0beta
- #CHANGELOG:
+ #VERSION: 2.1beta
+ #CHANGELOG: 24-10-2016 : MySQLi integration.
  #DEPENDS:
  #TODO: Aggiungere alla guida, alla funzione edit, i parametri perms e group.
  
@@ -86,7 +86,7 @@ function mainmenu_insert($args, $sessid, $shellid)
  }
  $db->RunQuery("INSERT INTO gnujiko_main_menu(uid,gid,_mod,name,icon,large_icon,url,ordering,published) VALUES('"
 	.$uid."','$gid','$mod','$name','$icon','$largeIcon','$url','$ordering','$published')");
- $id = mysql_insert_id();
+ $id = $db->GetInsertId();
  $db->Close();
  $outArr = array('id'=>$id,'name'=>$name,'url'=>$url,'icon'=>$icon,'largeicon'=>$largeIcon,'ordering'=>$ordering,'published'=>$published);
  $out = "done!";

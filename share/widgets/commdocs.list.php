@@ -1,16 +1,18 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 08-07-2013
+ #DATE: 02-10-2014
  #PACKAGE: gcommercialdocs
  #DESCRIPTION: Lista dei documenti commerciali
- #VERSION: 2.0beta
- #CHANGELOG: 08-07-2013 - Aggiunte le ricevute fiscali.
+ #VERSION: 2.2beta
+ #CHANGELOG: 02-10-2014 : Integrato con Fatture Soci
+			 23-05-2014 : Aggiunto DDT in entrata
+			 08-07-2013 - Aggiunte le ricevute fiscali.
  #TODO:
  
 */
@@ -40,10 +42,12 @@ switch($_REQUEST['doctype'])
  case 'preemptives' : include($_BASE_PATH."share/widgets/commercialdocs/list-preemptives.php"); break;
  case 'orders' : include($_BASE_PATH."share/widgets/commercialdocs/list-orders.php"); break;
  case 'ddt' : include($_BASE_PATH."share/widgets/commercialdocs/list-ddt.php"); break;
+ case 'ddtin' : include($_BASE_PATH."share/widgets/commercialdocs/list-ddtin.php"); break;
  case 'invoices' : include($_BASE_PATH."share/widgets/commercialdocs/list-invoices.php"); break;
  case 'vendororders' : include($_BASE_PATH."share/widgets/commercialdocs/list-vendororders.php"); break;
  case 'purchaseinvoices' : include($_BASE_PATH."share/widgets/commercialdocs/list-purchaseinvoices.php"); break;
  case 'agentinvoices' : include($_BASE_PATH."share/widgets/commercialdocs/list-agentinvoices.php"); break;
+ case 'memberinvoices' : include($_BASE_PATH."share/widgets/commercialdocs/list-memberinvoices.php"); break;
  case 'intervreports' : include($_BASE_PATH."share/widgets/commercialdocs/list-intervreports.php"); break;
  case 'creditsnote' : include($_BASE_PATH."share/widgets/commercialdocs/list-creditsnote.php"); break;
  case 'debitsnote' : include($_BASE_PATH."share/widgets/commercialdocs/list-debitsnote.php"); break;

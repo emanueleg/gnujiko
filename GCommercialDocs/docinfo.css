@@ -257,6 +257,29 @@ div.paymode span {
 	cursor: pointer;
 }
 
+div.internaldocref {
+
+}
+
+div.internaldocref img {
+	cursor: pointer;
+	float: right;
+	margin-top: 5px;
+}
+
+div.internaldocref span {
+	width: 140px;
+	display: block;
+	font-family: Arial;
+	font-size: 10px;
+	color: #999999;
+	text-align: right;
+	overflow: hidden;
+	white-space: nowrap;
+	float: left;
+	cursor: pointer;
+}
+
 /* SMALL TABLE */
 table.smalltable td {
 	font-family: Arial;
@@ -305,6 +328,12 @@ table.docfooter-results td em {
 	color: #eeeeee;
 	margin-right: 10px;
 }
+
+table.docfooter-results th.red {background: #f31903; color: #ffffff;}
+table.docfooter-results td.red {background: #f31903;}
+
+table.docfooter-results th.orange {background: #fb8b00; color: #ffffff;}
+table.docfooter-results td.orange {background: #fb8b00;}
 
 table.docfooter-results th.blue {background: #0169c9; color: #b3defd;}
 table.docfooter-results td.blue {background: #0169c9;}
@@ -591,7 +620,7 @@ div.attachments-topbar span.spanblue {
 }
 
 div.attachments-explore {
-	height: 380px;
+	height: 440px;
 	width: 770px;
 	overflow: auto;
 	padding-left: 12px;
@@ -633,6 +662,22 @@ div.attachments-explore div.attachment a.btndel {
 div.attachments-explore div.attachment:hover a.btnedit {visibility: visible;}
 div.attachments-explore div.attachment:hover a.btndel {visibility: visible;}
 
+div#subjinfoxl-container {
+ border: 1px solid #dadada;
+ overflow: auto;
+ width: 780px;
+}
+
+div.subjinfoxl-title {
+ font-family: arial, sans-serif;
+ color: #6699cc;
+ height: 20px;
+ line-height: 20px;
+ font-size: 16px;
+ margin-top: 10px;
+ font-weight: bold;
+}
+
 div.editform {
 	position: absolute;
 	width: 420px;
@@ -652,7 +697,7 @@ div.docnotes {
 textarea#notes {
 	border: 1px solid #6699cc;
 	width: 780px;
-	height: 120px;
+	height: 60px;
 }
 
 /* PREDEFINED MESSAGES */
@@ -743,6 +788,17 @@ table.predefmsg-list {
 	width: 100%;
 }
 
+table.predefmsg-list th {
+	font-family: arial,sans-serif;
+	font-size: 11px;
+	color: #336699;
+	height: 32px;
+	vertical-align: middle;
+	border-bottom: 1px solid #cccccf;
+	cursor: default;
+	padding-left: 5px;
+}
+
 table.predefmsg-list td {
 	font-family: arial,sans-serif;
 	font-size: 11px;
@@ -755,6 +811,7 @@ table.predefmsg-list td {
 }
 
 table.predefmsg-list tr:hover td {background: #ffff99;}
+table.predefmsg-list tr.selected td {background: #ffff99;}
 
 
 /* SHOWCOLUMNS CLOUD */
@@ -853,5 +910,36 @@ a.smallblue {
 	font-family: arial, sans-serif;
 	font-size: 12px;
 	color: blue;
+}
+
+input.button-gray, input.button-blue, input.button-red {
+	height: 30px;
+	border-radius: 2px;
+	border: 1px solid #d9d9d9;
+	font-family: Arial,sans-serif;
+	font-size: 12px;
+	white-space: nowrap;
+	padding-left: 12px;
+	padding-right: 12px;
+	cursor: pointer;
+	background: #f4f4f4;
+	font-weight: bold;
+	text-align: left;
+	overflow: hidden;
+}
+
+input.button-blue {border-color: #4285f4; background-color: #4583ec; color: #ffffff;}
+input.button-red {border-color: #d40000; background-color: #f44800; color: #ffffff;}
+
+/* RIF PA */
+div#rifpa-container {
+ padding-top: 10px;
+ font-family: arial;
+ font-size: 14px;
+}
+
+div#rifpa-container td {
+ font-family: arial;
+ font-size: 14px;
 }
 

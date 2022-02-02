@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 13-08-2013
+ #DATE: 20-04-2014
  #PACKAGE: gcommercialdocs
  #DESCRIPTION: Pay form for GCommercialDocs.
- #VERSION: 2.3beta
- #CHANGELOG: 13-08-2013 : Bug fix nei pagamenti che non teneva conto delle ritenute.
+ #VERSION: 2.4beta
+ #CHANGELOG: 20-04-2014 : Bug fix.
+			 13-08-2013 : Bug fix nei pagamenti che non teneva conto delle ritenute.
 			 12-08-2013 : Aggiunta la categoria
 			 13-01-2013 : Bug fix in assign group at every new items.
  #TODO:
@@ -160,9 +161,9 @@ function OnFormSubmit()
  var sh = new GShell();
  sh.OnFinish = function(o,a){gframe_close(o,a);}
  if(IS_DEBIT)
-  sh.sendCommand("dynarc new-item -ap `pettycashbook`"+(catId ? " -cat `"+catId+"`" : "")+" -group pettycashbook -ctime `"+date+"` -name `"+description+"` -extset `pettycashbook.resout='"+resId+"',out='"+amount+"',docap='"+docAp+"',docid='"+docId+"',"+(subjectId ? "subjectid='"+subjectId+"'" : "subject='''"+subjectName+"'''")+"` && dynarc edit-item -ap `commercialdocs` -id `<?php echo $docInfo['id']; ?>` -extset `cdinfo.status=10,payment-date='"+date+"',mmr.expenses='"+amount+"',payment='"+date+"',description='Saldo',subject='''"+subjectName+"''',subjectid='"+subjectId+"'`");
+  sh.sendCommand("dynarc new-item -ap `pettycashbook`"+(catId ? " -cat `"+catId+"`" : "")+" -group pettycashbook -ctime `"+date+"` -name `"+description+"` -extset `pettycashbook.resout='"+resId+"',out='"+amount+"',docap='"+docAp+"',docid='"+docId+"',"+(subjectId ? "subjectid='"+subjectId+"'" : "subject='''"+subjectName+"'''")+"` && dynarc edit-item -ap `commercialdocs` -id `<?php echo $docInfo['id']; ?>` -extset `cdinfo.status=10,payment-date='"+date+"',mmr.setallpaid='1',payment='"+date+"'`");
  else
-  sh.sendCommand("dynarc new-item -ap `pettycashbook`"+(catId ? " -cat `"+catId+"`" : "")+" -group pettycashbook -ctime `"+date+"` -name `"+description+"` -extset `pettycashbook.resin='"+resId+"',in='"+amount+"',docap='"+docAp+"',docid='"+docId+"',"+(subjectId ? "subjectid='"+subjectId+"'" : "subject='''"+subjectName+"'''")+"` && dynarc edit-item -ap `commercialdocs` -id `<?php echo $docInfo['id']; ?>` -extset `cdinfo.status=10,payment-date='"+date+"',mmr.incomes='"+amount+"',payment='"+date+"',description='Saldo',subject='''"+subjectName+"''',subjectid='"+subjectId+"'`");
+  sh.sendCommand("dynarc new-item -ap `pettycashbook`"+(catId ? " -cat `"+catId+"`" : "")+" -group pettycashbook -ctime `"+date+"` -name `"+description+"` -extset `pettycashbook.resin='"+resId+"',in='"+amount+"',docap='"+docAp+"',docid='"+docId+"',"+(subjectId ? "subjectid='"+subjectId+"'" : "subject='''"+subjectName+"'''")+"` && dynarc edit-item -ap `commercialdocs` -id `<?php echo $docInfo['id']; ?>` -extset `cdinfo.status=10,payment-date='"+date+"',mmr.setallpaid='1',payment='"+date+"'`");
 }
 
 function cashResourcesConfig()

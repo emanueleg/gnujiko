@@ -26,7 +26,7 @@ include_once($_BASE_PATH."include/i18n.php");
 LoadLanguage("dynarc");
 
 ?>
-<html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8"><title><?php echo i18n("Dynarc - Select archive"); ?></title>
+<html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8"><title><?php echo i18n("Dynarc - Select category"); ?></title>
 <?php
 include_once($_BASE_PATH."include/js/gshell.php");
 include_once($_BASE_PATH."var/objects/gform/index.php");

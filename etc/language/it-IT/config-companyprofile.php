@@ -1,16 +1,18 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 18-12-2012
+ #DATE: 17-12-2016
  #PACKAGE: companyprofile-config-language-pack-it
  #DESCRIPTION: Italian translation file for companyprofile-config.
- #VERSION: 2.2beta
- #CHANGELOG: 18-12-2012 : Cash resources included.
+ #VERSION: 2.4beta
+ #CHANGELOG: 17-12-2016 : Aggiunto voce discount su pricelists.
+			 02-05-2016 : Aggiunto voci di nuove classi IVA.
+			 18-12-2012 : Cash resources included.
 			 29-11-2012 : Aggiunto magazzini.
  #TODO:
  
@@ -89,6 +91,7 @@ $_DICTIONARY["quarterly"] = "trimestrale";
 $_DICTIONARY["Interest on quarterly VAT:"] = "Interessi su IVA trimestrale:";
 $_DICTIONARY["N. decimal pricing:"] = "N. decimali sui prezzi:";
 $_DICTIONARY["VAT rate most frequently used:"] = "Aliquota usata più di frequente:";
+$_DICTIONARY["Tax regime:"] = "Regime fiscale:";
 $_DICTIONARY["Percentage of tax payment:"] = "Percentuale d'acconto IVA:";
 $_DICTIONARY["Rate of the VAT payable."] = "Percentuale dell'acconto IVA da versare.";
 $_DICTIONARY["Amount of stamp duty on receipts:"] = "Importo bollo su ricevute:";
@@ -102,7 +105,7 @@ $_DICTIONARY["thousandths"] = "millesimi";
 $_DICTIONARY["Riba collection costs. to be charged:"] = "Spese incasso Ri.Ba. da addebitare:";
 $_DICTIONARY["These are the costs of collection to be charged for each type of Ri.Ba."] = "Si tratta delle spese di incasso da addebitare per ogni tipo di effetto.";
 $_DICTIONARY["For the ordinary management of the accounting you need to install the package:"] = "Per la gestione della contabilità ordinaria è necessario installare il pacchetto:";
-$_DICTIONARY["Installa"] = "Install";
+$_DICTIONARY["Install"] = "Installa";
 
 /* share/widgets/config-companyprofile/banks.php */
 $_DICTIONARY["add new<br/>bank"] = "aggiungi<br/>nuova banca";
@@ -129,10 +132,14 @@ $_DICTIONARY["Free"] = "Esente";
 $_DICTIONARY["Excluding"] = "Escluso";
 $_DICTIONARY["Not subject"] = "Non soggetto";
 $_DICTIONARY["Not deductible"] = "Indetraibile";
+$_DICTIONARY["Purch. extra-EUR"] = "Acq. extra-UE";
+$_DICTIONARY["Purch. in-EUR"] = "Acq. intra-UE";
+$_DICTIONARY["Purch. rev. charge"] = "Acq. rev. charge";
 
 /* share/widgets/config-companyprofile/pricelist.php */
 $_DICTIONARY["NAME"] = "NOME";
 $_DICTIONARY["MARKUP"] = "RICARICO";
+$_DICTIONARY["DISCOUNT"] = "SCONTO";
 $_DICTIONARY["VAT"] = "IVA";
 
 /* share/widgets/config-companyprofile/chartofaccounts.php */

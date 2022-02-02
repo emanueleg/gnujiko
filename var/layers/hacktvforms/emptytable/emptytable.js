@@ -1,15 +1,15 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 27-05-2013
+ #DATE: 27-10-2014
  #PACKAGE: 
  #DESCRIPTION: 
  #VERSION: 2.0beta
- #CHANGELOG: 
+ #CHANGELOG: 27-10-2014 : Aggiunta funzione importFromCommand.
  #TODO:
  
 */
@@ -69,8 +69,7 @@ function HackTVFormOnLoad(layer, data)
 
   sh.sendCommand(data['query']);
  }
-
- /*if(data['results'])
+ else if(data['results'])
  {
   for(var c=0; c < data['results'].length; c++)
   {
@@ -78,16 +77,8 @@ function HackTVFormOnLoad(layer, data)
    r.id = data['results'][c]['id'];
    for(var i=0; i < tb.Fields.length; i++)
 	r.cell[tb.Fields[i].name].setValue(data['results'][c][tb.Fields[i].name]);
-
-   totAmount+= parseFloat(data['results'][c]['amount']);
-   totVat+= parseFloat(data['results'][c]['vat']);
-   subTot+= parseFloat(data['results'][c]['total']);
   }
  }
-
- document.getElementById("xtb-"+layer.id+"-totamount").innerHTML = "<em>&euro;</em>"+formatCurrency(totAmount,2);
- document.getElementById("xtb-"+layer.id+"-totvat").innerHTML = "<em>&euro;</em>"+formatCurrency(totVat,2);
- document.getElementById("xtb-"+layer.id+"-subtot").innerHTML = "<em>&euro;</em>"+formatCurrency(subTot,2);*/
 }
 
 function hacktvform_emptytable_showColumn(layerId, colIdx, cb)
@@ -143,6 +134,53 @@ function hacktvform_emptytable_addRow(layerId)
  var tb = document.getElementById("xtb-"+layerId+"-doctable").gmutable;
  return tb.AddRow();
 }
+
+function hacktvform_emptytable_importFromCommand(layerId)
+{
+ var cmd = prompt("Digita un comando gshell");
+ if(!cmd) return;
+
+ var tb = document.getElementById("xtb-"+layerId+"-doctable").gmutable;
+ tb.EmptyTable();
+ while(tb.Fields.length)
+ {
+  tb.DeleteField(tb.Fields[0].name);
+ }
+
+ var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
+ sh.OnOutput = function(o,a){
+	 if(!a) return alert("No data found.\n"+o);
+	 var list = a['items'] ? a['items'] : a['results'];
+	 if(!list) return alert(o ? o : "No results found.");
+	 
+	 for(var c=0; c < list.length; c++)
+	 {
+	  if(c == 0)
+	  {
+	   // preparo le colonne
+	   var keys = array_keys(list[0]);
+	   for(var i=0; i < keys.length; i++)
+	   {
+		if(typeof(a['items'][0][keys[i]]) != 'string')
+		 continue;
+		tb.AddField(keys[i], keys[i], {editable:true, width:100, minwidth:100});
+	   }
+	  }
+
+	  var r = tb.AddRow();
+	  for(var i=0; i < tb.Fields.length; i++)
+	  {
+	   var field = tb.Fields[i];
+	   r.cell[field.name].setValue(a['items'][c][field.name]);
+	  }
+	 }
+
+	}
+ sh.sendCommand(cmd);
+
+}
+
 
 function hacktvform_emptytable_cut(layerId)
 {

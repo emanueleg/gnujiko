@@ -1,16 +1,20 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2017 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 11-04-2013
+ #DATE: 15-05-2017
  #PACKAGE: dynarc
  #DESCRIPTION: Import and Export functions for Dynarc
- #VERSION: 2.5beta
- #CHANGELOG: 11-04-2013 : Sistemato i permessi ai files.
+ #VERSION: 2.9beta
+ #CHANGELOG: 15-05-2017 : Aggiunto parametro extraVar su tutte le funzioni.
+			 26-12-2014 : Aggiornate funzioni import ed export.
+			 19-09-2014 : Bug fix on function dynarc_importItem.
+			 18-02-2014 : Bug fix su funzioni import export.
+			 11-04-2013 : Sistemato i permessi ai files.
 			 06-04-2013 : Completato funzioni overwrite negli articoli (manca nelle categorie) e aggiunto parametro -group su dynarc import
 			 14-03-2013 : Bug fix su funzione category import ed export.
  #TODO:  fare funzione overwrite su esporta categorie.
@@ -26,16 +30,18 @@ function dynarc_import($args, $sessid, $shellid=0, $extraVar=null)
 {
  global $_BASE_PATH, $_USERS_HOMES, $_USER_PATH;
  $out = "";
- $outArr = array();
+ $outArr = array("items"=>array(), "categories"=>array());
  $catInfo = null;
 
  for($c=1; $c < count($args); $c++)
   switch($args[$c])
   {
    case '-f' : case '-i' : case '-file' : {$fileName=ltrim($args[$c+1],"/"); $c++;} break;
+   case '-xml' : {$xmlContent=$args[$c+1]; $c++;} break;
    case '-a' : case '-archive' : {$archive=$args[$c+1]; $c++;} break;
    case '-aid' : {$archiveId=$args[$c+1]; $c++;} break;
    case '-ap' : case '--archive-prefix' : {$archivePrefix=$args[$c+1]; $c++;} break;
+   case '-name' : {$name=$args[$c+1]; $c++;} break; // solo in caso di importazione di un unico documento.
 
    case '-cat' : {$catId=$args[$c+1]; $c++;} break;
    case '-ct' : case '--cat-tag' : {$catTag=$args[$c+1]; $c++;} break;
@@ -115,7 +121,7 @@ function dynarc_import($args, $sessid, $shellid=0, $extraVar=null)
   /* detect if is a ZIP file */
   if(strtolower(substr($_BASE_PATH.$_USER_PATH.$fileName,-4,4)) == ".zip")
   {
-   $ret = GShell("unzip -i `".$fileName."`",$sessid,$shellid);
+   $ret = GShell("unzip -i `".$fileName."`",$sessid,$shellid, $extraVar);
    if($ret['error'])
 	return $ret;
    $out.= "Unzip $fileName... success!\n";
@@ -137,11 +143,19 @@ function dynarc_import($args, $sessid, $shellid=0, $extraVar=null)
   }
   else
    $xmlFile = $fileName;
+ }
 
+ if($xmlFile)
   gshPreOutput($shellid, $out."Import data into archive '".$archiveInfo['name']."' from $xmlFile");
+ else if($xmlContent)
+  gshPreOutput($shellid, $out."Import data into archive '".$archiveInfo['name']."' from XML");
 
   $out = "";
-  $xml = new GXML($_BASE_PATH.$_USER_PATH.$xmlFile);
+  $xml = new GXML();
+  if($xmlFile)
+   $xml->LoadFromFile($_BASE_PATH.$_USER_PATH.$xmlFile);
+  else if($xmlContent)
+   $xml->LoadFromString($xmlContent);
   /* Estimate elements */
   $estimate = count($xml->GetElementsByTagName('item'));
   $list = $xml->GetElementsByTagName('category');
@@ -151,12 +165,16 @@ function dynarc_import($args, $sessid, $shellid=0, $extraVar=null)
   gshPreOutput($shellid, "Estimated elements to import: ".$estimate, "ESTIMATION", null, "DEFAULT", array('estimated_elements'=>$estimate));
 
   /* Import items */
+  $title = "";
   $list = $xml->GetElementsByTagName('item');
   for($c=0; $c < count($list); $c++)
   {
-   $ret = dynarc_importItem($sessid, $shellid, $archiveInfo, $catInfo, $list[$c], $group, $overwrite);
+   if($c == 0)
+	$title = $name;
+   $ret = dynarc_importItem($sessid, $shellid, $archiveInfo, $catInfo, $list[$c], $group, $overwrite, $title);
    if($ret['error'])
 	return $ret;
+   $outArr['items'][] = $ret;
   }
   /* Import categories */
   $list = $xml->GetElementsByTagName('category');
@@ -165,8 +183,9 @@ function dynarc_import($args, $sessid, $shellid=0, $extraVar=null)
    $ret = dynarc_importCategory($sessid, $shellid, $archiveInfo, $catInfo, $list[$c], $group, $overwrite);
    if($ret['error'])
 	return $ret;
+   $outArr['categories'][] = $ret;
   }
- }
+
  $out.= "done!";
 
  return array("message"=>$out,"outarr"=>$outArr);
@@ -333,13 +352,25 @@ function dynarc_export($args, $sessid, $shellid=0, $extraVar=null)
    $missed = array();
    for($c=0; $c < count($attachments); $c++)
    {
-	$att = str_replace($userpath,"",$attachments[$c]);
-	if(file_exists($_BASE_PATH.$userpath.$att))
-     $q.= " -i `".$att."`";
+    if(is_array($attachments[$c]) && $attachments[$c]['src'] && $attachments[$c]['dest'])
+	{
+	 $attSrc = $attachments[$c]['src'];
+	 $attDest = $attachments[$c]['dest'];
+	 if(file_exists($_BASE_PATH.$attSrc))
+	  $q.= " -absi `".$attSrc."` -abso `".$attDest."`";
+	 else
+	  $missed[] = $attSrc;
+	}
 	else
-	 $missed[] = $att;
+	{
+	 $att = str_replace($userpath,"",$attachments[$c]);
+	 if(file_exists($_BASE_PATH.$userpath.$att))
+      $q.= " -i `".$att."`";
+	 else
+	  $missed[] = $att;
+	}
    }
-   $ret = GShell("zip -i `".str_replace($userpath,"",$fileName)."`".$q." -o `".substr(str_replace($userpath,"",$fileName),0,-4).".zip`");
+   $ret = GShell("zip -i `".str_replace($userpath,"",$fileName)."`".$q." -o `".substr(str_replace($userpath,"",$fileName),0,-4).".zip`",$sessid,$shellid,array('ALLOW_ABS_PATH'=>true));
    if($ret['error'])
    {
 	$ret['message'] = $out.$ret['message'];
@@ -351,7 +382,10 @@ function dynarc_export($args, $sessid, $shellid=0, $extraVar=null)
   }
  }
  else
-  $out = $xml;
+ {
+  $outArr['xml'] = $xml;
+  $out.= "done!";
+ }
 
  return array("message"=>$out,"outarr"=>$outArr);
 }
@@ -413,7 +447,7 @@ function dynarc_exportItem($sessid, $shellid, $archiveInfo, $id, $itm=null)
  return array('xml'=>$xml, 'attachments'=>$attachments);
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function dynarc_importItem($sessid, $shellid, $archiveInfo, $catInfo, $node, $group=null, $overwrite=false)
+function dynarc_importItem($sessid, $shellid, $archiveInfo, $catInfo, $node, $group=null, $overwrite=false, $title="")
 {
  global $_BASE_PATH;
 
@@ -432,7 +466,7 @@ function dynarc_importItem($sessid, $shellid, $archiveInfo, $catInfo, $node, $gr
  else
   $qry = "dynarc new-item -aid `".$archiveInfo['id']."`".($catInfo['id'] ? " -cat '".$catInfo['id']."'" : "");
 
- $qry.= " -name `".$node->getString('name')."` -desc `".$node->getString('desc')."`".($group ? " -group '".$group."'" : "");
+ $qry.= " -name `".($title ? $title : $node->getString('name'))."` -desc `".$node->getString('desc')."`".($group ? " -group '".$group."'" : "");
  if($node->getString('ctime')) $qry.= " -ctime `".date('Y-m-d H:i',$node->getString('ctime',time()))."`";
  if($node->getString('code_num')) $qry.= " -code-num '".$node->getString('code_num')."'";
  if($node->getString('code_str')) $qry.= " -code-string `".$node->getString('code_str')."`";
@@ -441,6 +475,8 @@ function dynarc_importItem($sessid, $shellid, $archiveInfo, $catInfo, $node, $gr
  if($node->getString('contents')) $qry.= " -contents `".$node->getString('contents')."`";
  if($node->getString('keywords')) $qry.= " -keyw `".$node->getString('keywords')."`";
  if($node->getString('lang')) $qry.= " -lang `".$node->getString('lang')."`";
+ 
+ $qry.= " -set `mtime='".date('Y-m-d H:i',$node->getString('mtime',time()))."'`";
 
  gshPreOutput($shellid, "Importo: <i>".$node->getString('name')." - cod.".$node->getString('code_str')."</i>","PROGRESS", null, "SINGLE_LINE");
 
@@ -461,11 +497,14 @@ function dynarc_importItem($sessid, $shellid, $archiveInfo, $catInfo, $node, $gr
 	if(is_callable("dynarcextension_".$ext."_import",false))
 	{ 
 	 $ret = call_user_func("dynarcextension_".$ext."_import",$sessid,$shellid,$archiveInfo,$itemInfo,$extNode);
+	 if(is_array($ret) && $ret['error'])
+	  return $ret;
 	}
    }
   }
  }
- return $ret;
+ if($ret['error']) return $ret;
+ return $itemInfo;
 }
 //-------------------------------------------------------------------------------------------------------------------//
 function dynarc_exportCat($sessid, $shellid, $archiveInfo, $catId, $cat=null)
@@ -480,7 +519,7 @@ function dynarc_exportCat($sessid, $shellid, $archiveInfo, $catId, $cat=null)
 
  gshPreOutput($shellid, "Esportando cartella: <i>".$cat['name']."</i>","PROGRESS",null,"SINGLE_LINE");
 
- $fieldToExport = array('name','desc','ctime','tag');
+ $fieldToExport = array('name','desc','ctime','tag','code');
  $xml = "<category";
  $attachments = array();
  for($c=0; $c < count($fieldToExport); $c++)
@@ -554,6 +593,10 @@ function dynarc_importCategory($sessid, $shellid, $archiveInfo, $catInfo, $node,
 
  $qry = "dynarc new-cat -aid `".$archiveInfo['id']."`".($catInfo['id'] ? " -parent ".$catInfo['id'] : "");
  $qry.= " -name `".$node->getString('name')."` -desc `".$node->getString('desc')."`".($group ? " -group '".$group."'" : "");
+ if($node->getString('code'))
+  $qry.= " -code `".$node->getString('code')."`";
+ if($node->getString('tag'))
+  $qry.= " -tag `".$node->getString('tag')."`";
 
  gshPreOutput($shellid, "Importo cartella: <i>".$node->getString('name')."</i>","PROGRESS", null, "SINGLE_LINE");
  
@@ -599,7 +642,7 @@ function dynarc_importCategory($sessid, $shellid, $archiveInfo, $catInfo, $node,
    return $ret;
  }
 
- return $ret;
+ return $subCatInfo;
 }
 //-------------------------------------------------------------------------------------------------------------------//
 function sanitize($str)

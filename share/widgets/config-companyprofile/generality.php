@@ -1,12 +1,12 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2015 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 07-02-2012
+ #DATE: 28-02-2015
  #PACKAGE: companyprofile-config
  #DESCRIPTION: 
  #VERSION: 2.0beta
@@ -28,10 +28,14 @@ include_once($_BASE_PATH."var/objects/guploader/index.php");
 	<td><input type='text' size='30' id='legal_representative' value="<?php echo $_COMPANY_PROFILE['legal_representative']; ?>"/></td></tr>
 
 <tr><td><b><?php echo i18n('Tax code:'); ?></b></td>
-	<td><input type='text' size='16' id='taxcode' maxlength='16' style='font-size:monospace;text-transform:uppercase;' value="<?php echo $_COMPANY_PROFILE['taxcode']; ?>"/></td></tr>
+	<td>
+	 <input type='text' size='16' id='taxcode' maxlength='28' style='font-size:monospace;text-transform:uppercase;' value="<?php echo $_COMPANY_PROFILE['taxcode']; ?>"/>
+	</td></tr>
 
 <tr><td><b><?php echo i18n('VAT number:'); ?></b></td>
-	<td><input type='text' size='11' id='vatnumber' maxlength='11' style='font-size:monospace;' value="<?php echo $_COMPANY_PROFILE['vatnumber']; ?>"/></td></tr>
+	<td>
+	 <input type='text' size='11' id='vatnumber' maxlength='28' style='font-size:monospace;' value="<?php echo $_COMPANY_PROFILE['vatnumber']; ?>"/>
+	</td></tr>
 
 <tr><td><b><?php echo i18n('R.E.A.:'); ?></b></td>
 	<td><input type='text' size='16' id='rea' maxlength='16' style='font-size:monospace;' value="<?php echo $_COMPANY_PROFILE['rea']; ?>"/></td></tr>

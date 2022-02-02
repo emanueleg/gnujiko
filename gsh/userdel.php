@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 08-01-2012
+ #DATE: 11-05-2016
  #PACKAGE: gnujiko-accounts
  #DESCRIPTION: Remove a user, or remove user from a group
- #VERSION: 2.0beta
- #CHANGELOG: 08-01-2012 : Aggiunto paramentro -group
+ #VERSION: 2.1beta
+ #CHANGELOG: 11-05-2016 : Integrato con Rubrica.
+			 08-01-2012 : Aggiunto paramentro -group
  #TODO:
  
 */
@@ -22,6 +23,8 @@ function shell_userdel($args, $sessid)
  $sessInfo = sessionInfo($sessid);
  if($sessInfo['uname'] != "root")
   return array("message"=>"You must be root", "error"=>"PERMISSION_DENIED");
+
+ $out = "";
  
  for($c=0; $c < count($args); $c++)
   switch($args[$c])
@@ -37,30 +40,31 @@ function shell_userdel($args, $sessid)
  
  // check if user exists //
  $db = new AlpaDatabase();
- $db->RunQuery("SELECT * FROM gnujiko_users WHERE username='$user' LIMIT 1");
+ $db->RunQuery("SELECT * FROM gnujiko_users WHERE username='".$user."' LIMIT 1");
  if(!$db->Read())
   return array("message"=>"User $user does not exists", "error"=>"USER_DOES_NOT_EXISTS");
  $uid = $db->record['id'];
  $gid = $db->record['group_id'];
  $homedir = $db->record['homedir']; 
+ $rubricaId = $db->record['rubrica_id'];
 
  if($group)
  {
   // check if group exists //
   $db2 = new AlpaDatabase();
-  $db2->RunQuery("SELECT * FROM gnujiko_groups WHERE name='$group' LIMIT 1");
+  $db2->RunQuery("SELECT * FROM gnujiko_groups WHERE name='".$group."' LIMIT 1");
   if(!$db2->Read())
-   return array("message"=>"Group $group does not exists", "error"=>"GROUP_DOES_NOT_EXISTS");
+   return array("message"=>"Group ".$group." does not exists", "error"=>"GROUP_DOES_NOT_EXISTS");
   $gid = $db2->record['id'];
   $db2->Close();
-  $db->RunQuery("DELETE FROM gnujiko_usergroups WHERE uid='$uid' AND gid='$gid'");
+  $db->RunQuery("DELETE FROM gnujiko_usergroups WHERE uid='".$uid."' AND gid='".$gid."'");
   $db->Close();
-  return array("message"=>"User $user has been removed from group $group");
+  return array("message"=>"User ".$user." has been removed from group ".$group);
  }
  else
  {
-  $db->RunQuery("DELETE FROM gnujiko_users WHERE id='$uid'");
-  $db->RunQuery("DELETE FROM gnujiko_usergroups WHERE uid='$uid'");
+  $db->RunQuery("DELETE FROM gnujiko_users WHERE id='".$uid."'");
+  $db->RunQuery("DELETE FROM gnujiko_usergroups WHERE uid='".$uid."'");
   $db->Close();
   
   // remove group (if empty) //
@@ -79,7 +83,15 @@ function shell_userdel($args, $sessid)
    if($homedir)
     shell_userdel_rmdirr($_BASE_PATH.$_USERS_HOMES.$homedir);
   }
-  return array("message"=>"User $user has been removed");
+
+  if($rubricaId) // remove from rubrica
+  {
+   $ret = GShell("dynarc delete-item -ap rubrica -id '".$rubricaId."'", $sessid, $shellid);
+   if($ret['error']) $out.= "Warning: unable to delete user from rubrica.\n".$ret['message']; 
+  }
+  $out.= "User ".$user." has been removed!\n";
+
+  return array("message"=>$out);
  }
 }
 //----------------------------------------------------------------------------------------------------------------------//

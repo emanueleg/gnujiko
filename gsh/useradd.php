@@ -1,16 +1,18 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 30-04-2013
+ #DATE: 24-10-2016
  #PACKAGE: gnujiko-accounts
  #DESCRIPTION: Add user 
- #VERSION: 2.4beta
- #CHANGELOG: 30-04-2013 : Bug fix.
+ #VERSION: 2.6beta
+ #CHANGELOG: 24-10-2016 : MySQLi integration.
+			 11-05-2016 : Integrato con Rubrica.
+			 30-04-2013 : Bug fix.
 			 10-04-2013 : Bug fix.
 			 03-03-2013 : --insert-into-groups parameter added.
 			 13-01-2013 : useradd bug fix.
@@ -30,6 +32,7 @@ function shell_useradd($args, $sessid)
 
  $output = "";
  $outArr = array();
+ $setRubricaId = 0;
 
  for($c=0; $c < count($args); $c++)
   switch($args[$c])
@@ -48,6 +51,9 @@ function shell_useradd($args, $sessid)
    case '-fullname' : {$fullname=$args[$c+1]; $c++;} break;
    case '-email' : {$email=$args[$c+1]; $c++;} break;
    case '-privileges' : {$privileges=$args[$c+1]; $c++; } break;
+
+   case '--set-rubrica-id' : {$setRubricaId=$args[$c+1]; $c++;} break;
+
    default : {if(!$name) $name=$args[$c]; } break;
   }
 
@@ -67,42 +73,42 @@ function shell_useradd($args, $sessid)
  if($uid) // check if uid already exists
  {
   $db = new AlpaDatabase();
-  $db->RunQuery("SELECT username FROM gnujiko_users WHERE id='$uid'");
+  $db->RunQuery("SELECT username FROM gnujiko_users WHERE id='".$uid."'");
   if($db->Read())
-   return array("message"=>"UID $uid already exists.", "error"=>"UID_ALREADY_EXISTS");
+   return array("message"=>"UID ".$uid." already exists.", "error"=>"UID_ALREADY_EXISTS");
   $db->Close();
  }
  if($gid) // check if gid exists
  {
   $db = new AlpaDatabase();
-  $db->RunQuery("SELECT name FROM gnujiko_groups WHERE id='$gid'");
+  $db->RunQuery("SELECT name FROM gnujiko_groups WHERE id='".$gid."'");
   if(!$db->Read())
-   return array("message"=>"GID $gid does not exists.", "error"=>"GID_DOES_NOT_EXISTS");
+   return array("message"=>"GID ".$gid." does not exists.", "error"=>"GID_DOES_NOT_EXISTS");
   $db->Close();
  }
  if($group) // check if group exists
  {
   $db = new AlpaDatabase();
-  $db->RunQuery("SELECT id FROM gnujiko_groups WHERE name='$group' LIMIT 1");
+  $db->RunQuery("SELECT id FROM gnujiko_groups WHERE name='".$group."' LIMIT 1");
   if($db->Read())
    $gid = $db->record['id'];
   else
   {
-   $db->RunQuery("INSERT INTO gnujiko_groups(name) VALUES('$group')");
-   $gid = mysql_insert_id();
+   $db->RunQuery("INSERT INTO gnujiko_groups(name) VALUES('".$group."')");
+   $gid = $db->GetInsertId();
   }
   $db->Close();
  }
  if($inGroup) // check if group exists
  {
   $db = new AlpaDatabase();
-  $db->RunQuery("SELECT id FROM gnujiko_groups WHERE name='$inGroup' LIMIT 1");
+  $db->RunQuery("SELECT id FROM gnujiko_groups WHERE name='".$inGroup."' LIMIT 1");
   if($db->Read())
    $inGroupID = $db->record['id'];
   else
   {
-   $db->RunQuery("INSERT INTO gnujiko_groups(name) VALUES('$inGroup')");
-   $inGroupID = mysql_insert_id();
+   $db->RunQuery("INSERT INTO gnujiko_groups(name) VALUES('".$inGroup."')");
+   $inGroupID = $db->GetInsertId();
   }
   $db->Close();
  }
@@ -110,8 +116,8 @@ function shell_useradd($args, $sessid)
  if(!$gid) // create group with same name of user //
  {
   $db = new AlpaDatabase();
-  $db->RunQuery("INSERT INTO gnujiko_groups(name) VALUES('$name')");
-  $gid = mysql_insert_id();
+  $db->RunQuery("INSERT INTO gnujiko_groups(name) VALUES('".$name."')");
+  $gid = $db->GetInsertId();
   $db->Close();
  }
  
@@ -137,23 +143,25 @@ function shell_useradd($args, $sessid)
  if($disabledPassword)
   $cryptpassword = "!";
  $db = new AlpaDatabase();
- $q = "INSERT INTO gnujiko_users(".($uid ? "id," : "")."group_id,username,password,email,fullname,homedir,regtime,enableshell) VALUES(".($uid ? "'$uid'," : "")."'$gid','$name','$cryptpassword','$email','$fullname','$home','$now','$enableShell')";
+ $q = "INSERT INTO gnujiko_users(".($uid ? "id," : "")."group_id,username,password,email,fullname,homedir,regtime,enableshell,rubrica_id) VALUES("
+	.($uid ? "'".$uid."'," : "")."'".$gid."','".$name."','".$cryptpassword."','".$email."','".$db->Purify($fullname)."','"
+	.$home."','".$now."','".$enableShell."','".$setRubricaId."')";
  $db->RunQuery($q);
- $uid = mysql_insert_id();
+ $uid = $db->GetInsertId();
  if($privileges)
  {
   $db->RunQuery("INSERT INTO gnujiko_user_privileges(uid) VALUES('".$uid."')");
   $db->RunQuery("UPDATE gnujiko_user_privileges SET ".$privileges." WHERE uid='".$uid."'");
  }
  $db->Close();
- $output.= "User $name has been created!\n";
+ $output.= "User ".$name." has been created!\n";
 
  if($inGroupID)
  {
   $db = new AlpaDatabase();
-  $db->RunQuery("INSERT INTO gnujiko_usergroups(uid,gid) VALUES('$uid','$inGroupID')");
+  $db->RunQuery("INSERT INTO gnujiko_usergroups(uid,gid) VALUES('".$uid."','".$inGroupID."')");
   $db->Close();
-  $output.= "$name has been inserted into group ".$group."\n";
+  $output.= $name." has been inserted into group ".$group."\n";
  }
 
  if($insertIntoGroups)
@@ -170,7 +178,7 @@ function shell_useradd($args, $sessid)
 	$db = new AlpaDatabase();
 	$db->RunQuery("INSERT INTO gnujiko_usergroups(uid,gid) VALUES('".$uid."','".$groupId."')");
 	$db->Close();
-	$output.= "$name has been inserted into group ".$groups[$c]."\n";
+	$output.= $name." has been inserted into group ".$groups[$c]."\n";
    }
    else
    {
@@ -180,11 +188,20 @@ function shell_useradd($args, $sessid)
 	 $output.= "Warning: The user '".$name."' is already into group '".$groups[$c]."'\n";
    }
   }
+ }
 
+ if($setRubricaId)
+ {
+  $output.= "Update rubrica contact refer...";
+  $db = new AlpaDatabase();
+  $db->RunQuery("UPDATE dynarc_rubrica_items SET user_id='".$uid."',login='".$name."',password='".$db->Purify($password)."' WHERE id='".$setRubricaId."'");
+  if($db->Error) return array('message'=>$output."failed!\nMySQL Error: ".$db->Error, 'error'=>'MYSQL_ERROR');
+  $db->Close();
+  $output.= "done!\n";
  }
 
  // return array //
- $outArr = array('uid'=>$uid,'gid'=>$gid,'name'=>$name,"email"=>$email,"fullname"=>$fullname,"homedir"=>$home,"regtime"=>$now);
+ $outArr = array('uid'=>$uid,'gid'=>$gid,'name'=>$name,"email"=>$email,"fullname"=>$fullname,"homedir"=>$home,"regtime"=>$now,"rubrica_id"=>$setRubricaId);
 
  return array('message'=>trim($output), 'outarr'=>$outArr);
 }

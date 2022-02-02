@@ -1,16 +1,16 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2010 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2015 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 28-08-2010
+ #DATE: 13-03-2015
  #PACKAGE: parserize
  #DESCRIPTION: Gnujiko parserizer.
- #VERSION: 2.0beta
- #CHANGELOG:
+ #VERSION: 2.1beta
+ #CHANGELOG: 13-03-2015 : Aggiunto parametri -ap e -id
  #TODO:
  
 */
@@ -36,13 +36,24 @@ function shell_parserize($args, $sessid, $shellid=null)
   {
    case '-p' : {$parsers[] = $args[$c+1]; $c++;} break;
    case '-params' : {$params = $args[$c+1]; $c++;} break;
+
    case '-c' : case '-contents' : {$contents=$args[$c+1]; $c++;} break;
+   case '-ap' : {$_AP=$args[$c+1]; $c++;} break;
+   case '-id' : {$_ID=$args[$c+1]; $c++;} break;
+
    default : $contents = $args[$c]; break;
   }
  
  if(!count($parsers))
   return array('message'=>"You must specify parser filename","error"=>"INVALID_PARSER");
  
+ if($_AP && $_ID)
+ {
+  $ret = GShell("dynarc item-info -ap '".$_AP."' -id '".$_ID."'",$sessid,$shellid);
+  if(!$ret['error'])
+   $contents = $ret['outarr']['desc'];
+ }
+
  /* ARRAYZE PARAMS */
  $tmp = explode("&",$params);
  $params = array();

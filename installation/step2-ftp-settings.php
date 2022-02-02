@@ -1,16 +1,16 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 15-04-2013
+ #DATE: 27-10-2016
  #PACKAGE: makedist
  #DESCRIPTION: FTP settings form.
- #VERSION: 2.0beta
- #CHANGELOG:
+ #VERSION: 2.1beta
+ #CHANGELOG: 27-10-2016 : MySQLi integration.
  #TODO:
  
 */
@@ -25,10 +25,10 @@ if(isset($_POST['action']))
  switch($_POST['action'])
  {
   case 'ftp-check' : {
-	 $ftpServer = mysql_escape_string(trim($_POST['ftp-server']));
-	 $ftpPath = mysql_escape_string(trim($_POST['ftp-path']));
-	 $ftpUser = mysql_escape_string(trim($_POST['ftp-user']));
-	 $ftpPasswd = mysql_escape_string(trim($_POST['ftp-passwd']));
+	 $ftpServer = trim($_POST['ftp-server']);
+	 $ftpPath = trim($_POST['ftp-path']);
+	 $ftpUser = trim($_POST['ftp-user']);
+	 $ftpPasswd = trim($_POST['ftp-passwd']);
 	 $defFilePerms = $_POST['def-file-perms'] ? $_POST['def-file-perms'] : "0777";
  
 	 $params = "step=3&lang=".$_POST['lang'];

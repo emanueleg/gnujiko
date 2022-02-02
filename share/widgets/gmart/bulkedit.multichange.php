@@ -1,16 +1,16 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 23-09-2013
+ #DATE: 01-06-2014
  #PACKAGE: gmart
  #DESCRIPTION: Bulk edit - multi change.
- #VERSION: 2.0beta
- #CHANGELOG: 
+ #VERSION: 2.1beta
+ #CHANGELOG: Aggiunto brand_id
  #TODO:
  
 */
@@ -195,6 +195,8 @@ function bodyOnLoad()
 	});
 
  var es = EditSearch.init(document.getElementById("vendorname"), "dynarc search -ap 'rubrica' -ct VENDORS -fields code_str,name `","` --order-by `name ASC` -limit 10","id","name","items",true);
+
+ var esB = EditSearch.init(document.getElementById("brand"), "dynarc search -ap 'brands' -fields name `","` --order-by `name ASC` -limit 10","id","name","items",true);
 }
 
 function submit()
@@ -220,7 +222,7 @@ function submit()
  var qry = "";
 
  if(document.getElementById('cb_brand').checked)
-  qry+= " -brand `"+document.getElementById('brand').value+"`";
+  qry+= " -brand `"+document.getElementById('brand').value+"`"+(document.getElementById('brand').data ? " -brandid '"+document.getElementById('brand').data['id']+"'" : "");
 
  if(document.getElementById('cb_vendorname').checked)
   qry+= document.getElementById('vendorname').data ? " -vendorid '"+document.getElementById('vendorname').data['id']+"'" : " -vendor `"+document.getElementById('vendorname').value+"`";

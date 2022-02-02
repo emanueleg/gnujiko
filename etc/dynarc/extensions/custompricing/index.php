@@ -1,16 +1,20 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 12-04-2013
+ #DATE: 24-10-2016
  #PACKAGE: dynarc-custompricing-extension
  #DESCRIPTION: Custom pricing extension for Dynarc archives.
- #VERSION: 2.2beta
- #CHANGELOG: 12-04-2013 : Aggiunte le 3 colonne degli sconti.
+ #VERSION: 2.6beta
+ #CHANGELOG: 24-10-2016 : MySQLi integration.
+			 24-07-2014 : Sostituito baseprice float con decimal 10,4
+			 10-06-2014 : Aggiunta funzione onarchiveempty
+			 18-02-2014 : Completate funzioni import export.
+			 12-04-2013 : Aggiunte le 3 colonne degli sconti.
 			 04-02-2013 : Bug fix in function unset.
  #TODO:
  
@@ -27,7 +31,7 @@ function dynarcextension_custompricing_install($params, $sessid, $shellid=0, $ar
 `item_id` INT( 11 ) NOT NULL ,
 `subject` VARCHAR( 40 ) NOT NULL ,
 `subject_id` INT( 11 ) NOT NULL ,
-`baseprice` FLOAT NOT NULL ,
+`baseprice` DECIMAL(10,4) NOT NULL ,
 `discount_perc` FLOAT NOT NULL ,
 `discount_inc` FLOAT NOT NULL ,
 `discount2` FLOAT NOT NULL,
@@ -137,7 +141,7 @@ function dynarcextension_custompricing_set($args, $sessid, $shellid, $archiveInf
   $db->RunQuery("INSERT INTO dynarc_".$archiveInfo['prefix']."_custompricing(item_id,subject,subject_id,baseprice,discount_perc,discount_inc,discount2,discount3) VALUES('"
 	.$itemInfo['id']."','".$db->Purify($subjectName)."','".$subjectId."','".$basePrice."','".$discountPerc."','".$discountInc."','"
 	.$discount2."','".$discount3."')");
-  $id = mysql_insert_id();
+  $id = $db->GetInsertId();
   $db->Close();
   $itemInfo['last_inserted'] = array('id'=>$id, 'subject_name'=>$subjectName, 'subject_id'=>$subjectId, 'baseprice'=>$basePrice, 'discount_perc'=>$discountPerc, 'discount_inc'=>$discountInc, 'discount2'=>$discount2, 'discount3'=>$discount3);
  }
@@ -292,21 +296,63 @@ function dynarcextension_custompricing_onmovecategory($args, $sessid, $shellid, 
  return true;
 }
 //-------------------------------------------------------------------------------------------------------------------//
-
-//-------------------------------------------------------------------------------------------------------------------//
 function dynarcextension_custompricing_oncopycategory($sessid, $shellid, $archiveInfo, $srcInfo, $cloneInfo)
 {
  return $cloneInfo;
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function dynarcextension_custompricing_export($sessid, $shellid, $archiveInfo, $itemInfo)
+function dynarcextension_custompricing_onarchiveempty($args, $sessid, $shellid, $archiveInfo)
 {
- $xml = "";
+ $db = new AlpaDatabase();
+ $db->RunQuery("TRUNCATE TABLE `dynarc_".$archiveInfo['prefix']."_custompricing`");
+ $db->Close();
+
+ return true;
+}
+//-------------------------------------------------------------------------------------------------------------------//
+function dynarcextension_custompricing_export($sessid, $shellid, $archiveInfo, $itemInfo, $isCategory=false)
+{
+ if($isCategory)
+  return;
+
+ $xml = "<custompricing>";
+ $db = new AlpaDatabase();
+ $db->RunQuery("SELECT * FROM dynarc_".$archiveInfo['prefix']."_custompricing WHERE item_id='".$itemInfo['id']."'");
+ while($db->Read())
+ {
+  $xml.= "<customprice subject_id='".$db->record['subject_id']."' subject_name='".$db->record['subject']."' baseprice='"
+	.$db->record['baseprice']."' discount_perc='".$db->record['discount_perc']."' discount_inc='"
+	.$db->record['discount_inc']."' discount2='".$db->record['discount2']."' discount3='".$db->record['discount3']."'/>";
+ }
+ $db->Close();
+ $xml.= "</custompricing>";
+
  return array('xml'=>$xml);
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function dynarcextension_custompricing_import($sessid, $shellid, $archiveInfo, $itemInfo, $node)
+function dynarcextension_custompricing_import($sessid, $shellid, $archiveInfo, $itemInfo, $xmlNode, $isCategory=false)
 {
+ if($isCategory)
+  return;
+
+ $list = $xmlNode->GetElementsByTagName("customprice");
+ for($c=0; $c < count($list); $c++)
+ {
+  $node = $list[$c];
+  $subjectId = $node->getString('subject_id');
+  $subjectName = $node->getString('subject_name');
+  $baseprice = $node->getString('baseprice');
+  $discPerc = $node->getString('discount_perc');
+  $discInc = $node->getString('discount_inc');
+  $disc2 = $node->getString('discount2');
+  $disc3 = $node->getString('discount3');
+  
+  $db = new AlpaDatabase();
+  $db->RunQuery("INSERT INTO dynarc_".$archiveInfo['prefix']."_custompricing(item_id,subject,subject_id,baseprice,discount_perc,discount_inc,discount2,discount3) VALUES('"
+	.$itemInfo['id']."','".$db->Purify($subjectName)."','".$subjectId."','".$baseprice."','".$discPerc."','".$discInc."','".$disc2."','".$disc3."')");
+  $db->Close();
+ }
+ 
  return true;
 }
 //-------------------------------------------------------------------------------------------------------------------//

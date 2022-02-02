@@ -1,21 +1,28 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 30-04-2012
+ #DATE: 09-04-2014
  #PACKAGE: gnujiko-desktop-base
  #DESCRIPTION: Official Gnujiko Desktop - base package
- #VERSION: 2.1beta
- #CHANGELOG: 30-04-2012 : Aggiunto funzione desktopOnLoad() che scatta dopo il caricamento del desktop (su funzione: bodyOnLoad).
+ #VERSION: 2.2beta
+ #CHANGELOG: 09-04-2014 : Aggiunto possibilità di avere template personalizzato.
+			 30-04-2012 : Aggiunto funzione desktopOnLoad() che scatta dopo il caricamento del desktop (su funzione: bodyOnLoad).
 			 25-01-2012 : Ora le icone del package manager e del pannello di controllo vengono mostrate solo a chi fa parte del gruppo admin.
  #TODO:
  
 */
 
+if($_DESKTOP_TEMPLATE && file_exists($_BASE_PATH."include/footers/".$_DESKTOP_TEMPLATE.".php"))
+{
+ include($_BASE_PATH."include/footers/".$_DESKTOP_TEMPLATE.".php");
+}
+else
+{
 ?>
 <!-- EOF CONTENTS -->
 	</td>
@@ -85,8 +92,34 @@ function bodyOnLoad()
 {
  document.addEventListener ? document.addEventListener("mouseup",hideGnujikoMainMenu,false) : document.attachEvent("onmouseup",hideGnujikoMainMenu);
  MAINMENU_HEIGHT = parseFloat(document.getElementById('gnujikomainmenu').offsetHeight);
+
+ /* ADJUST GAPMESSAGE */
+ var gmBtn = document.getElementById('gnujikodesktop-runupdatebtn');
+ if(gmBtn)
+  window.setTimeout(function(){gnujikodesktopbase_showGapMessage(gmBtn);}, 2000);
+
  if(typeof(desktopOnLoad) == "function")
   desktopOnLoad();
+}
+
+function gnujikodesktopbase_showGapMessage(btn)
+{
+ var gmDiv = document.getElementById('gnujikodesktop-gapmessage');
+ if(!gmDiv) return;
+
+ var left = (btn.offsetLeft+Math.floor(btn.offsetWidth/2)) - Math.floor(gmDiv.offsetWidth/2);
+ gmDiv.style.marginLeft = left+"px";
+ gmDiv.style.marginTop = "20px";
+ gmDiv.style.visibility = "visible";
+}
+
+function gnujikodesktopbase_closeGapMessage()
+{
+ var gmDiv = document.getElementById('gnujikodesktop-gapmessage');
+ if(gmDiv) gmDiv.style.display = "none";
+
+ var sh = new GShell();
+ sh.sendCommand("export APM_NO_SHOW_NOTIFY=1");
 }
 
 function showGnujikoMainMenu()
@@ -109,11 +142,11 @@ function hideGnujikoMainMenu()
 if(file_exists($_BASE_PATH."share/widgets/apm.php"))
 {
  ?>
- function runPackageManager()
+ function runPackageManager(autoupdate)
  {
   var sh = new GShell();
   sh.OnFinish = function(){document.location.reload();}
-  sh.sendSudoCommand("gframe -f apm --fullspace");
+  sh.sendSudoCommand("gframe -f apm"+(autoupdate ? " -params `autoupdate=true`" : ""));
  }
  <?php
 }
@@ -132,4 +165,6 @@ if(file_exists($_BASE_PATH."share/widgets/config.php"))
 ?>
 
 </script>
+<?php
+}
 

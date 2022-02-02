@@ -1,16 +1,28 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2017 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 28-11-2012
+ #DATE: 14-05-2017
  #PACKAGE: dynarc
  #DESCRIPTION: Dynarc is a useful tool for manage dynamic archives.
- #VERSION: 2.9beta
- #CHANGELOG: 28-11-2012 : Aggiunto funzione extension-list.
+ #VERSION: 2.22beta
+ #CHANGELOG: 14-05-2017 : Aggiunto parametro extraVar a tutte le funzioni.
+			 09-04-2016 : Aggiunta funzione fast-search.
+			 18-10-2015 : Aggiunta funzione generate-extensiontl-file
+			 03-11-2014 : Creata funzione extension-info.
+			 30-09-2014 : Aggiunta funzione cross-search per effettuare ricerche all'interno delle tabelle delle estensioni.
+			 27-07-2014 : Aggiunta funzione generate-functions-file e generate-extension-file
+			 02-07-2014 : Aggiunta funzione getItemsCount.
+			 13-06-2014 : Aggiunta funzione extfind per ricercare all'interno delle estensioni.
+			 10-06-2014 : Aggiunta funzione empty-archive
+			 05-06-2014 : Aggiunto chown e chgrp
+			 23-05-2014 : Aggiunta funzione getrootcat getRootCategory
+			 17-02-2014 : Aggiunto archive-find
+			 28-11-2012 : Aggiunto funzione extension-list.
 			 13-11-2012 : Aggiunto integrazione con dynarc-sync
 			 10-07-2012 : Aggiunto funzione search.
 			 22-06-2012 : Aggiunto funzioni per copiare e rimuovere dalla clipboard.
@@ -22,71 +34,82 @@
 
 global $_BASE_PATH, $_ABSOLUTE_URL;
 
-function shell_dynarc($args, $sessid, $shellid=null)
+function shell_dynarc($args, $sessid, $shellid=null, $extraVar=null)
 {
  global $_BASE_PATH, $_ABSOLUTE_URL;
  switch($args[0])
  {
   // ARCHIVES //
-  case 'new-archive' : {include_once($_BASE_PATH.'etc/dynarc/archives.php'); return dynarc_newArchive($args, $sessid, $shellid); } break;
-  case 'edit-archive' : {include_once($_BASE_PATH.'etc/dynarc/archives.php'); return dynarc_editArchive($args, $sessid, $shellid); } break;
-  case 'delete-archive' : {include_once($_BASE_PATH.'etc/dynarc/archives.php'); return dynarc_deleteArchive($args, $sessid, $shellid); } break;
-  case 'archive-list' : {include_once($_BASE_PATH.'etc/dynarc/archives.php'); return dynarc_archiveList($args, $sessid, $shellid); } break;
-  case 'archive-info' : {include_once($_BASE_PATH.'etc/dynarc/archives.php'); return dynarc_archiveInfo($args, $sessid, $shellid); } break;
-  case 'repair-hierarchy' : return dynarc_repairHierarchy($args, $sessid, $shellid); break;
-  case 'enable-coding-system' : return dynarc_enableCodingSystem($args, $sessid, $shellid); break;
-  case 'enable-sharing-system' : return dynarc_enableSharingSystem($args, $sessid, $shellid); break;
-  case 'enable-sync' : return dynarc_enableSync($args, $sessid, $shellid); break;
-  case 'disable-sync' : return dynarc_disableSync($args, $sessid, $shellid); break;
+  case 'new-archive' : {include_once($_BASE_PATH.'etc/dynarc/archives.php'); return dynarc_newArchive($args, $sessid, $shellid, $extraVar); } break;
+  case 'edit-archive' : {include_once($_BASE_PATH.'etc/dynarc/archives.php'); return dynarc_editArchive($args, $sessid, $shellid, $extraVar); } break;
+  case 'delete-archive' : {include_once($_BASE_PATH.'etc/dynarc/archives.php'); return dynarc_deleteArchive($args, $sessid, $shellid, $extraVar); } break;
+  case 'empty-archive' : case 'archive-empty' : {include_once($_BASE_PATH.'etc/dynarc/archives.php'); return dynarc_emptyArchive($args, $sessid, $shellid, $extraVar); } break;
+  case 'archive-list' : {include_once($_BASE_PATH.'etc/dynarc/archives.php'); return dynarc_archiveList($args, $sessid, $shellid, $extraVar); } break;
+  case 'archive-info' : {include_once($_BASE_PATH.'etc/dynarc/archives.php'); return dynarc_archiveInfo($args, $sessid, $shellid, $extraVar); } break;
+  case 'archive-find' : case 'archive-search' : {include_once($_BASE_PATH.'etc/dynarc/archives.php'); return dynarc_archiveFind($args, $sessid, $shellid, $extraVar); } break;
+  case 'repair-hierarchy' : return dynarc_repairHierarchy($args, $sessid, $shellid, $extraVar); break;
+  case 'enable-coding-system' : return dynarc_enableCodingSystem($args, $sessid, $shellid, $extraVar); break;
+  case 'enable-sharing-system' : return dynarc_enableSharingSystem($args, $sessid, $shellid, $extraVar); break;
+  case 'enable-sync' : return dynarc_enableSync($args, $sessid, $shellid, $extraVar); break;
+  case 'disable-sync' : return dynarc_disableSync($args, $sessid, $shellid, $extraVar); break;
 
   // CATEGORIES //
-  case 'new-cat' : {include_once($_BASE_PATH.'etc/dynarc/categories.php'); return dynarc_newCategory($args, $sessid, $shellid); } break;
-  case 'edit-cat' : {include_once($_BASE_PATH.'etc/dynarc/categories.php'); return dynarc_editCategory($args, $sessid, $shellid); } break;
-  case 'delete-cat' : {include_once($_BASE_PATH.'etc/dynarc/categories.php'); return dynarc_deleteCategory($args, $sessid, $shellid); } break;
-  case 'cat-list' : {include_once($_BASE_PATH.'etc/dynarc/categories.php'); return dynarc_categoryList($args, $sessid, $shellid); } break;
-  case 'cat-find' : {include_once($_BASE_PATH.'etc/dynarc/categories.php'); return dynarc_categoryFind($args, $sessid, $shellid); } break;
-  case 'cat-info' : {include_once($_BASE_PATH.'etc/dynarc/categories.php'); return dynarc_categoryInfo($args, $sessid, $shellid); } break;
-  case 'cat-sort' : {include_once($_BASE_PATH.'etc/dynarc/categories.php'); return dynarc_categorySort($args, $sessid, $shellid); } break;
-  case 'cat-tree' : {include_once($_BASE_PATH.'etc/dynarc/categories.php'); return dynarc_categoryTree($args, $sessid, $shellid); } break;
-  case 'cat-move' : {include_once($_BASE_PATH.'etc/dynarc/categories.php'); return dynarc_categoryMove($args, $sessid, $shellid); } break;
-  case 'cat-copy' : {include_once($_BASE_PATH.'etc/dynarc/categories.php'); return dynarc_categoryCopy($args, $sessid, $shellid); } break;
+  case 'new-cat' : {include_once($_BASE_PATH.'etc/dynarc/categories.php'); return dynarc_newCategory($args, $sessid, $shellid, $extraVar); } break;
+  case 'edit-cat' : {include_once($_BASE_PATH.'etc/dynarc/categories.php'); return dynarc_editCategory($args, $sessid, $shellid, $extraVar); } break;
+  case 'delete-cat' : {include_once($_BASE_PATH.'etc/dynarc/categories.php'); return dynarc_deleteCategory($args, $sessid, $shellid, $extraVar); } break;
+  case 'cat-list' : {include_once($_BASE_PATH.'etc/dynarc/categories.php'); return dynarc_categoryList($args, $sessid, $shellid, $extraVar); } break;
+  case 'cat-find' : {include_once($_BASE_PATH.'etc/dynarc/categories.php'); return dynarc_categoryFind($args, $sessid, $shellid, $extraVar); } break;
+  case 'cat-info' : {include_once($_BASE_PATH.'etc/dynarc/categories.php'); return dynarc_categoryInfo($args, $sessid, $shellid, $extraVar); } break;
+  case 'cat-sort' : {include_once($_BASE_PATH.'etc/dynarc/categories.php'); return dynarc_categorySort($args, $sessid, $shellid, $extraVar); } break;
+  case 'cat-tree' : {include_once($_BASE_PATH.'etc/dynarc/categories.php'); return dynarc_categoryTree($args, $sessid, $shellid, $extraVar); } break;
+  case 'cat-move' : {include_once($_BASE_PATH.'etc/dynarc/categories.php'); return dynarc_categoryMove($args, $sessid, $shellid, $extraVar); } break;
+  case 'cat-copy' : {include_once($_BASE_PATH.'etc/dynarc/categories.php'); return dynarc_categoryCopy($args, $sessid, $shellid, $extraVar); } break;
+  case 'getrootcat' : case 'rootcat' : case 'get-root-cat' : {include_once($_BASE_PATH.'etc/dynarc/categories.php'); return dynarc_getRootCategory($args, $sessid, $shellid, $extraVar); } break;
 
   // ITEMS //
-  case 'new-item' : {include_once($_BASE_PATH.'etc/dynarc/items.php'); return dynarc_newItem($args, $sessid, $shellid); } break;
-  case 'edit-item' : {include_once($_BASE_PATH.'etc/dynarc/items.php'); return dynarc_editItem($args, $sessid, $shellid); } break;
-  case 'delete-item' : {include_once($_BASE_PATH.'etc/dynarc/items.php'); return dynarc_deleteItem($args, $sessid, $shellid); } break;
-  case 'item-info' : {include_once($_BASE_PATH.'etc/dynarc/items.php'); return dynarc_itemInfo($args, $sessid, $shellid); } break;
-  case 'item-list' : {include_once($_BASE_PATH.'etc/dynarc/items.php'); return dynarc_itemList($args, $sessid, $shellid); } break;
-  case 'item-find' : {include_once($_BASE_PATH.'etc/dynarc/items.php'); return dynarc_itemFind($args, $sessid, $shellid); } break;
-  case 'item-sort' : {include_once($_BASE_PATH.'etc/dynarc/items.php'); return dynarc_itemSort($args, $sessid, $shellid); } break;
-  case 'item-move' : {include_once($_BASE_PATH.'etc/dynarc/items.php'); return dynarc_itemMove($args, $sessid, $shellid); } break;
-  case 'item-copy' : {include_once($_BASE_PATH.'etc/dynarc/items.php'); return dynarc_itemCopy($args, $sessid, $shellid); } break;
+  case 'new-item' : {include_once($_BASE_PATH.'etc/dynarc/items.php'); return dynarc_newItem($args, $sessid, $shellid, $extraVar); } break;
+  case 'edit-item' : {include_once($_BASE_PATH.'etc/dynarc/items.php'); return dynarc_editItem($args, $sessid, $shellid, $extraVar); } break;
+  case 'delete-item' : {include_once($_BASE_PATH.'etc/dynarc/items.php'); return dynarc_deleteItem($args, $sessid, $shellid, $extraVar); } break;
+  case 'item-info' : {include_once($_BASE_PATH.'etc/dynarc/items.php'); return dynarc_itemInfo($args, $sessid, $shellid, $extraVar); } break;
+  case 'item-list' : {include_once($_BASE_PATH.'etc/dynarc/items.php'); return dynarc_itemList($args, $sessid, $shellid, $extraVar); } break;
+  case 'item-find' : {include_once($_BASE_PATH.'etc/dynarc/items.php'); return dynarc_itemFind($args, $sessid, $shellid, $extraVar); } break;
+  case 'item-sort' : {include_once($_BASE_PATH.'etc/dynarc/items.php'); return dynarc_itemSort($args, $sessid, $shellid, $extraVar); } break;
+  case 'item-move' : {include_once($_BASE_PATH.'etc/dynarc/items.php'); return dynarc_itemMove($args, $sessid, $shellid, $extraVar); } break;
+  case 'item-copy' : {include_once($_BASE_PATH.'etc/dynarc/items.php'); return dynarc_itemCopy($args, $sessid, $shellid, $extraVar); } break;
+  case 'item-count' : case 'items-count' : case 'get-item-count' : case 'get-items-count' : {include_once($_BASE_PATH.'etc/dynarc/items.php'); return dynarc_getItemsCount($args, $sessid, $shellid, $extraVar); } break;
 
   // OTHER FUNCTIONS //
-  case 'chmod' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_chmod($args, $sessid, $shellid); } break;
-  case 'trash' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_trash($args, $sessid, $shellid); } break;
-  case 'install-extension' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_installExtension($args, $sessid, $shellid); } break;
-  case 'uninstall-extension' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_uninstallExtension($args, $sessid, $shellid); } break;
-  case 'extension-list' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_extensionList($args, $sessid, $shellid); } break;
-  case 'exec-func' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_execFunc($args, $sessid, $shellid); } break;
-  case 'build' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_build($args, $sessid, $shellid); } break;
-  case 'unbuild' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_unbuild($args, $sessid, $shellid); } break;
+  case 'chmod' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_chmod($args, $sessid, $shellid, $extraVar); } break;
+  case 'chown' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_chown($args, $sessid, $shellid, $extraVar); } break;
+  case 'chgrp' : case 'chgroup' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_chgrp($args, $sessid, $shellid, $extraVar); } break;
+  case 'trash' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_trash($args, $sessid, $shellid, $extraVar); } break;
+  case 'install-extension' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_installExtension($args, $sessid, $shellid, $extraVar); } break;
+  case 'uninstall-extension' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_uninstallExtension($args, $sessid, $shellid, $extraVar); } break;
+  case 'extension-list' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_extensionList($args, $sessid, $shellid, $extraVar); } break;
+  case 'extension-info' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_extensionInfo($args, $sessid, $shellid, $extraVar); } break;
+  case 'exec-func' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_execFunc($args, $sessid, $shellid, $extraVar); } break;
+  case 'build' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_build($args, $sessid, $shellid, $extraVar); } break;
+  case 'unbuild' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_unbuild($args, $sessid, $shellid, $extraVar); } break;
+  case 'generate-functions-file' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_generateFunctionsFile($args, $sessid, $shellid, $extraVar); } break;
+  case 'generate-extension-file' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_generateExtensionFile($args, $sessid, $shellid, $extraVar); } break;
+  case 'generate-extensiontl-file' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_generateExtensionTLFile($args, $sessid, $shellid, $extraVar); } break;
+  
+  case 'copy-to-clipboard' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_copyToClipboard($args, $sessid, $shellid, $extraVar); } break;
+  case 'remove-from-clipboard' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_removeFromClipboard($args, $sessid, $shellid, $extraVar); } break;
+  case 'clipboard-list' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_clipboardList($args, $sessid, $shellid, $extraVar); } break;
+  case 'clipboard-info' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_clipboardInfo($args, $sessid, $shellid, $extraVar); } break;
+  case 'clipboard-delete' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_clipboardDelete($args, $sessid, $shellid, $extraVar); } break;
 
-  case 'copy-to-clipboard' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_copyToClipboard($args, $sessid, $shellid); } break;
-  case 'remove-from-clipboard' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_removeFromClipboard($args, $sessid, $shellid); } break;
-  case 'clipboard-list' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_clipboardList($args, $sessid, $shellid); } break;
-  case 'clipboard-info' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_clipboardInfo($args, $sessid, $shellid); } break;
-  case 'clipboard-delete' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_clipboardDelete($args, $sessid, $shellid); } break;
-
-  case 'search' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_search($args, $sessid, $shellid); } break;
+  case 'search' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_search($args, $sessid, $shellid, $extraVar); } break;
+  case 'fast-search' : case 'fastsearch' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_fastSearch($args, $sessid, $shellid, $extraVar); } break;
+  case 'ext-find' : case 'extfind' : case 'ext-search' : case 'extsearch' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_extfind($args, $sessid, $shellid, $extraVar); } break;
+  case 'cross-search' : {include_once($_BASE_PATH.'etc/dynarc/otherfuncs.php'); return dynarc_crossSearch($args, $sessid, $shellid, $extraVar); } break;
 
   // IMPORT AND EXPORT */
-  case 'import' : {include_once($_BASE_PATH.'etc/dynarc/importexport.php'); return dynarc_import($args, $sessid, $shellid); } break;
-  case 'export' : {include_once($_BASE_PATH.'etc/dynarc/importexport.php'); return dynarc_export($args, $sessid, $shellid); } break;
-  case 'sync' : {include_once($_BASE_PATH.'etc/dynarc/sync.php'); return dynarc_sync($args, $sessid, $shellid); } break;
-
+  case 'import' : {include_once($_BASE_PATH.'etc/dynarc/importexport.php'); return dynarc_import($args, $sessid, $shellid, $extraVar); } break;
+  case 'export' : {include_once($_BASE_PATH.'etc/dynarc/importexport.php'); return dynarc_export($args, $sessid, $shellid, $extraVar); } break;
+  case 'sync' : {include_once($_BASE_PATH.'etc/dynarc/sync.php'); return dynarc_sync($args, $sessid, $shellid, $extraVar); } break;
   
-
   default : return dynarc_invalidArguments(); break;
  }
 }
@@ -96,7 +119,7 @@ function dynarc_invalidArguments()
  return array('message'=>"Invalid arguments",'error'=>"INVALID_ARGUMENTS");
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function dynarc_repairHierarchy($args, $sessid, $shellid)
+function dynarc_repairHierarchy($args, $sessid, $shellid, $extraVar)
 {
  global $_BASE_PATH;
  include_once($_BASE_PATH.'etc/dynarc/archives.php');
@@ -118,7 +141,7 @@ function dynarc_repairHierarchy($args, $sessid, $shellid)
   $archiveInfo = $extraVar;
  else
  {
-  $ret = dynarc_checkForArchive($args,$sessid,$shellid);
+  $ret = dynarc_checkForArchive($args,$sessid,$shellid, $extraVar);
   if($ret['error'])
    return $ret;
   $archiveInfo = $ret['outarr'];
@@ -173,7 +196,7 @@ function dynarc_repairHierarchy($args, $sessid, $shellid)
  return array("message"=>$out);
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function dynarc_enableCodingSystem($args, $sessid, $shellid)
+function dynarc_enableCodingSystem($args, $sessid, $shellid, $extraVar)
 {
  global $_BASE_PATH;
  include_once($_BASE_PATH.'etc/dynarc/archives.php');
@@ -187,14 +210,14 @@ function dynarc_enableCodingSystem($args, $sessid, $shellid)
   }
 
  /* CHECK FOR ARCHIVE */
- $ret = dynarc_checkForArchive($args,$sessid,$shellid);
+ $ret = dynarc_checkForArchive($args,$sessid,$shellid, $extraVar);
  if($ret['error'])
   return $ret;
  $archiveInfo = $ret['outarr'];
- return GShell("dynarc install-extension coding -aid ".$archiveInfo['id'],$sessid,$shellid);
+ return GShell("dynarc install-extension coding -aid ".$archiveInfo['id'],$sessid,$shellid, $extraVar);
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function dynarc_enableSharingSystem($args, $sessid, $shellid)
+function dynarc_enableSharingSystem($args, $sessid, $shellid, $extraVar)
 {
  global $_BASE_PATH;
  include_once($_BASE_PATH.'etc/dynarc/archives.php');
@@ -214,13 +237,13 @@ function dynarc_enableSharingSystem($args, $sessid, $shellid)
 
  if($allArchives)
  {
-  $ret = GShell("dynarc archive-list -a",$sessid,$shellid);
+  $ret = GShell("dynarc archive-list -a",$sessid,$shellid, $extraVar);
   $archives = $ret['outarr'];
  }
  else
  {
   /* CHECK FOR ARCHIVE */
-  $ret = dynarc_checkForArchive($args,$sessid,$shellid);
+  $ret = dynarc_checkForArchive($args,$sessid,$shellid, $extraVar);
   if($ret['error'])
    return $ret;
   $archives[] = $ret['outarr'];
@@ -247,7 +270,7 @@ function dynarc_enableSharingSystem($args, $sessid, $shellid)
  return array("message"=>$out);
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function dynarc_enableSync($args, $sessid, $shellid=0)
+function dynarc_enableSync($args, $sessid, $shellid, $extraVar )
 {
  global $_BASE_PATH;
  include_once($_BASE_PATH.'etc/dynarc/archives.php');
@@ -272,13 +295,13 @@ function dynarc_enableSync($args, $sessid, $shellid=0)
 
  if($allArchives)
  {
-  $ret = GShell("dynarc archive-list -a",$sessid,$shellid);
+  $ret = GShell("dynarc archive-list -a",$sessid,$shellid, $extraVar);
   $archives = $ret['outarr'];
  }
  else
  {
   /* CHECK FOR ARCHIVE */
-  $ret = dynarc_checkForArchive($args,$sessid,$shellid);
+  $ret = dynarc_checkForArchive($args,$sessid,$shellid, $extraVar);
   if($ret['error'])
    return $ret;
   $archives[] = $ret['outarr'];
@@ -382,7 +405,7 @@ INDEX ( `id` , `cat_id` , `uid` , `gid` , `_mod` )
  return array("message"=>$out);
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function dynarc_disableSync($args, $sessid, $shellid=0)
+function dynarc_disableSync($args, $sessid, $shellid, $extraVar)
 {
  global $_BASE_PATH;
  include_once($_BASE_PATH.'etc/dynarc/archives.php');
@@ -407,13 +430,13 @@ function dynarc_disableSync($args, $sessid, $shellid=0)
 
  if($allArchives)
  {
-  $ret = GShell("dynarc archive-list -a",$sessid,$shellid);
+  $ret = GShell("dynarc archive-list -a",$sessid,$shellid, $extraVar);
   $archives = $ret['outarr'];
  }
  else
  {
   /* CHECK FOR ARCHIVE */
-  $ret = dynarc_checkForArchive($args,$sessid,$shellid);
+  $ret = dynarc_checkForArchive($args,$sessid,$shellid, $extraVar);
   if($ret['error'])
    return $ret;
   $archives[] = $ret['outarr'];

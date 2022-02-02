@@ -6,11 +6,11 @@
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 25-03-2013
+ #DATE: 11-12-2013
  #PACKAGE: system-config-gui
  #DESCRIPTION: System Backup
- #VERSION: 2.0beta
- #CHANGELOG: 
+ #VERSION: 2.1beta
+ #CHANGELOG: 11-12-2013 : Aggiunto backup file di configurazione.
  #TODO: 
  
 */
@@ -37,6 +37,7 @@ include_once($_BASE_PATH."include/js/gshell.php");
 	<span class="sync-smallgray"><i>Seleziona gli archivi e/o altri dati da esportare</i></span>
 	<div class="sync-archivelist" id="option-list">	
 	<input type='checkbox' checked='true' id='backup-database'/> DATABASE<br/>
+	<input type='checkbox' checked='true' id='backup-config'/> FILE DI CONFIGURAZIONE<br/>
 	<input type='checkbox' checked='true' id='backup-homedir'/> CARTELLA HOME UTENTI<br/>
 	<input type='checkbox' checked='true' id='backup-share'/> IMMAGINI E DOCUMENTI CONDIVISI<br/>
 	</div>
@@ -70,6 +71,7 @@ function submit()
    switch(list[c].id)
    {
     case 'backup-database' : q+= " -db"; break;
+    case 'backup-config' : q+= " -config"; break;
     case 'backup-homedir' : q+= " -home"; break;
     case 'backup-share' : q+= " -share"; break;
    }

@@ -1,22 +1,29 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2017 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 16-06-2013
+ #DATE: 19-03-2017
  #PACKAGE: gnujiko-desktop-base
  #DESCRIPTION: Default desktop home page
- #VERSION: 2.2beta
- #CHANGELOG: 16-06-2013 : Bug fix vari.
+ #VERSION: 2.3beta
+ #CHANGELOG: 19-03-2017 : Possibilita di impostare una homepage personalizzata per ogni utente registrato.
+			 16-06-2013 : Bug fix vari.
 			 28-10-2012 : Bug fix into line 172
 			 04-04-2012 : Bug fix into line 150.
 			 24-01-2012 : Aggiunta funzione adaptDesktopElements() che adatta gli elementi in base all'altezza dello schermo.
  #TODO: Traduzione in inglese degli strumenti utente.
  
 */
+
+if(file_exists($_USERS_HOMES.$_SESSION['HOMEDIR']."/desktop.php"))
+{
+ include($_USERS_HOMES.$_SESSION['HOMEDIR']."/desktop.php");
+ exit();
+}
 
 $_DESKTOP_TITLE = $_SOFTWARE_NAME;
 

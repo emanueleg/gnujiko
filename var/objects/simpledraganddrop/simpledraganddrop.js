@@ -1,21 +1,23 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 11-05-2013
+ #DATE: 21-09-2016
  #PACKAGE: simpledraganddrop
  #DESCRIPTION: Simple Drag and Drop functions
- #VERSION: 2.2beta
- #CHANGELOG: 11-05-2013 : Risolto famoso problema con le scrollbars.
+ #VERSION: 2.4beta
+ #CHANGELOG: 21-09-2016 : Bug fix in function _mouseIntoObject for deleted objects (without parent-node).
+			 12-11-2013 : Cambiato SDD_HANDLER in SIMPDD_HANDLER altrimenti andava in conflitto con GOrganizer.
+			 11-05-2013 : Risolto famoso problema con le scrollbars.
  #TODO:
  
 */
 
 //-------------------------------------------------------------------------------------------------------------------//
-if(!SDD_HANDLER)
+if(!SIMPDD_HANDLER)
 {
  document.addEventListener ? document.addEventListener("mousemove",_SDDdocumentMouseMove,false) : document.attachEvent("onmousemove",_SDDdocumentMouseMove);
  document.addEventListener ? document.addEventListener("mousedown",_SDDdocumentMouseDown,false) : document.attachEvent("onmousedown",_SDDdocumentMouseDown);
@@ -62,7 +64,7 @@ SimpleDragAndDropHandler.prototype.setDraggableObject = function(obj, handle, op
   handle.oldonmousedowncallback = handle.onmousedown;
 
  handle.onmousedown = function(){
-	 SDD_HANDLER.selectObject(this.O);
+	 SIMPDD_HANDLER.selectObject(this.O);
 	}
 
  this.DragObjects.push(obj);
@@ -364,7 +366,7 @@ SimpleDragAndDropHandler.prototype._objOverDropArea = function(dropArea,obj)
 //-------------------------------------------------------------------------------------------------------------------//
 SimpleDragAndDropHandler.prototype._mouseIntoObject = function(obj)
 {
- if(!obj) return false;
+ if(!obj || !obj.parentNode) return false;
  var pos = this._getABSobjPos(obj);
  pos.y-= obj.parentNode.scrollTop;
  pos.x-= obj.parentNode.scrollLeft;
@@ -377,19 +379,19 @@ SimpleDragAndDropHandler.prototype._mouseIntoObject = function(obj)
 function _SDDdocumentMouseMove(ev)
 {
  ev = ev || window.event;
- SDD_HANDLER._onMouseMove(ev);
+ SIMPDD_HANDLER._onMouseMove(ev);
 }
 //-------------------------------------------------------------------------------------------------------------------//
 function _SDDdocumentMouseDown(ev)
 {
  ev = ev || window.event;
- SDD_HANDLER._onMouseDown(ev);
+ SIMPDD_HANDLER._onMouseDown(ev);
 }
 //-------------------------------------------------------------------------------------------------------------------//
 function _SDDdocumentMouseUp(ev)
 {
  ev = ev || window.event;
- SDD_HANDLER._onMouseUp(ev);
+ SIMPDD_HANDLER._onMouseUp(ev);
 }
 //-------------------------------------------------------------------------------------------------------------------//
 
@@ -435,8 +437,8 @@ function _SDDgetStyle(el,styleProp)
 //-------------------------------------------------------------------------------------------------------------------//
 //-------------------------------------------------------------------------------------------------------------------//
 //-------------------------------------------------------------------------------------------------------------------//
-if(!SDD_HANDLER)
- var SDD_HANDLER = new SimpleDragAndDropHandler();
+if(!SIMPDD_HANDLER)
+ var SIMPDD_HANDLER = new SimpleDragAndDropHandler();
 //-------------------------------------------------------------------------------------------------------------------//
 //-------------------------------------------------------------------------------------------------------------------//
 //-------------------------------------------------------------------------------------------------------------------//

@@ -1,16 +1,16 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 31-08-2013
+ #DATE: 21-05-2014
  #PACKAGE: blocknotes-module
  #DESCRIPTION: Edit note form.
- #VERSION: 2.0beta
- #CHANGELOG:
+ #VERSION: 2.1beta
+ #CHANGELOG: 21-05-2014 : Aggiunta la data.
  #DEPENDS: fckeditor
  #TODO:
  
@@ -68,7 +68,7 @@ include_once($_BASE_PATH."include/js/gshell.php");
 		  echo "<option value='".$docInfo['cat_id']."' selected='selected'>".$docInfo['catinfo']['name']."</option>";
 		 }
 		?></select> <img src="<?php echo $_ABSOLUTE_URL; ?>share/widgets/blocknotes/img/select-cat.png" style="cursor:pointer" onclick="selectCat()"/></td>
-	  <td width='150'><span class='attachbtn' style="margin-right:10px" onclick="uploadFile()">Carica un allegato</span></td></tr>
+	  <td width='150'>Data: <input type='text' class='edit' style='width:100px' value="<?php echo date('d/m/Y',$docInfo['ctime']); ?>" id="ctime"/></td></tr>
   </table>
   <table width="100%" cellspacing="0" cellpadding="0" border="0">
   <tr><td valign="top" width="500"><textarea style="width:500px;height:350px" id="description"><?php echo $docInfo['desc']; ?></textarea></td>
@@ -86,6 +86,7 @@ include_once($_BASE_PATH."include/js/gshell.php");
 		}
 	   ?>
 	   </div>
+	   <div><span class='attachbtn' style="margin-right:10px;margin-top:10px" onclick="uploadFile()">Carica un allegato</span></div>
 	  </td></tr>
   </table>
  </div>
@@ -142,10 +143,13 @@ function submit()
  var contents = oEditor.GetXHTML();
  var title = document.getElementById("doctitle").value;
  var catId = document.getElementById("catid").value;
+ var ctime = strdatetime_to_iso(document.getElementById("ctime").value);
+ if(ctime)
+  ctime = ctime.substr(0,10);
 
  var sh = new GShell();
  sh.OnOutput = function(o,a){gframe_close(o,a);}
- sh.sendCommand("dynarc edit-item -ap '"+AP+"' -id '"+ID+"' -name `"+title+"` -cat `"+catId+"` -desc `"+contents+"`");
+ sh.sendCommand("dynarc edit-item -ap '"+AP+"' -id '"+ID+"' -ctime `"+ctime+"` -name `"+title+"` -cat `"+catId+"` -desc `"+contents+"`");
 }
 
 function selectCat()

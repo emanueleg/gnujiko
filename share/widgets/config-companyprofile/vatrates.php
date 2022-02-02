@@ -1,16 +1,16 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 07-02-2012
+ #DATE: 02-05-2016
  #PACKAGE: companyprofile-config
  #DESCRIPTION: 
- #VERSION: 2.0beta
- #CHANGELOG:
+ #VERSION: 2.1beta
+ #CHANGELOG: 02-05-2016 : Aggiunto Split Payment e Reverse Charge tra le tipologia di IVA.
  #TODO: 
  
 */
@@ -18,7 +18,7 @@
 include_once($_BASE_PATH."var/objects/gextendedtable/index.php");
 
 ?>
-<div style='height:430px;overflow:auto;'>
+<div style='height:530px;overflow:auto;'>
 <table width='100%' id='vattable' class='gextendedtable' cellspacing='0' cellpadding='0' border='0'>
 <tr><th id='column-code' width='100'><?php echo i18n('CODE'); ?></th>
     <th id='column-name'><?php echo i18n('DESCRIPTION'); ?></th>
@@ -30,7 +30,18 @@ include_once($_BASE_PATH."var/objects/gextendedtable/index.php");
 <?php
 $ret = GShell("dynarc item-list -ap vatrates -get vat_type,percentage",$_REQUEST['sessid'],$_REQUEST['shellid']);
 $list = $ret['outarr']['items'];
-$types = array("TAXABLE"=>i18n('Taxable'), "NOT_TAXABLE"=>i18n('Not taxable'), "FREE"=>i18n('Free'), "EXCLUDING"=>i18n('Excluding'), "NOT_SUBJECT"=>i18n('Not subject'), "NOT_DEDUCTIBLE"=>i18n('Not deductible'));
+$types = array(
+	"TAXABLE"=>i18n('Taxable'), 
+	"NOT_TAXABLE"=>i18n('Not taxable'), 
+	"FREE"=>i18n('Free'), 
+	"EXCLUDING"=>i18n('Excluding'), 
+	"NOT_SUBJECT"=>i18n('Not subject'), 
+	"NOT_DEDUCTIBLE"=>i18n('Not deductible'), 
+	"SPLIT_PAYMENT"=>i18n('Split Payment'), 
+	"PURCH_EXEUR"=>i18n('Purch. extra-EUR'), 
+	"PURCH_INEUR"=>i18n('Purch. in-EUR'), 
+	"REVERSE_CHARGE"=>i18n('Purch. rev. charge')
+);
 
 for($c=0; $c < count($list); $c++)
 {
@@ -71,6 +82,10 @@ tb.Fields[2].options.comboitems.push({'name':"<?php echo i18n('Free'); ?>", 'val
 tb.Fields[2].options.comboitems.push({'name':"<?php echo i18n('Excluding'); ?>", 'value':'EXCLUDING'});
 tb.Fields[2].options.comboitems.push({'name':"<?php echo i18n('Not subject'); ?>", 'value':'NOT_SUBJECT'});
 tb.Fields[2].options.comboitems.push({'name':"<?php echo i18n('Not deductible'); ?>", 'value':'NOT_DEDUCTIBLE'});
+tb.Fields[2].options.comboitems.push({'name':"<?php echo i18n('Split Payment'); ?>", 'value':'SPLIT_PAYMENT'});
+tb.Fields[2].options.comboitems.push({'name':"<?php echo i18n('Purch. extra-EUR'); ?>", 'value':'PURCH_EXEUR'});
+tb.Fields[2].options.comboitems.push({'name':"<?php echo i18n('Purch. in-EUR'); ?>", 'value':'PURCH_INEUR'});
+tb.Fields[2].options.comboitems.push({'name':"<?php echo i18n('Purch. rev. charge'); ?>", 'value':'REVERSE_CHARGE'});
 
 tb.Fields[3].options.editable = true;
 

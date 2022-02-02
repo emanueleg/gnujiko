@@ -1,0 +1,64 @@
+table#color-picker-widget {
+	background: #ffffff;
+	border: 4px solid #aaccee;
+}
+
+table#color-picker-widget th {
+	background: #aaccee;
+	font-family: Arial;
+	font-size: 14px;
+	font-weight: bold;
+	color: #ffffff;
+	text-align: left;
+}
+
+table#color-picker-widget td {
+	font-family: Arial;
+	font-size: 12px;
+	padding: 12px;
+}
+
+table#color-picker-widget div.single {
+	margin-bottom: 30px;
+	border: 1px solid #ffffff;	
+}
+
+table#color-picker-widget div.multi {
+	width: 164px;
+}
+
+table#color-picker-widget div.cb {
+	cursor: pointer;
+	background-image: none;
+	width: 18px;
+	height: 18px;
+	border:1px solid #cccccc;
+	float: left;
+}
+
+table#color-picker-widget div.cb-checked {
+	cursor: pointer;
+	background-image: url(img/check_black.gif);
+	background-repeat: no-repeat;
+	width: 18px;
+	height: 18px;
+	border:1px solid #cccccc;
+	float: left;
+}
+
+table#color-picker-widget div.cb-checked-white {
+	cursor: pointer;
+	background-image: url(img/check_white.gif);
+	background-repeat: no-repeat;
+	width: 18px;
+	height: 18px;
+	border:1px solid #cccccc;
+	float: left;
+}
+
+table#color-picker-widget span.label {
+	font-family: Arial;
+	font-size: 10px;
+	padding: 4px;
+}
+

@@ -465,3 +465,54 @@ div.trash-container {
 	overflow: auto;
 }
 
+/* BSMCOMPAT */
+div.bsmcompat-search-container {
+	background: #f1f1f1;
+	border: 1px solid #0169c9;
+	border-bottom: 0px;
+	font-family: Arial;
+	font-size: 13px;
+	color: #6699cc;
+	clear: both;
+	padding: 4px;
+}
+
+table.bsmcompat-search-table th {
+	font-family: Arial, sans-serif;
+	font-size: 14px;
+	color: #333333;
+}
+
+table.bsmcompat-search-table th.bg-gray {
+	background: #d8d8d8;
+	color: #ffffff;
+}
+
+/* TRANSPONDER */
+div.transp-basket-pubbtn {
+ 	background: #eec73e url(img/transp-basket-publish.png) 8px 6px no-repeat;
+ 	width: 240px;
+	height: 48px;
+	text-align: left;
+	border-radius: 8px;
+	cursor: pointer;
+}
+
+span.transp-basket-pubbtn-title {
+	font-family: arial, sans-serif;
+	font-size: 16px;
+	color: #f44800;
+	font-weight: bold;
+	margin-left: 50px;
+	line-height: 20px;
+	float: left;
+	margin-top: 5px;
+}
+
+span.transp-basket-pubbtn-subtitle {
+	font-family: arial, sans-serif;
+	font-size: 10px;
+	color: #000000;
+	margin-left: 50px;
+}
+

@@ -1,18 +1,18 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 23-05-2013
+ #DATE: 31-01-2014
  #PACKAGE: powershell
  #DESCRIPTION: Run a list of customized shell commands from a table.
- #VERSION: 2.0beta
- #CHANGELOG: 
+ #VERSION: 2.1beta
+ #CHANGELOG: 24-12-2013 : Bug fix generali.
  #DEPENDS: 
- #TODO:
+ #TODO: 31-01-2014 : Aggiunto ID nelle tipologie di campi.
  
 */
 
@@ -23,40 +23,6 @@ $_PARSER_INFO = null;
 define("VALID-GNUJIKO",1);
 
 include_once($_BASE_PATH."include/gshell.php");
-
-/*if(!$_REQUEST['parser'] && $_REQUEST['ap'])
- $_REQUEST['parser'] = $_REQUEST['ap'];*/
-
-/*function autocheckField($keyName, $keyValue, $fieldName, $fieldValue)
-{
- global $_PARSER_INFO;
- $fieldName = strtolower(trim($fieldName));
- $fieldValue = strtolower(trim($fieldValue));
-
- if($keyName == $fieldName)
-  return true;
- if($keyValue == $fieldValue)
-  return true;
-
- if(!$_PARSER_INFO['keydict'])
-  return false;
-
- $dict = $_PARSER_INFO['keydict'][$keyName];
- if(!$dict || !count($dict))
-  return false;
-
- for($c=0; $c < count($dict); $c++)
- {
-  if(($dict[$c] == $fieldName) || ($dict[$c] == $fieldValue))
-   return true;
-  if(strpos($fieldName,$dict[$c]) !== false)
-   return true;
-  if(strpos($fieldValue,$dict[$c]) !== false)
-   return true;
- }
- 
- return false;
-}*/
 
 ?>
 <html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8"><title>Run shell commands from table</title>
@@ -91,18 +57,6 @@ include_once($_BASE_PATH."include/js/gshell.php");
   echo "<td class='head'".($c==0 ? " style='border-left: 1px solid #dadada'" : "").">".$fields[$c]['value']."</td>";
  echo "</tr>";
 
-
- /*for($r=1; $r < count($list); $r++)
- {
-  echo "<tr>";
-  for($c=0; $c < count($fields); $c++)
-  {
-   $field = $fields[$c]['name'];
-   $value = $list[$r][$field];
-   echo "<td".($c==0 ? " style='border-left: 1px solid #dadada'" : "").">".($value ? $value : "&nbsp;")."</td>";
-  }
-  echo "</tr>";
- }*/
  ?>
  </table>
  </div>
@@ -116,23 +70,7 @@ include_once($_BASE_PATH."include/js/gshell.php");
 	 <th width='160' style="text-align:left">FORMATO</th>
 	 <th style="text-align:left;padding-left:10px">CHIAVE</th>
  </tr>
- <?php
- /*for($c=0; $c < count($fields); $c++)
- {
-  echo "<tr fieldname='".$fields[$c]['name']."' fieldletter='".$fields[$c]['letter']."'><td><div class='column'>".$fields[$c]['letter']."</div></td>";
-  echo "<td><select onchange='fieldControlCheck(this)'><option value=''> </option>";
-  if($_PARSER_INFO)
-  {
-   reset($_PARSER_INFO['keys']);
-   while(list($k,$v) = each($_PARSER_INFO['keys']))
-   {
-	$checkOK = autocheckField($k, $v, $fields[$c]['name'], $fields[$c]['value']);
-	echo "<option value='".$k."'".($checkOK ? " selected='selected'>" : ">").$v."</option>";
-   }
-  }
-  echo "</select></td></tr>";
- }*/
- ?>
+
  </table>
  </div>
 
@@ -164,7 +102,9 @@ function gframe_cachecontentsload(contents)
  div.style.left = 0;
  document.body.appendChild(div);
 
- var letters = new Array("A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z");
+ var letters = new Array("A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z",
+"AA","AB","AC","AD","AE","AF","AG","AH","AI","AJ","AK","AL","AM","AN","AO","AP","AQ","AR","AS","AT","AU","AV","AW","AX","AY","AZ",
+"BA","BB","BC","BD","BE","BF","BG","BH","BI","BJ","BK","BL","BM","BN","BO","BP","BQ","BR","BS","BT","BU","BV","BW","BX","BY","BZ");
 
  var tb = div.getElementsByTagName('TABLE')[0];
  var xtb = document.getElementById('excel-table');
@@ -177,7 +117,7 @@ function gframe_cachecontentsload(contents)
  var excludeFirstColumn = document.getElementById('userfirstrowasheader').checked ? 1 : 0;
 
  var formatSelectOptions = "";
- var formats = {"text":"Testo","date":"Data","currency":"Valuta","percentage":"Percentuale","number":"Numero"};
+ var formats = {"text":"Testo","date":"Data","currency":"Valuta","percentage":"Percentuale","number":"Numero","id":"ID"};
  for(k in formats)
   formatSelectOptions+="<option value='"+k+"'>"+formats[k]+"</option>";
 
@@ -221,7 +161,7 @@ function gframe_cachecontentsload(contents)
    else
 	value = tb.rows[c].cells[i].innerHTML;
 
-   cell.innerHTML = value;
+   cell.innerHTML = value ? value : "&nbsp;";
   }
 
  }
@@ -317,6 +257,7 @@ function commandPreview()
 
    case "currency" : value = value ? parseCurrency(value) : ""; break;
    case "percentage" : case "number" : value = value ? parseFloat(value) : "0"; break;
+   case "id" : value = parseFloat(value) > 1000000 ? parseFloat(value)-1000000 : value; break;
   }
   command = command.replace(regex,value);
  }
@@ -358,6 +299,7 @@ function getCommands()
 	 } break;
     case "currency" : value = value ? parseCurrency(value) : ""; break;
     case "percentage" : case "number" : value = value ? parseFloat(value) : "0"; break;
+    case "id" : value = parseFloat(value) > 1000000 ? parseFloat(value)-1000000 : value; break;
    }
    command = command.replace(regex,value);
   }

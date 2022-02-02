@@ -1,16 +1,19 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2015 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 30-03-2013
+ #DATE: 27-01-2015
  #PACKAGE: idoc-config
  #DESCRIPTION: Execute iDoc documents.
- #VERSION: 2.1beta
- #CHANGELOG: 30-03-2013 : Aggiunta funzione idocOnLoad che scatta non appena caricato tutti i parametri.
+ #VERSION: 2.4beta
+ #CHANGELOG: 27-01-2015 : Bug fix accenti e virgolette.
+			 02-12-2014 : Bug fix su salvataggio.
+			 13-06-2014 : Bug fix absolute_url
+			 30-03-2013 : Aggiunta funzione idocOnLoad che scatta non appena caricato tutti i parametri.
  #TODO:
  
 */
@@ -49,6 +52,8 @@ $id = $_REQUEST['idocid'] = $docInfo['id'];
   $httpRequest.= "HTTP_REQUEST['".$k."'] = \"".$v."\";\n";
  }
 
+$_CONTENTS = str_replace("{ABSOLUTE_URL}",$_ABSOLUTE_URL,$docInfo['desc']);
+
 ?>
 <html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8"/><title><?php echo $docInfo['name']; ?></title>
 <?php
@@ -71,7 +76,7 @@ for($c=0; $c < count($docInfo['css']); $c++)
 }
 ?>
 <table width="<?php echo $params['width'] ? $params['width'] : 640; ?>" height="<?php echo $params['height'] ? $params['height'] : 480; ?>" align='center' valign='middle'>
-<tr><td valign='top'><?php echo $docInfo['desc']; ?></td></tr>
+<tr><td valign='top'><?php echo $_CONTENTS; ?></td></tr>
 </table>
 
 <?php
@@ -93,10 +98,12 @@ function idocAutoSave(callback)
  var xml = idocGetXMLProp();
  var sh = new GShell();
  sh.OnOutput = function(o,a){
-	 if(callback)
+	 if(typeof(idocOnSave) == "function")
+	  idocOnSave(o,a,callback); 
+	 else if(callback)
 	  callback(o,a);
 	}
- sh.sendCommand("dynarc edit-item -ap `"+HTTP_REQUEST['ap']+"` -id `"+HTTP_REQUEST['id']+"` -extset `idoc.<?php echo $_REQUEST['idocaid'] ? 'aid='.$_REQUEST['idocaid'] : 'ap='.$_AP; ?>,id=<?php echo $_REQUEST['idocid']; ?>,xmlprop=<![CDATA[ "+xml+" ]]>`");
+ sh.sendCommand("dynarc edit-item -ap `"+HTTP_REQUEST['ap']+"` -id `"+HTTP_REQUEST['id']+"` -extset `idoc.<?php echo $_REQUEST['idocaid'] ? 'aid='.$_REQUEST['idocaid'] : 'ap='.$_AP; ?>,id='<?php echo $_REQUEST['idocid']; ?>',xmlprop='''<![CDATA["+xml+"]]>'''`");
 }
 
 function idocAutoLoad()
@@ -125,7 +132,8 @@ function idocAutoLoad()
 	  {
 	   switch(params[c]['type'])
 	   {
-	    case 'text' : case 'select' : case 'textarea' : el.value = params[c]['value']; break;
+	    case 'text' : case 'select' : el.value = params[c]['value']; break;
+		case 'textarea' : el.value = params[c]['value']; break;
 		case 'checkbox' : el.checked = params[c]['value']==1 ? true : false; break;
 	   }
 	  }
@@ -156,7 +164,7 @@ function idocGetXMLProp()
   if(!el.id) continue;
   switch(el.type.toLowerCase())
   {
-   case 'text' : xmlRet+="<param type='text' id='"+el.id+"' value=\""+el.value.replace("&","&amp;")+"\"/"+">"; break;
+   case 'text' : xmlRet+="<param type='text' id='"+el.id+"' value=\""+el.value.E_QUOT().replace("&","&amp;")+"\"/"+">"; break;
    case 'checkbox' : xmlRet+="<param type='checkbox' id='"+el.id+"' value='"+(el.checked ? "1" : "0")+"'/"+">"; break;
   }
  }
@@ -174,7 +182,7 @@ function idocGetXMLProp()
  {
   var el = list[c];
   if(!el.id) continue;
-  xmlRet+="<param type='textarea' id='"+el.id+"' value=\""+el.value.replace("&","&amp;")+"\"/"+">";
+  xmlRet+="<param type='textarea' id='"+el.id+"' value=\""+el.value.E_QUOT().replace("&","&amp;")+"\"/"+">";
  }
  xmlRet+= "</xml>";
  return xmlRet;

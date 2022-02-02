@@ -105,9 +105,4 @@ $_COMPANY_PROFILE['accounting'] = array (
   'contr_cassa_prev_vatid' => '0',
 );
 $_COMPANY_PROFILE['extracolumns'] = array();
-$_COMPANY_PROFILE['extracolumns'] = array();
-$_COMPANY_PROFILE['extracolumns'] = array();
-$_COMPANY_PROFILE['extracolumns'] = array();
-$_COMPANY_PROFILE['extracolumns'] = array();
-$_COMPANY_PROFILE['extracolumns'] = array();
-$_COMPANY_PROFILE['extracolumns'] = array();
+

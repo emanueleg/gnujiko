@@ -1,16 +1,19 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2015 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 07-02-2012
+ #DATE: 04-02-2015
  #PACKAGE: companyprofile-config
  #DESCRIPTION: 
- #VERSION: 2.0beta
- #CHANGELOG:
+ #VERSION: 2.4beta
+ #CHANGELOG: 04-02-2015 : Bug fix su aggiungi nuova banca.
+			 20-01-2015 : Aggiunto campo bic-swift.
+			 23-10-2014 : Aggiornato dimensione IBAN a 31 caratteri, e CAP a 8.
+			 29-01-2014 : Aggiunto codice SIA
  #TODO:
  
 */
@@ -52,13 +55,16 @@ for($c=0; $c < count($_BANKS); $c++)
 	 <?php echo i18n('ABI:'); ?> <input type='text' class='text' size='5' maxlength='5' id="bank_<?php echo $c; ?>_abi" value="<?php echo $_BANKS[$c]['abi']; ?>"/>
 	 <?php echo i18n('CAB:'); ?> <input type='text' class='text' size='5' maxlength='5' id="bank_<?php echo $c; ?>_cab" value="<?php echo $_BANKS[$c]['cab']; ?>"/>
 	 <?php echo i18n('C/A:'); ?> <input type='text' class='text' size='12' maxlength='12' id="bank_<?php echo $c; ?>_cc" value="<?php echo $_BANKS[$c]['cc']; ?>"/><br/>
-	 <?php echo i18n('IBAN:'); ?> <input type='text' class='text' style='width:40px;' maxlength='4' id="bank_<?php echo $c; ?>_iban_1" value="<?php echo substr($iban,0,4); ?>"/>
-		   <input type='text' class='text' style='width:40px;' maxlength='4' id="bank_<?php echo $c; ?>_iban_2" value="<?php echo substr($iban,4,4); ?>"/>
-		   <input type='text' class='text' style='width:40px;' maxlength='4' id="bank_<?php echo $c; ?>_iban_3" value="<?php echo substr($iban,8,4); ?>"/>
-		   <input type='text' class='text' style='width:40px;' maxlength='4' id="bank_<?php echo $c; ?>_iban_4" value="<?php echo substr($iban,12,4); ?>"/>
-		   <input type='text' class='text' style='width:40px;' maxlength='4' id="bank_<?php echo $c; ?>_iban_5" value="<?php echo substr($iban,16,4); ?>"/>
-		   <input type='text' class='text' style='width:40px;' maxlength='4' id="bank_<?php echo $c; ?>_iban_6" value="<?php echo substr($iban,20,4); ?>"/>
-		   <input type='text' class='text' style='width:30px;' maxlength='3' id="bank_<?php echo $c; ?>_iban_7" value="<?php echo substr($iban,24); ?>"/><br/>
+	 <?php echo i18n('IBAN:'); ?> <input type='text' class='text' style='width:40px;text-transform:uppercase' maxlength='4' id="bank_<?php echo $c; ?>_iban_1" value="<?php echo substr($iban,0,4); ?>"/>
+		   <input type='text' class='text' style='width:40px;text-transform:uppercase' maxlength='4' id="bank_<?php echo $c; ?>_iban_2" value="<?php echo substr($iban,4,4); ?>"/>
+		   <input type='text' class='text' style='width:40px;text-transform:uppercase' maxlength='4' id="bank_<?php echo $c; ?>_iban_3" value="<?php echo substr($iban,8,4); ?>"/>
+		   <input type='text' class='text' style='width:40px;text-transform:uppercase' maxlength='4' id="bank_<?php echo $c; ?>_iban_4" value="<?php echo substr($iban,12,4); ?>"/>
+		   <input type='text' class='text' style='width:40px;text-transform:uppercase' maxlength='4' id="bank_<?php echo $c; ?>_iban_5" value="<?php echo substr($iban,16,4); ?>"/>
+		   <input type='text' class='text' style='width:40px;text-transform:uppercase' maxlength='4' id="bank_<?php echo $c; ?>_iban_6" value="<?php echo substr($iban,20,4); ?>"/>
+		   <input type='text' class='text' style='width:60px;text-transform:uppercase' maxlength='7' id="bank_<?php echo $c; ?>_iban_7" value="<?php echo substr($iban,24); ?>"/><br/>
+	 <?php echo i18n('SIA:'); ?> <input type='text' class='text' style='width:60px' maxlength='5' id="bank_<?php echo $c; ?>_sia" value="<?php echo $_BANKS[$c]['sia']; ?>"/>
+	 <?php echo i18n('BIC/SWIFT:'); ?> <input type='text' class='text' style='width:90px' maxlength='11' id="bank_<?php echo $c; ?>_bicswift" value="<?php echo $_BANKS[$c]['bicswift']; ?>"/>
+<br/>
 	 <hr/>
 	 <br/>
      <span style='font-family:Arial;font-size:14px;color:#666666;'><i><?php echo i18n('Start balance:'); ?></i></span> 
@@ -71,7 +77,7 @@ for($c=0; $c < count($_BANKS); $c++)
 	 <div class='orangebar' style='margin-right:0px;'><?php echo i18n('BANK CONTACTS'); ?></div>
 	 &nbsp;<?php echo i18n('Address:'); ?> <input type='text' class='text' size='20' id="bank_<?php echo $c; ?>_address" value="<?php echo $_BANKS[$c]['address']; ?>"/><br/>
 	 &nbsp;<?php echo i18n('City:'); ?> <input type='text' class='text' size='20' id="bank_<?php echo $c; ?>_city" value="<?php echo $_BANKS[$c]['city']; ?>"/><br/>
-	 &nbsp;<?php echo i18n('Zip:'); ?> <input type='text' class='text' size='5' maxlength='5' id="bank_<?php echo $c; ?>_zip" value="<?php echo $_BANKS[$c]['zip']; ?>"/> &nbsp; Prov.: <input type='text' class='text' size='2' maxlength='2' id="bank_<?php echo $c; ?>_prov" value="<?php echo $_BANKS[$c]['prov']; ?>"/><br/>
+	 &nbsp;<?php echo i18n('Zip:'); ?> <input type='text' class='text' size='8' maxlength='8' id="bank_<?php echo $c; ?>_zip" value="<?php echo $_BANKS[$c]['zip']; ?>"/> &nbsp; Prov.: <input type='text' class='text' size='2' maxlength='2' id="bank_<?php echo $c; ?>_prov" value="<?php echo $_BANKS[$c]['prov']; ?>"/><br/>
 	 &nbsp;<?php echo i18n('Country:'); ?> <input type='text' class='text' size='2' maxlength='2' id="bank_<?php echo $c; ?>_country" value="<?php echo $_BANKS[$c]['country']; ?>"/><br/>
 	 <br/>
 	</td></tr>
@@ -112,17 +118,20 @@ function formSubmit(close)
   var cab = document.getElementById('bank_'+idx+'_cab').value;
   var cc = document.getElementById('bank_'+idx+'_cc').value;
 
-  var iban = document.getElementById('bank_'+idx+'_iban_1').value;
-  iban+= document.getElementById('bank_'+idx+'_iban_2').value;
-  iban+= document.getElementById('bank_'+idx+'_iban_3').value;
-  iban+= document.getElementById('bank_'+idx+'_iban_4').value;
-  iban+= document.getElementById('bank_'+idx+'_iban_5').value;
-  iban+= document.getElementById('bank_'+idx+'_iban_6').value;
-  iban+= document.getElementById('bank_'+idx+'_iban_7').value;
+  var iban = document.getElementById('bank_'+idx+'_iban_1').value.toUpperCase();
+  iban+= document.getElementById('bank_'+idx+'_iban_2').value.toUpperCase();
+  iban+= document.getElementById('bank_'+idx+'_iban_3').value.toUpperCase();
+  iban+= document.getElementById('bank_'+idx+'_iban_4').value.toUpperCase();
+  iban+= document.getElementById('bank_'+idx+'_iban_5').value.toUpperCase();
+  iban+= document.getElementById('bank_'+idx+'_iban_6').value.toUpperCase();
+  iban+= document.getElementById('bank_'+idx+'_iban_7').value.toUpperCase();
+
+  var sia = document.getElementById('bank_'+idx+'_sia').value;
+  var bicswift = document.getElementById('bank_'+idx+'_bicswift').value;
 
   var startBalance = document.getElementById('bank_'+idx+'_startbalance').value;
   var currentBalance = document.getElementById('bank_'+idx+'_currentbalance').value;
-  cmd+= " -abi `"+abi+"` -cab `"+cab+"` -cc `"+cc+"` -iban `"+iban+"` -start-balance `"+startBalance+"` -current-balance `"+currentBalance+"`";
+  cmd+= " -abi `"+abi+"` -cab `"+cab+"` -cc `"+cc+"` -sia `"+sia+"` -iban `"+iban+"` -bicswift `"+bicswift+"` -start-balance `"+startBalance+"` -current-balance `"+currentBalance+"`";
 
   /* Bank contacts */
   var _addr = document.getElementById('bank_'+idx+'_address').value;
@@ -172,10 +181,10 @@ function addNewBank()
 
  var r = document.getElementById('mastertable').insertRow(-1);
  
- r.insertCell(-1).innerHTML = "<div class='orangebar'><?php echo i18n('ACCOUNT DETAILS'); ?></div> <?php echo i18n('ABI:'); ?> <input type='text' class='text' size='5' maxlength='5' id='bank_"+idx+"_abi'/ > <?php echo i18n('CAB:'); ?> <input type='text' class='text' size='5' maxlength='5' id='bank_"+idx+"_cab' / > <?php echo i18n('C/A:'); ?> <input type='text' class='text' size='12' maxlength='12' id='bank_"+idx+"_cc'/ ><br/ > <?php echo i18n('IBAN:'); ?> <input type='text' class='text' style='width:40px;' maxlength='4' id='bank_"+idx+"_iban_1'/ > <input type='text' class='text' style='width:40px;' maxlength='4' id='bank_"+idx+"_iban_2'/ > <input type='text' class='text' style='width:40px;' maxlength='4' id='bank_"+idx+"_iban_3'/ > <input type='text' class='text' style='width:40px;' maxlength='4' id='bank_"+idx+"_iban_4'/ > <input type='text' class='text' style='width:40px;' maxlength='4' id='bank_"+idx+"_iban_5'/ > <input type='text' class='text' style='width:40px;' maxlength='4' id='bank_"+idx+"_iban_6'/ > <input type='text' class='text' style='width:30px;' maxlength='3' id='bank_"+idx+"_iban_7'/ ><br/ > <hr/ > <br/ > <span style='font-family:Arial;font-size:14px;color:#666666;'><i><?php echo i18n('Start balance:'); ?></i></span> <input type='text' class='text' size='10' id='bank_"+idx+"_startbalance'/ ><br/ > <span style='font-family:Arial;font-size:14px;color:#666666;'><i><?php echo i18n('Current balance:'); ?></i></span> <input type='text' class='text' size='10' id='bank_"+idx+"_currentbalance'/ >";
+ r.insertCell(-1).innerHTML = "<div class='orangebar'><?php echo i18n('ACCOUNT DETAILS'); ?></div> <?php echo i18n('ABI:'); ?> <input type='text' class='text' size='5' maxlength='5' id='bank_"+idx+"_abi'/ > <?php echo i18n('CAB:'); ?> <input type='text' class='text' size='5' maxlength='5' id='bank_"+idx+"_cab' / > <?php echo i18n('C/A:'); ?> <input type='text' class='text' size='12' maxlength='12' id='bank_"+idx+"_cc'/ ><br/ > <?php echo i18n('IBAN:'); ?> <input type='text' class='text' style='width:40px;text-transform:uppercase' maxlength='4' id='bank_"+idx+"_iban_1'/ > <input type='text' class='text' style='width:40px;text-transform:uppercase' maxlength='4' id='bank_"+idx+"_iban_2'/ > <input type='text' class='text' style='width:40px;text-transform:uppercase' maxlength='4' id='bank_"+idx+"_iban_3'/ > <input type='text' class='text' style='width:40px;text-transform:uppercase' maxlength='4' id='bank_"+idx+"_iban_4'/ > <input type='text' class='text' style='width:40px;' maxlength='4' id='bank_"+idx+"_iban_5'/ > <input type='text' class='text' style='width:40px;text-transform:uppercase' maxlength='4' id='bank_"+idx+"_iban_6'/ > <input type='text' class='text' style='width:60px;text-transform:uppercase' maxlength='7' id='bank_"+idx+"_iban_7'/ ><br/ > SIA: <input type='text' class='text' style='width:60px' maxlength='5' id='bank_"+idx+"_sia'/ > BIC/SWIFT: <input type='text' class='text' style='width:90px' maxlength='11' id='bank_"+idx+"_bicswift'/ > <hr/ > <br/ > <span style='font-family:Arial;font-size:14px;color:#666666;'><i><?php echo i18n('Start balance:'); ?></i></span> <input type='text' class='text' size='10' id='bank_"+idx+"_startbalance'/ ><br/ > <span style='font-family:Arial;font-size:14px;color:#666666;'><i><?php echo i18n('Current balance:'); ?></i></span> <input type='text' class='text' size='10' id='bank_"+idx+"_currentbalance'/ >";
  r.cells[0].className = "left-block"; r.cells[0].style.verticalAlign='top';
 
- r.insertCell(-1).innerHTML = "<div class='orangebar' style='margin-right:0px;'><?php echo i18n('BANK CONTACTS'); ?></div>&nbsp;<?php echo i18n('Address:'); ?> <input type='text' class='text' size='20' id='bank_"+idx+"_address'/ ><br/ >&nbsp;<?php echo i18n('City:'); ?> <input type='text' class='text' size='20' id='bank_"+idx+"_city'/ ><br/ >&nbsp;<?php echo i18n('Zip:'); ?> <input type='text' class='text' size='5' maxlength='5' id='bank_"+idx+"_zip'/ > &nbsp; Prov.: <input type='text' class='text' size='2' maxlength='2' id='bank_"+idx+"_prov'/ ><br/ > &nbsp;<?php echo i18n('Country:'); ?> <input type='text' class='text' size='2' maxlength='2' id='bank_"+idx+"_country'/ ><br/ ><br/ >";
+ r.insertCell(-1).innerHTML = "<div class='orangebar' style='margin-right:0px;'><?php echo i18n('BANK CONTACTS'); ?></div>&nbsp;<?php echo i18n('Address:'); ?> <input type='text' class='text' size='20' id='bank_"+idx+"_address'/ ><br/ >&nbsp;<?php echo i18n('City:'); ?> <input type='text' class='text' size='20' id='bank_"+idx+"_city'/ ><br/ >&nbsp;<?php echo i18n('Zip:'); ?> <input type='text' class='text' size='8' maxlength='8' id='bank_"+idx+"_zip'/ > &nbsp; Prov.: <input type='text' class='text' size='2' maxlength='2' id='bank_"+idx+"_prov'/ ><br/ > &nbsp;<?php echo i18n('Country:'); ?> <input type='text' class='text' size='2' maxlength='2' id='bank_"+idx+"_country'/ ><br/ ><br/ >";
  r.cells[1].className = "right-block"; r.cells[1].style.verticalAlign='top'; r.cells[1].style.width = 280;
 
  var r = document.getElementById('mastertable').insertRow(-1);

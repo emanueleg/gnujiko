@@ -1,16 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 22-02-2013
+ #DATE: 14-03-2016
  #PACKAGE: gnujiko-base
  #DESCRIPTION: Gnujiko official shell
- #VERSION: 2.2beta
- #CHANGELOG: 22-02-2013 : Buf fix on errors
- #TODO:
+ #VERSION: 2.13beta
+ #CHANGELOG: 14-06-2016 : Aggiunta funzione testCommand.
+			 11-03-2016 : Bug fix with backslash.
+			 28-02-2016 : Aggiunto evento OnInterfaceUpdate.
+			 23-02-2016 : encodeURIComponent su funzione send command.
+			 06-02-2016 : Risolto problema session expiry.
+			 02-02-2016 : Aggiustato alcuni zIndex.
+			 21-01-2016 : Bug fix su GSHInterface.
+			 27-03-2015 : Aggiunto messaggio di errore PHP su shell request problem.
+			 25-10-2014 : Creata funzione showPopupMessage e showProcessMessage.
+			 23-07-2014 : Aggiunto funzioni includeJS e includeCSS
+			 06-06-2014 : Messo il timing a 1000 (prima era 500)
+			 22-02-2013 : Buf fix on errors
+
+ #TODO: Risolvere il problema della session expiry. 
  
 */
 
@@ -44,16 +56,22 @@ function GShell()
  //--- EVENTS ---//
  this.OnInput = null;
  this.OnPreOutput = null;
+ this.OnInterfaceUpdate = null;
  this.OnOutput = null;
  this.OnPreError = null;
  this.OnError = null;
  this.OnNewSession = null;
  this.OnSessionChange = null;
  this.OnFinish = null;
+ this.OnTest = null;
 
  //--- PRIVATE ---//
  this.preoutT = null;
  this.iFace = null;
+ this.popupMessage = null;
+ this.processMessage = null;
+ this.screenMask = null;
+
  var oThis = this;
 
  this.hHR = new GHTTPRequest();
@@ -62,14 +80,25 @@ function GShell()
 	 {
 	  if(oThis.preoutT)
 	   clearInterval(oThis.preoutT);
-	  oThis.error("Shell request problem","SHELL_REQUEST_FAILED");
-	  return alert("Shell request problem!");
+	  if(oThis.isTest)
+	  {
+	   oThis.isTest = false;
+	   return oThis.OnTest ? oThis.OnTest(reqObj.responseText) : false;
+	  }
+	  oThis.error("Shell request problem\n"+reqObj.responseText,"SHELL_REQUEST_FAILED");
+	  return alert("Shell request problem!\n"+reqObj.responseText);
 	 }
+
 	 var response = reqObj.responseXML.documentElement;
 	 if(!response.getElementsByTagName('request').length)
 	 {
-	  oThis.error("Shell request problem","SHELL_REQUEST_FAILED");
-	  return alert("Shell request problem!");
+	  if(oThis.isTest)
+	  {
+	   oThis.isTest = false;
+	   return oThis.OnTest ? oThis.OnTest(reqObj.responseText) : false;
+	  }
+	  oThis.error("Shell request problem"+reqObj.responseText,"SHELL_REQUEST_FAILED");
+	  return alert("Shell request problem!\n"+reqObj.responseText);
 	 }
 	 var requestType = response.getElementsByTagName('request')[0].getAttribute('type');
 
@@ -198,7 +227,9 @@ function GShell()
 		 if(sessid != oThis.SessionID) // session was change //
 		 {
 		  if(!sessid || (sessid == "0"))
+		  {
 		   oThis._showSEF();
+		  }
 		  else
 		  {
 		   oThis.SessionID = req.getAttribute('sessid');
@@ -207,6 +238,10 @@ function GShell()
 		   if(oThis.OnSessionChange)
 		    oThis.OnSessionChange(oThis.Username,oThis.Hostname,oThis.SessionID);
 		  }
+		 }
+		 else if(!oThis.Username)
+		 {
+		  oThis.Username = req.getAttribute('uname');
 		 }
 		 var success = (req.getAttribute('result') == "true") ? true : false;
 		 var xmlArr = response.getElementsByTagName('output_array')[0];
@@ -250,35 +285,49 @@ function GShell()
 	}
 }
 
+GShell.prototype.testCommand = function(cmd, launch)
+{
+ cmd = cmd.replace(/[\\]/g, "\\$&"); /* 11-03-2016: Bug fix with backslash "\" */
+ cmd = encodeURIComponent(cmd);
+ this.isTest = true;
+ this.hHR.send(BASE_PATH+"./gshell.php?request=testcommand&sessid="+this.SessionID+"&shellid="+this.ShellID+"&command="+cmd+"&launch="+(launch ? '1' : '0'));
+}
+
 GShell.prototype.sendCommand = function(cmd)
 {
  var oThis = this;
  // purge special chars //
- cmd = cmd.replace(/&/g,"%26");
- cmd = cmd.replace(/\+/g,"%2B");
+ //cmd = cmd.replace(/&/g,"%26");
+ //cmd = cmd.replace(/\+/g,"%2B");
+
+ cmd = cmd.replace(/[\\]/g, "\\$&"); /* 11-03-2016: Bug fix with backslash "\" */
+ cmd = encodeURIComponent(cmd);
 
  this.Commands.push(cmd);
  if(this.__inProgress)
   return;
  this.__inProgress = true;
  this.hHR.send(BASE_PATH+"./gshell.php?request=command&sessid="+this.SessionID+"&shellid="+this.ShellID+"&command="+cmd);
- this._cpomT = 500;
+ this._cpomT = 1000;
  if(this.OnPreOutput) // enable pre-output messages //
-  this.preoutT = setInterval(function(){oThis.checkPreOutMessages();},500);
+  this.preoutT = setInterval(function(){oThis.checkPreOutMessages();},1000);
 }
 
 GShell.prototype.sendSudoCommand = function(cmd)
 {
  var oThis = this;
  // purge special chars //
- cmd = cmd.replace(/&/g,"%26");
- cmd = cmd.replace(/\+/g,"%2B");
+ //cmd = cmd.replace(/&/g,"%26");
+ //cmd = cmd.replace(/\+/g,"%2B");
+
+ cmd = cmd.replace(/[\\]/g, "\\$&"); /* 11-03-2016: Bug fix with backslash "\" */
+ cmd = encodeURIComponent(cmd);
 
  this.__inProgress = true;
 
  this.hHR.send(BASE_PATH+"./gshell.php?request=sudo&sessid="+this.SessionID+(this.lastSudoSessionID ? "&lastsudosessid="+this.lastSudoSessionID : "")+"&shellid="+this.ShellID+"&command="+cmd);
  if(this.OnPreOutput) // enable pre-output messages //
-  this.preoutT = setInterval(function(){oThis.checkPreOutMessages();},500);
+  this.preoutT = setInterval(function(){oThis.checkPreOutMessages();},1000);
  this.lastSudoCmd = cmd;
 }
 
@@ -302,18 +351,25 @@ GShell.prototype.preOutput = function(msg ,outArr, msgType, msgRef, mode)
   if(!this.iFace)
   {
    this.iFace = new GSHInterface(outArr['name']);
-   this.iFace.OnLoad = function(){
-	 
-	 this.update(msg, outArr['outarr'] ? outArr['outarr'] : outArr, msgType, msgRef);
-	}
-   this.iFace.OnFree = function(){
-	 oThis.iFace = null;
-	}
+   this.iFace.OnLoad = function(){this.update(msg, outArr['outarr'] ? outArr['outarr'] : outArr, msgType, msgRef);}
+   this.iFace.OnFree = function(){oThis.iFace = null;}
    this.iFace.load();
+   if(this.OnInterfaceUpdate)
+	this.OnInterfaceUpdate(this.iFace, msg ,outArr, msgType, msgRef, mode);
+  }
+  else
+  {
+   this.iFace.update(msg, outArr, msgType, msgRef);
+   if(this.OnInterfaceUpdate)
+	this.OnInterfaceUpdate(this.iFace, msg ,outArr, msgType, msgRef, mode);
   }
  }
  else if(this.iFace)
+ {
   this.iFace.update(msg, outArr, msgType, msgRef);
+  if(this.OnInterfaceUpdate)
+   this.OnInterfaceUpdate(this.iFace, msg ,outArr, msgType, msgRef, mode);
+ }
  else if(this.OnPreOutput)
   return this.OnPreOutput(msg ? msg : "",outArr, msgType, msgRef, mode);
 }
@@ -421,7 +477,7 @@ GShell.prototype.checkPreOutMessages = function(lastmessage, callback)
  if(!this.__inProgress && !lastmessage)
  {
   if(this.preoutT)
-   clearInterval(this.preoutT)
+   clearInterval(this.preoutT);
   return;
  }
 
@@ -508,6 +564,7 @@ GShell.prototype._restoreSession = function(passwd)
 	  oThis._showSEF();
 	 }
 	}
+
  rsHR.send(BASE_PATH+"./gshell.php?request=restoresession&sessid="+this.SessionID+"&shellid="+this.ShellID+"&user="+this.Username+"&passwd="+passwd);
 }
 
@@ -537,7 +594,7 @@ GShell.prototype._restoreTimer = function()
  if(!this.preoutT)
   return;
  clearInterval(this.preoutT);
- this._cpomT = 500;
+ this._cpomT = 1000;
  this.preoutT = setInterval(function(){oThis.checkPreOutMessages();},this._cpomT);
 }
 
@@ -550,6 +607,7 @@ GShell.prototype._showRPF = function(callback)
   this.rpf = document.createElement('DIV');
   this.rpf.style.width = "360px";
   this.rpf.style.height = "180px";
+  this.rpf.style.zIndex = 20000;
   this.rpf.style.backgroundImage = "url("+BASE_PATH+"share/images/rootpwdform.png)";
   this.rpf.style.backgroundRepeat = "no-repeat";
   this.rpf.style.padding = "5px 5px 5px 70px";
@@ -589,6 +647,7 @@ GShell.prototype._showSEF = function()
   this.sef = document.createElement('DIV');
   this.sef.style.width = "360px";
   this.sef.style.height = "180px";
+  this.sef.style.zIndex = 20000;
   this.sef.style.backgroundImage = "url("+BASE_PATH+"share/images/sessionexpiredform.png)";
   this.sef.style.backgroundRepeat = "no-repeat";
   this.sef.style.padding = "5px 5px 5px 70px";
@@ -620,6 +679,193 @@ GShell.prototype._showSEF = function()
  this.sef.getElementsByTagName('INPUT')[1].onclick = function(){document.body.removeChild(oThis.sef);}
  this.sef.getElementsByTagName('INPUT')[2].onclick = function(){oThis.sef.submit();}
 }
+//-------------------------------------------------------------------------------------------------------------------//
+GShell.prototype.showPopupMessage = function(msg, marginTop, autohide, showUndoButton, classname)
+{
+ var oThis = this;
+ var scrW = window.innerWidth ? window.innerWidth : (document.all ? document.body.clientWidth : 320);
+ if(typeof(autohide) != 'bool') autohide = true;
+ marginTop = marginTop ? marginTop : 0;
+
+ if(!this.popupMessage)
+  this.popupMessage = document.createElement('DIV');
+ this.popupMessage.className = "gshell-popupmessage-container";
+ this.popupMessage.innerHTML = msg;
+
+ this.popupMessage.style.visibility = "hidden";
+ document.body.appendChild(this.popupMessage);
+ this.popupMessage.style.left = (Math.floor(scrW/2) - Math.floor(this.popupMessage.offsetWidth/2))+"px";
+ this.popupMessage.style.top = marginTop+"px";
+ this.popupMessage.style.visibility = "visible";
+
+ if(autohide) window.setTimeout(function(){oThis.popupMessage.className = oThis.popupMessage.className+" gshell-autohide";}, 3000);
+}
+//-------------------------------------------------------------------------------------------------------------------//
+GShell.prototype.showProcessMessage = function(title, subtitle, msgtype, icon, oplist)
+{
+ this.showScreenMask();
+
+ if(!this.processMessage)
+ {
+  this.processMessage = document.createElement('DIV');
+  this.processMessage.sh = this;
+ }
+
+ if(!msgtype) msgtype = "default";
+ var scrW = window.innerWidth ? window.innerWidth : (document.all ? document.body.clientWidth : 320);
+ var scrH = window.innerHeight ? window.innerHeight : (document.all ? document.body.clientHeight : 240);
+
+ var ICON_FILE = "";
+ switch(icon)
+ {
+  case 'excel' : ICON_FILE = "excel.png"; break;
+  default : ICON_FILE = "process.png"; break;
+ }
+
+ switch(msgtype)
+ {
+  case 'multi' : {
+	 this.processMessage.className = "gshell-processmessage-multi";
+	 var html = "<img src='"+ABSOLUTE_URL+"share/images/gshell/close.png' class='gshell-close-button' title='Chiudi' style='visibility:hidden'/>";
+	 html+= "<span class='gshell-pmdefault-title'>"+title+"</span><br/>";
+	 html+= "<span class='gshell-pmdefault-subtitle'>"+(subtitle ? subtitle : '')+"</span><br/>";
+
+	 html+= "<table cellspacing='0' cellpadding='0' border='0' style='margin-top:10px'>";
+	 html+= "<tr><td rowspan='"+oplist.length+"' width='84' valign='middle'><img src='"+ABSOLUTE_URL+"share/images/gshell/msgicons/"+ICON_FILE+"' style='width:64px;'/></td>";
+	 html+= "<td valign='middle'><ul class='gshell-optitle'><li class='current'>"+oplist[0]+"</li></ul></td><td valign='middle' align='center' width='32'><img src='"+ABSOLUTE_URL+"share/images/gshell/small-loading.gif'/></td></tr>";
+	 for(var c=1; c < oplist.length; c++)
+	 {
+	  html+= "<tr><td valign='middle'><ul class='gshell-optitle'><li>"+oplist[c]+"</li></ul></td><td valign='middle' align='center'><img src='"+ABSOLUTE_URL+"share/images/gshell/transparent.png'/></td></tr>";
+	 }
+	 html+= "</table>";
+	 this.processMessage.innerHTML = html;
+	} break;
+
+
+  default : {
+	 this.processMessage.className = "gshell-processmessage-default";
+	 var html = "<img src='"+ABSOLUTE_URL+"share/images/gshell/close.png' class='gshell-close-button' title='Chiudi' style='visibility:hidden'/>";
+	 html+= "<table cellspacing='0' cellpadding='0' border='0'>";
+	 html+= "<tr><td rowspan='2' width='60'><img src='"+ABSOLUTE_URL+"share/images/bigroundloading.gif' style='width:48px;height:48px'/></td>";
+	 html+= "<td><span class='gshell-pmdefault-title'>"+title+"</span></td></tr>";
+	 html+= "<tr><td><span class='gshell-pmdefault-subtitle'>"+(subtitle ? subtitle : '')+"</span></td></tr>";
+	 html+= "</table>";
+	 this.processMessage.innerHTML = html;
+	} break;
+ }
+
+ this.processMessage.style.visibility = "hidden";
+ document.body.appendChild(this.processMessage);
+ this.processMessage.style.left = (Math.floor(scrW/2) - Math.floor(this.processMessage.offsetWidth/2))+"px";
+ this.processMessage.style.top = (Math.floor(scrH/2) - Math.floor(this.processMessage.offsetHeight/2) + document.body.scrollTop)+"px";
+ this.processMessage.style.visibility = "visible";
+
+ if(msgtype == "multi")
+ {
+  /* INITIALIZE PROCESS MESSAGE MULTI*/
+  this.processMessage.titleO = this.processMessage.getElementsByTagName('SPAN')[0];
+  this.processMessage.subtitleO = this.processMessage.getElementsByTagName('SPAN')[1];
+  this.processMessage.closeBtn = this.processMessage.getElementsByTagName('IMG')[0];
+  this.processMessage.closeBtn.processMessageHandler = this.processMessage;
+  this.processMessage.closeBtn.onclick = function(){this.processMessageHandler.hide();}
+
+  var tb = this.processMessage.getElementsByTagName('TABLE')[0];
+  
+  this.processMessage.iconO = tb.rows[0].cells[0].getElementsByTagName('IMG')[0];
+  this.processMessage.oplist = new Array();
+  this.processMessage.opidx = 0;
+  var ul = tb.rows[0].cells[1].getElementsByTagName('UL')[0];
+  var li = ul.getElementsByTagName('LI')[0];
+  li.iconO = tb.rows[0].cells[2].getElementsByTagName('IMG')[0];
+  this.processMessage.oplist.push(li);
+
+  for(var c=1; c < oplist.length; c++)
+  {
+   var ul = tb.rows[c].cells[0].getElementsByTagName('UL')[0];
+   var li = ul.getElementsByTagName('LI')[0];
+   li.iconO = tb.rows[c].cells[1].getElementsByTagName('IMG')[0];
+   this.processMessage.oplist.push(li);
+  }
+
+  /* INJECT FUNCTIONS */
+  this.processMessage.nextStep = function(){
+	 var li = this.oplist[this.opidx];
+	 li.className = "ok";
+	 li.iconO.src = ABSOLUTE_URL+"share/images/gshell/ok.png";
+	 this.opidx++;
+	 if(this.opidx == this.oplist.length)
+	 {
+	  var oThisPM = this;
+	  window.setTimeout(function(){oThisPM.hide();}, 1000);
+	  return;
+	 }
+	 var li = this.oplist[this.opidx];
+	 li.className = "current";
+	 li.iconO.src = ABSOLUTE_URL+"share/images/gshell/small-loading.gif"; 
+	}
+
+  this.processMessage.error = function(errmsg){
+	 var li = this.oplist[this.opidx];
+	 li.className = "failed";
+	 li.iconO.src = ABSOLUTE_URL+"share/images/gshell/warning.png";
+	 li.iconO.title = errmsg;
+	 this.closeBtn.style.visibility = "visible";
+	}
+
+  this.processMessage.hide = function(){this.sh.hideProcessMessage();}
+
+ }
+ else
+ {
+  /* INITIALIZE PROCESS MESSAGE DEFAULT*/
+  var tb = this.processMessage.getElementsByTagName('TABLE')[0];
+  this.processMessage.iconO = tb.rows[0].cells[0].getElementsByTagName('IMG')[0];
+  this.processMessage.titleO = tb.rows[0].cells[1].getElementsByTagName('SPAN')[0];
+  this.processMessage.subtitleO = tb.rows[1].cells[0].getElementsByTagName('SPAN')[0];
+  this.processMessage.closeBtn = this.processMessage.getElementsByTagName('IMG')[0];
+  this.processMessage.closeBtn.processMessageHandler = this.processMessage;
+  this.processMessage.closeBtn.onclick = function(){this.processMessageHandler.hide();}
+
+  /* INJECT FUNCTIONS */
+  this.processMessage.error = function(errmsg){
+	 this.iconO.src = ABSOLUTE_URL+"share/images/gshell/alert.png";
+	 this.titleO.innerHTML = "Errore";
+	 this.titleO.style.color = "#980101";
+	 this.subtitleO.innerHTML = errmsg;
+	 this.subtitleO.style.color = "#000000";
+	 this.closeBtn.style.visibility = "visible";
+	}
+
+  this.processMessage.hide = function(){this.sh.hideProcessMessage();}
+ }
+
+}
+//-------------------------------------------------------------------------------------------------------------------//
+GShell.prototype.hideProcessMessage = function()
+{
+ if(this.processMessage && this.processMessage.parentNode)
+  this.processMessage.parentNode.removeChild(this.processMessage);
+ this.hideScreenMask();
+}
+//-------------------------------------------------------------------------------------------------------------------//
+GShell.prototype.showScreenMask = function()
+{
+ if(!this.screenMask)
+ {
+  this.screenMask = document.createElement('DIV');
+  this.screenMask.className = "gshell-screen-mask";
+ }
+ this.screenMask.style.height = (document.body.scrollHeight ? document.body.scrollHeight+"px" : "100%");
+ document.body.appendChild(this.screenMask);
+}
+//-------------------------------------------------------------------------------------------------------------------//
+GShell.prototype.hideScreenMask = function()
+{
+ if(this.screenMask && this.screenMask.parentNode)
+  this.screenMask.parentNode.removeChild(this.screenMask);
+}
+//-------------------------------------------------------------------------------------------------------------------//
+//-------------------------------------------------------------------------------------------------------------------//
 //-------------------------------------------------------------------------------------------------------------------//
 function xml_to_array(xml,parent)
 {
@@ -683,7 +929,48 @@ function callFunction(func)
  }
 }
 //-------------------------------------------------------------------------------------------------------------------//
+function includeJS(file,reload,callback)
+{
+ var ls = document.getElementsByTagName('SCRIPT');
+ for(var c=0; c < ls.length; c++)
+ {
+  if(ls[c].src == file)
+  {
+   if(reload)
+   {
+    if(ls[c].parentNode)
+	 ls[c].parentNode.removeChild(ls[c]);
+   }
+   else
+   {
+	if(callback) callback();
+    return true;
+   }
+  }
+ }
+
+ var script  = document.createElement('SCRIPT');
+ script.src  = file;
+ script.type = 'text/javascript';
+ if(callback)
+  script.onload = function(){callback();}
+ document.getElementsByTagName('HEAD').item(0).appendChild(script);
+}
 //-------------------------------------------------------------------------------------------------------------------//
+function includeCSS(file)
+{
+ var ls = document.getElementsByTagName('LINK');
+ for(var c=0; c < ls.length; c++)
+ {
+  if(ls[c].href == file)
+   return true;
+ }
+ var css  = document.createElement('LINK');
+ css.rel = 'stylesheet';
+ css.href = file;
+ css.type = 'text/css';
+ document.getElementsByTagName('HEAD').item(0).appendChild(css);
+}
 //-------------------------------------------------------------------------------------------------------------------//
 function GSHInterface(iName, sessid, shellid)
 {
@@ -772,13 +1059,15 @@ GSHInterface.prototype.load = function(arguments, destObj)
 	 destObj.style.top = Math.floor(oThis.getScreenHeight()/2) - Math.floor(destObj.offsetHeight/2);
 	 destObj.style.visibility = "";
 
+
 	 if(scripts)
 	 {
+	  var jsFileList = new Array();
 	  for(var c=0; c < scripts.length; c++)
 	  {
 	   var m = scripts[c].match(/src=(.+?\.js)/);
 	   if(m && m[1])
-	    oThis._includeJS(m[1].substr(1,m[1].length),true);
+		jsFileList.push(m[1].substr(1,m[1].length));
 	   else
 	   {
 	    var s = scripts[c].replace(/<script[^>]*>/,"");
@@ -788,21 +1077,21 @@ GSHInterface.prototype.load = function(arguments, destObj)
 	  }
 	 }
 
-	 if(scriptAdd)
+	 if(scripts || scriptAdd)
 	 {
-	  var script  = document.createElement('SCRIPT');
-	  script.type = 'text/javascript';
-	  script.innerHTML = scriptAdd;
-	  document.getElementsByTagName('HEAD').item(0).appendChild(script);
-	  oThis._jslist.push(script);
+	  oThis._includeJSS(jsFileList, scriptAdd, function(){
+		 oThis.loaded = true;
+		 if(oThis.OnLoad)
+	  	  oThis.OnLoad();
+		});
+	 }
+	 else
+	 {
+	  oThis.loaded = true;
+	  if(oThis.OnLoad)
+	   oThis.OnLoad();
 	 }
 
-	 oThis.loaded = true;
-
-	 //if(oThis.OnLoad)
-	 // window.setTimeout(function(){oThis.OnLoad();},500);
-	 if(oThis.OnLoad)
-	  oThis.OnLoad();
 	}
  HR.send(BASE_PATH+"etc/dynarc/interfaces/"+this.Name+"/index.php?sessid="+this.SessionID+"&shellid="+this.ShellID+(arguments ? "&"+arguments : ""));
 }
@@ -887,9 +1176,10 @@ GSHInterface.prototype._includeCSS = function(file)
  document.getElementsByTagName('HEAD').item(0).appendChild(css);
  this._csslist.push(css);
 }
-
+//-------------------------------------------------------------------------------------------------------------------//
 GSHInterface.prototype._includeJS = function(file,reload)
 {
+ /* Deprecated function. Will'be removed. */
  var ls = document.getElementsByTagName('SCRIPT');
  for(var c=0; c < ls.length; c++)
  {
@@ -911,3 +1201,69 @@ GSHInterface.prototype._includeJS = function(file,reload)
  document.getElementsByTagName('HEAD').item(0).appendChild(script);
  this._jslist.push(script);
 }
+//-------------------------------------------------------------------------------------------------------------------//
+GSHInterface.prototype._includeJSS = function(jsFileList, jsContent, callback)
+{
+ var oThis = this;
+ var idx = 0;
+
+ if(jsContent)
+ {
+  this._loadJSContent(jsContent, function(){
+	 if(jsFileList && jsFileList.length)
+	 {
+	  oThis._loadNextJSFile(jsFileList, idx, function(){if(callback) callback();});
+	 }
+	 else if(callback)
+	  callback();
+	});
+ }
+ else if(jsFileList && jsFileList.length)
+ {
+  this._loadNextJSFile(jsFileList, idx, function(){if(callback) callback();});
+ }
+ else if(callback)
+  callback();
+}
+//-------------------------------------------------------------------------------------------------------------------//
+GSHInterface.prototype._loadNextJSFile = function(jsFileList, idx, callback)
+{
+ var oThis = this;
+ var file = jsFileList[idx];
+ var ls = document.getElementsByTagName('SCRIPT');
+ for(var c=0; c < ls.length; c++)
+ {
+  if(ls[c].src == file)
+  {
+   if(ls[c].parentNode)
+	ls[c].parentNode.removeChild(ls[c]);
+  }
+ }
+
+ var script  = document.createElement('SCRIPT');
+ script.type = 'text/javascript';
+ script.onload = function(){
+	 idx++;
+	 if(idx == jsFileList.length)
+	  return callback();
+	 else
+	  return oThis._loadNextJSFile(jsFileList, idx, callback);
+	}
+
+ script.src = file;
+ document.getElementsByTagName('HEAD').item(0).appendChild(script);
+}
+//-------------------------------------------------------------------------------------------------------------------//
+GSHInterface.prototype._loadJSContent = function(jsContent, callback)
+{
+ var script  = document.createElement('SCRIPT');
+ script.type = 'text/javascript';
+ //script.onload = function(){if(callback) callback();}
+ script.innerHTML = jsContent;
+ document.getElementsByTagName('HEAD').item(0).appendChild(script);
+ if(callback) 
+ callback();
+}
+//-------------------------------------------------------------------------------------------------------------------//
+
+

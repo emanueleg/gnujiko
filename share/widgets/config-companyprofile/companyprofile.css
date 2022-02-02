@@ -178,9 +178,9 @@ span.bluetitle {
 }
 
 div.extracolumns-container {
-	height: 110px;
+	height: 60px;
 	overflow: auto;
-	margin-top: 20px;
+	margin-top: 10px;
 }
 
 table#extracolumns th {

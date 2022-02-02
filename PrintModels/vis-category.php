@@ -102,6 +102,7 @@ function newModel()
  var nm = prompt("Specifica il nome da assegnare al nuovo modello");
  if(!nm) return;
  var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
  sh.OnOutput = function(o,a){
 	 if(!a) return;
 	 document.location.href="edit.php?id="+a['id'];
@@ -149,6 +150,7 @@ function deleteSelectedModels()
   return;
 
  var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
  sh.OnFinish = function(){document.location.reload();}
  for(var c=0; c < SELECTED_ROWS.length; c++)
   sh.sendCommand("dynarc delete-item -ap `printmodels` -id `"+SELECTED_ROWS[c].id+"`");
@@ -164,6 +166,7 @@ function setAsDefault(id)
    q+= ","+tb.rows[c].id;
  }
  var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
  sh.OnOutput = function(){document.location.reload();}
  sh.sendCommand("dynarc item-sort -ap `printmodels` -serialize `"+q+"`");
 }
@@ -196,6 +199,7 @@ function exportSelected()
   q+= " -id "+SELECTED_ROWS[c].id;
 
  var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
  sh.OnPreOutput = function(){}
  sh.OnOutput = function(o,a){
 	 if(!a) return;
@@ -207,6 +211,7 @@ function exportSelected()
 function printmodelImport()
 {
  var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
  sh.OnOutput = function(){document.location.reload();}
  sh.sendCommand("gframe -f dynarc.import -params `ap=printmodels&cat=<?php echo $_SELECTED_CAT['id']; ?>`");
 }

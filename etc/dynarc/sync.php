@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 11-04-2013
+ #DATE: 24-10-2016
  #PACKAGE: gnujiko-sync
  #DESCRIPTION: Tool for synchronize data of archives managed by Dynarc between multiple devices (computers) on the network or by pendrive.
- #VERSION: 2.3beta
- #CHANGELOG: 11-04-2013 : Sistemato i permessi ai files.
+ #VERSION: 2.4beta
+ #CHANGELOG: 24-10-2016 : MySQLi integration.
+			 11-04-2013 : Sistemato i permessi ai files.
  #DEPENDS: rsh
  #TODO: 
  
@@ -584,7 +585,7 @@ function dynarc_sync_registerDevice($args, $sessid, $shellid=0)
  $db = new AlpaDatabase();
  $db->RunQuery("INSERT INTO dynarcsync_devices(name,device_type,url,login,password) VALUES('".$db->Purify($deviceName)."','"
 	.$deviceType."','".$URL."','".$deviceLogin."','".$devicePassword."')");
- $id = mysql_insert_id();
+ $id = $db->GetInsertId();
  $db->Close();
 
  $out = "Device has been registered! ID=".$id;
@@ -1131,7 +1132,7 @@ function dynarc_sync_importCatFromXML($fileName,$action, $archiveInfo, $sessid,$
   }
   $qry.= ltrim($vals,",").")";
   $db->RunQuery($qry);
-  $id = mysql_insert_id();
+  $id = $db->GetInsertId();
   $outArr = array('id'=>$id, 'uid'=>$uid, 'gid'=>$gid, '_mod'=>$xmlCatInfo->getString('_mod'), 'parent_id'=>$parentId, 'hierarchy'=>$hierarchy,'name'=>$xmlCatInfo->getString('name'));
   $db->Close();
   // update synclog //
@@ -1272,7 +1273,7 @@ function dynarc_sync_importItemFromXML($fileName,$action, $archiveInfo, $sessid,
   }
   $qry.= ltrim($vals,",").")";
   $db->RunQuery($qry);
-  $id = mysql_insert_id();
+  $id = $db->GetInsertId();
   $outArr = array('id'=>$id, 'uid'=>$uid, 'gid'=>$gid, '_mod'=>$xmlItemInfo->getString('_mod'), 'cat_id'=>$parentId, 'hierarchy'=>$hierarchy, 'name'=>$xmlItemInfo->getString('name'));
   $db->Close();
   // update synclog //

@@ -1,16 +1,16 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 23-07-2012
+ #DATE: 24-10-2016
  #PACKAGE: cashresources
  #DESCRIPTION: Manage cash resources.
- #VERSION: 2.0beta
- #CHANGELOG: 
+ #VERSION: 2.1beta
+ #CHANGELOG: 24-10-2016 : MySQLi integration.
  #DEPENDS:
  #TODO:
  
@@ -56,7 +56,7 @@ function cashresources_new($args, $sessid, $shellid)
  
  $db = new AlpaDatabase();
  $db->RunQuery("INSERT INTO cashresources(name,res_type,current_balance) VALUES('".$db->Purify($name)."','".$type."','".$currentBalance."')");
- $outArr = array('id'=>mysql_insert_id(),'name'=>$name,'current_balance'=>$currentBalance);
+ $outArr = array('id'=>$db->GetInsertId(),'name'=>$name,'current_balance'=>$currentBalance);
  $db->Close();
  $out = "done!";
  return array('message'=>$out,'outarr'=>$outArr);

@@ -1,16 +1,18 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 
- #PACKAGE: 
- #DESCRIPTION: 
- #VERSION: 2.0beta
- #CHANGELOG: 
+ #DATE: 29-09-2014
+ #PACKAGE: excel-parsers-collection
+ #DESCRIPTION: Rubrica excel parser 
+ #VERSION: 2.3beta
+ #CHANGELOG: 29-09-2014 : Aggiunto fidelity card e punteggio.
+			 13-06-2014 : Aggiunto id su import.
+			 13-04-2014 : Aggiunto campo note.
  #TODO:
  
 */
@@ -20,14 +22,20 @@ function gnujikoexcelparser_rubrica_info()
  $info = array('name' => "Rubrica");
  $keys = array(
 	/* BASIC INFO */
+	"id"=>"ID",
 	"name"=>"Nome e Cognome / Ragione sociale",
-	"notes"=>"Note",
+	"desc"=>"Note",
+	"notes"=>"Extra Notes",
 	"code"=>"Codice",
 	"taxcode"=>"Codice Fiscale",
 	"vatnumber"=>"Partita IVA",
 	"paymentmode"=>"Modalita di pagamento",
+	"paymentmodeid"=>"ID mod. di pagam.",
 	"pricelist"=>"Listino prezzi associato",
 	"distance"=>"Distanza (x rimborsi chilometrici)",
+	"agentid"=>"ID Agente",
+	"fidelitycard"=>"Fidelity Card",
+	"fidelitycardpoints"=>"Punti accumulati",
 	/* CONTACTS */
 	"address"=>"Indirizzo",
 	"city"=>"Citta",
@@ -41,19 +49,32 @@ function gnujikoexcelparser_rubrica_info()
 	"email"=>"Email",
 	"email2"=>"Email 2",
 	"email3"=>"Email 3",
-	"skype"=>"Skype"
+	"skype"=>"Skype",
+	/* BANKS */
+	"bnkname"=>"Nome banca",
+	"bnkabi"=>"Banca - ABI",
+	"bnkcab"=>"Banca - CAB",
+	"bnkcin"=>"Banca - CIN",
+	"bnkcc"=>"Banca - Conto Corrente",
+	"bnkiban"=>"Banca - IBAN"
 	);
 
  $keydict = array(
 	/* BASIC INFO */
+	"id"=> array("id"),
 	"name"=> array("nome","cliente","fornitore"),
-	"notes"=> array("note","annotazioni"),
+	"desc"=> array("note","annotazioni"),
+	"notes"=> array("extra note","annotazioni extra"),
 	"code"=> array("codice","cod."),
 	"taxcode"=> array("cf","codice fiscale", "cod. fisc", "cod.fisc", "cfisc"),
 	"vatnumber"=> array("piva","partita iva","p.iva"),
 	"paymentmode"=> array("pagamento","modalita di pagamento","cod. pagam", "codpagamento", "cod.pagam"),
+	"paymentmodeid"=> array("id pagamento", "id mod. di pagam.", "id cod. pagam"),
 	"pricelist"=> array("listino","listino prezzi"),
 	"distance"=> array("distanza","km"),
+	"agentid"=> array("agent","agentid"),
+	"fidelitycard"=> array("fidelity card","cod. fidelity"),
+	"fidelitycardpoints"=> array("punti","punteggio"),
 	/* CONTACTS */
 	"address"=> array("indirizzo"),
 	"city"=> array("città","citta"),
@@ -67,13 +88,20 @@ function gnujikoexcelparser_rubrica_info()
 	"email"=> array("e-mail","e_mail","mail"),
 	"email2"=> array("email2"),
 	"email3"=> array("email3"),
-	"skype"=> array("skype")
+	"skype"=> array("skype"),
+	/* BANKS */
+	"bnkname"=> array("banca"),
+	"bnkabi"=> array("abi"),
+	"bnkcab"=> array("cab"),
+	"bnkcin"=> array("cin"),
+	"bnkcc"=> array("cc","conto corrente"),
+	"bnkiban"=> array("iban")
 	);
 
  return array('info'=>$info, 'keys'=>$keys, 'keydict'=>$keydict);
 }
 
-function gnujikoexcelparser_rubrica_import($_DATA, $sessid, $shellid, $archivePrefix="", $catId=0, $catTag="")
+function gnujikoexcelparser_rubrica_import($_DATA, $sessid, $shellid, $archivePrefix="", $catId=0, $catTag="", $id=0)
 {
  $interface = array("name"=>"progressbar","steps"=>count($_DATA['items']));
  gshPreOutput($shellid,"Import from Excel to Rubrica", "ESTIMATION", "", "PASSTHRU", $interface);
@@ -86,28 +114,23 @@ function gnujikoexcelparser_rubrica_import($_DATA, $sessid, $shellid, $archivePr
 
   $qry = "dynarc new-item -ap `".($archivePrefix ? $archivePrefix : "rubrica")."`"
 	.($catId ? " -cat '".$catId."'" : ($catTag ? " -ct `".$catTag."`" : ""))." -name `".$itm['name']."`";
+  if($itm['id'])
+   $qry.= " -id '".$itm['id']."'";
 
   $set = "";
   $extset = "";
-  if($itm['notes']) $qry.= " -desc `".$itm['notes']."`";
+  if($itm['desc']) $qry.= " -desc `".$itm['desc']."`";
   if($itm['code']) $qry.= " -code-str `".$itm['code']."`";
-  if($itm['taxcode']) $set.= ",taxcode='".$itm['taxcode']."'";
-  if($itm['vatnumber']) $set.= ",vatnumber='".$itm['vatnumber']."'";
 
-  if($itm['paymentmode'])
-  {
-   $ret = GShell("accounting paymentmodeinfo `".$itm['paymentmode']."` --get-id",$sessid,$shellid);
-   $set.= ",paymentmode='".$ret['outarr']['id']."'";
-  }
-
-  /*if($itm['pricelist']) $set.= ",pricelist_id='".$itm['pricelist']."'"; TODO: da vedere */
-
-  if($itm['distance']) $set.= ",distance='".$itm['distance']."'";
+  /* INFO */
+  $extset = "rubricainfo.taxcode='".$itm['taxcode']."',vatnumber='".$itm['vatnumber']."',paymentmode='".$itm['paymentmodeid']."',pricelist='"
+	.$itm['pricelistid']."',distance='".$itm['distance']."',fidelitycard='".$itm['fidelitycard']."',fidelitycardpoints='"
+	.$itm['fidelitycardpoints']."',agentid='".$itm['agentid']."',extranotes='''".$itm['extranotes']."'''";
 
   /* CONTACTS */
   if($itm['address'] || $itm['city'] || $itm['phone'] || $itm['cell'] || $itm['email'])
   {
-   $extset = "contacts.name='''".$itm['name']."'''";
+   $extset.= ",contacts.name='''".$itm['name']."'''";
    if($itm['address']) $extset.= ",address='''".$itm['address']."'''";
    if($itm['city']) $extset.= ",city='''".$itm['city']."'''";
    if($itm['zipcode']) $extset.= ",zipcode='".$itm['zipcode']."'";
@@ -122,6 +145,14 @@ function gnujikoexcelparser_rubrica_import($_DATA, $sessid, $shellid, $archivePr
    if($itm['email3']) $extset.= ",email3='".$itm['email3']."'";
    if($itm['skype']) $extset.= ",skype='".$itm['skype']."'";
   }
+  
+  /* BANKS */
+  if($itm['bnkname'] || $itm['bnkabi'] || $itm['bnkcab'] || $itm['bnkcc'] || $itm['bnkiban'])
+  {
+   $extset.= ",banks.name='''".$itm['bnkname']."''',abi='".$itm['bnkabi']."',cab='".$itm['bnkcab']."',cin='".$itm['bnkcin']."',cc='"
+	.$itm['bnkcc']."',iban='".$itm['bnkiban']."'";
+  }
+
   $ret = GShell($qry.($set ? " -set `".ltrim($set,",")."`" : "").($extset ? " -extset `".$extset."`" : ""),$sessid,$shellid);
   if($ret['error'])
    return $ret;
@@ -129,8 +160,4 @@ function gnujikoexcelparser_rubrica_import($_DATA, $sessid, $shellid, $archivePr
 
  return array('message'=>"done!");
 }
-
-
-
-
 

@@ -1,234 +1,521 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 14-09-2013
+ #DATE: 22-03-2016
  #PACKAGE: gstore
- #DESCRIPTION: Official Gnujiko Store Manager.
- #VERSION: 2.0beta
- #CHANGELOG:
+ #DESCRIPTION: Official Gnujiko Store Manager
+ #VERSION: 2.5beta
+ #CHANGELOG: 22-03-2016 : Integrato con varianti
+			 16-12-2014 : Bug fix.
+			 25-08-2014 : Integrato con i libri.
+			 30-07-2014 : Integrato con prodotti finiti, componenti e materiali.
+			 08-03-2014 : Aggiunto campo note.
  #TODO:
  
 */
 
-global $_BASE_PATH, $_ABSOLUTE_URL;
+global $_BASE_PATH, $_ABSOLUTE_URL, $_SHELL_CMD_PATH, $_USERS_HOMES, $_STORE_ID, $_STORE_NAME;
 $_BASE_PATH = "../../../";
 
 define("VALID-GNUJIKO",1);
 
-include_once($_BASE_PATH."include/gshell.php");
+include($_BASE_PATH."var/templates/glight/index.php");
+include_once($_BASE_PATH."include/userfunc.php");
+$template = new GLightTemplate("widget");
+$template->includeInternalObject("productsearch");
+$template->includeObject("gmutable");
+$template->includeObject("gcal");
+
+$template->Begin("Movimentazione magazzino");
+$rightContents = "<span class='smalltext'>data:</span> <input type='text' class='calendar' value='".date('d/m/Y')."' id='cdate'/> <input type='text' class='edit' id='ctime' style='width:50px' placeholder='hh:mm' value='".date('H:i')."'/>";
+$rightContents.= "<input type='button' class='button-exit' value='".i18n('Exit')."' onclick='Template.Exit()' style='margin-left:20px'/>";
+
+$template->Header("widget", "Movimentazione magazzino", $rightContents);
+
+$archiveTypes = array();
+if(_userInGroup("gmart") && file_exists($_BASE_PATH."Products/index.php"))
+ $archiveTypes['gmart'] = "articoli";
+if(_userInGroup("gproducts") && file_exists($_BASE_PATH."FinalProducts/index.php"))
+ $archiveTypes['gproducts'] = "prodotti finiti";
+if(_userInGroup("gpart") && file_exists($_BASE_PATH."Parts/index.php"))
+ $archiveTypes['gpart'] = "componenti";
+if(_userInGroup("gmaterial") && file_exists($_BASE_PATH."Materials/index.php"))
+ $archiveTypes['gmaterial'] = "materiali";
+if(_userInGroup("gbook") && file_exists($_BASE_PATH."Books/index.php"))
+ $archiveTypes['gbook'] = "libri";
+
+$_AT = $_REQUEST['at'] ? $_REQUEST['at'] : 'gmart';
+
+//-------------------------------------------------------------------------------------------------------------------//
+$template->SubHeaderBegin(0,0,10);
+?>
+<input type='button' class="button-blue menuwhite" value="Menu" connect='mainmenu' id='menubutton' style='float:left'/>
+ <ul class='popupmenu' id='mainmenu'>
+  <li onclick='DeleteSelected()'><img src="<?php echo $_ABSOLUTE_URL; ?>share/icons/16x16/delete.gif"/>Elimina selezionati</li>
+ </ul>
+
+<input type='button' class="button-gray menu" value="Visualizza" connect='columnsmenu' id='columnsmenubutton' style='float:left;margin-left:10px'/>
+ <ul class='popupmenu' id='columnsmenu'>
+  <li><input type='checkbox' onclick="tb.showHideColumn('code_str',this.checked)"/>Codice</li>
+  <li><input type='checkbox' onclick="tb.showHideColumn('manufacturer_code',this.checked)"/>Cod. Produttore</li>
+  <li><input type='checkbox' onclick="tb.showHideColumn('barcode',this.checked)"/>Codice a barre</li>
+  <li><input type='checkbox' onclick="tb.showHideColumn('smalldesc',this.checked)" checked='true'/>Descrizione articolo</li>
+  <li><input type='checkbox' onclick="tb.showHideColumn('lot',this.checked)" checked='true'/>Lotto</li>
+  <li><input type='checkbox' onclick="tb.showHideColumn('coltint',this.checked)" checked='true'/>Colore/Tinta</li>
+  <li><input type='checkbox' onclick="tb.showHideColumn('sizmis',this.checked)" checked='true'/>Taglia/Misura</li>
+  <li><input type='checkbox' onclick="tb.showHideColumn('qty',this.checked)" checked='true'/>Qt&agrave;</li>
+  <li><input type='checkbox' onclick="tb.showHideColumn('avail',this.checked)" checked='true'/>Disponibilit&agrave;</li>
+ </ul>
+
+<input type='text' readonly='true' class='dropdown' id='archivetype' connect='archivetypelist' value="<?php echo $archiveTypes[$_AT]; ?>" retval="<?php echo $_AT; ?>" style='width:100px;float:left;margin-left:30px'/>
+<ul class='popupmenu' id='archivetypelist'>
+<?php
+$db = new AlpaDatabase();
+while(list($k,$v)=each($archiveTypes))
+{
+ $db->RunQuery("SELECT COUNT(*) FROM dynarc_archives WHERE archive_type='".$k."' AND trash='0'");
+ if($db->Read())
+ {
+  echo "<li value='".$k."'>".$v."</li>";
+  if(!$_AT) $_AT = $k;
+ }
+}
+$db->Close();
+$phsearch = "";
+switch($_AT)
+{
+ case 'gmart' : $phsearch = "Cerca un articolo"; break;
+ case 'gproducts' : $phsearch = "Cerca un prodotto finito"; break;
+ case 'gpart' : $phsearch = "Cerca un componente"; break;
+ case 'gmaterial' : $phsearch = "Cerca un materiale"; break;
+ case 'gbook' : $phsearch = "Cerca un libro"; break;
+}
 
 ?>
-<html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8"><title>Manual move</title>
+</ul>
+<input type='text' class='edit' style='width:290px;float:left' placeholder="<?php echo $phsearch; ?>" id='search' emptyonclick='true' at="<?php echo $_AT; ?>"/>
+<input type='button' class='button-search' id='searchbtn'/>
 <?php
-include_once($_BASE_PATH."include/js/gshell.php");
-include_once($_BASE_PATH."var/objects/gform/index.php");
-include_once($_BASE_PATH."var/objects/gmutable/index.php");
-
+$template->SubHeaderEnd();
+//-------------------------------------------------------------------------------------------------------------------//
+$template->Body("widget",800);
+//-------------------------------------------------------------------------------------------------------------------//
 ?>
-</head><body>
-
-<style type='text/css'>
-table.footertable td {
-	font-size: 14px;
-	color: #333333;
-}
-
-table.pricelists {
-	width: 560px;
-}
-
-table.pricelists th {
-	background: #eeeeee;
-	font-family: Arial;
-	font-size: 9px;
-	color: #000000;
-}
-
-table.pricelists td {
-	font-family: Arial;
-	font-size: 12px;
-	color: #000000;
-}
-
-table.pricelists td em {float: left;}
-
-table.pricelists tr.row0 td {background: #ffffcc;}
-table.pricelists tr.row1 td {background: #ffff99;}
-
-table.pricelists tr.selected td {background: #fafade;}
-
-table#itemstable td {background: #fafade;}
-
-</style>
-
+<div class='gmutable' style="height:400px;width:760px;margin:10px;border:0px">
+<table id="itemlist" class="gmutable" cellspacing='0' cellpadding='0' border='0'>
+<tr><th width='32' style='text-align:center'><input type='checkbox' onclick='tb.selectAll(this.checked)'/></th>
+    <th width='80' id='code_str' editable='true' style='text-align:center;display:none'>CODICE</th>
+    <th width='80' id='manufacturer_code' editable='true' style='text-align:center;display:none'>COD.PROD.</th>
+    <th width='100' id='barcode' editable='true' style='text-align:center;display:none'>BARCODE</th>
+    <th width='100' id='name' editable='true' style='display:none'>ARTICOLO</th>
+	<th minwidth='400' id='smalldesc' xlsexport='false'>ARTICOLO</th>
+	<th width='60' id='lot' editable='true' style='text-align:center'>LOTTO</th>
+	<th width='100' id='coltint' editable='true' format='dropdown' style='text-align:center'>COLORE/TINTA</th>
+	<th width='100' id='sizmis' editable='true' format='dropdown' style='text-align:center'>TAGLIA/MISURA</th>
+	<th width='60' id='qty' editable='true' style='text-align:center' format='number'>QTA'</th>
+	<th width='60' id='avail' editable='true' style='text-align:center' format='number'>DISP.</th>
+	<th width='18'>&nbsp;</th>
+</tr>
+</table>
+</div>
+<textarea class="textarea" style="width:780px;height:50px;margin-bottom:5px;resize:none" placeholder="Inserisci qui eventuali note" id="notes"></textarea>
 <?php
-
+//-------------------------------------------------------------------------------------------------------------------//
 $ret = GShell("store list",$_REQUEST['sessid'],$_REQUEST['shellid']);
-$_STORE_LIST = $ret['outarr'];
+$list = $ret['outarr'];
+$storeInfo = null;
+if($_REQUEST['storeid'])
+{
+ for($c=0; $c < count($list); $c++)
+ {
+  if($list[$c]['id'] == $_REQUEST['storeid'])
+  {
+   $storeInfo = $list[$c];
+   $_STORE_ID = $storeInfo['id'];
+   $_STORE_NAME = $storeInfo['name'];
+   break;
+  }
+ }
+}
+if(!$storeInfo && count($list))
+ $storeInfo = $list[0];
 
-$form = new GForm("Movimentazione magazzino", "MB_OK|MB_ABORT", "simpleform", "default", "orange", 600, 460);
-$form->Begin($_ABSOLUTE_URL."share/widgets/gstore/img/manual.png");
-echo "<div id='contents'>";
+$ret = GShell("dynarc item-list -ap storemovcausals -ct TRANSFER",$_REQUEST['sessid'],$_REQUEST['shellid']);
+$causalList = $ret['outarr']['items'];
 
+$footer = "<span class='smalltext'>Movimenta da: </span><input type='text' class='dropdown' readonly='true' connect='storelist' id='storeselect' placeholder='seleziona un magazzino' retval='".$_STORE_ID."' value=\"".$_STORE_NAME."\" style='width:150px'/>";
+$footer.= "<ul class='popupmenu' id='storelist'>";
+for($c=0; $c < count($list); $c++)
+ $footer.= "<li value='".$list[$c]['id']."'><img src='".$_ABSOLUTE_URL."share/widgets/gstore/img/storeicon.png'/>".$list[$c]['name']."</li>";
+$footer.= "</ul>";
+
+$footer.= "<span class='smalltext'>a: </span><input type='text' class='dropdown' readonly='true' connect='storelist2' id='storeselect2' placeholder='magazzino di destinazione' retval='' value='' style='width:150px'/>";
+$footer.= "<ul class='popupmenu' id='storelist2'>";
+for($c=0; $c < count($list); $c++)
+ $footer.= "<li value='".$list[$c]['id']."'><img src='".$_ABSOLUTE_URL."share/widgets/gstore/img/storeicon.png'/>".$list[$c]['name']."</li>";
+$footer.= "</ul>";
+
+$footer.= "<span class='smalltext' style='margin-left:20px'>Causale: </span>";
+$footer.= "<input type='text' class='dropdown' readonly='true' connect='causallist' id='causalselect' style='width:180px'/>";
+$footer.= "<ul class='popupmenu' id='causallist'>";
+for($c=0; $c < count($causalList); $c++)
+ $footer.= "<li value='".$causalList[$c]['code_str']."'>".$causalList[$c]['name']."</li>";
+$footer.= "</ul>";
+
+$footer.= "<input type='button' class='button-blue' value='Procedi &raquo;' style='float:right' onclick='SubmitAction()'/>";
+$template->Footer($footer,true);
+//-------------------------------------------------------------------------------------------------------------------//
 ?>
-<h3>Movimenta articoli da <select style='width:160px' id='storefrom'>
-	 <?php
-	  for($c=0; $c < count($_STORE_LIST); $c++)
-	   echo "<option value='".$_STORE_LIST[$c]['id']."'>".$_STORE_LIST[$c]['name']."</option>";
-	 ?>
-	</select> a <select style='width:160px' id='storeto'>
-	 <?php
-	  for($c=0; $c < count($_STORE_LIST); $c++)
-	   echo "<option value='".$_STORE_LIST[$c]['id']."'>".$_STORE_LIST[$c]['name']."</option>";
-	 ?>
-	</select>
-</h3>
-<div class="gmutable" style="width:560px;height:250px;background:#ffffff;border:0px;">
- <table id="itemstable" class="pricelists" cellspacing="2" cellpadding="2" border="0">
- <tr><th width='20'><input type="checkbox" onchange="tb.selectAll(this.checked)"/></th>
-	 <th width='60' id='code' editable='true'>CODICE</th>
-	 <th id='name' style='text-align:left;'>ARTICOLO</th>
-	 <th width='70' id='qty' editable='true'>QTA&lsquo;</th>
-	 <th width='20'>&nbsp;</th>
- </tr>
- </table>
-</div>
-
-<div style="height:34px;border-top:1px solid #dadada;padding:10px">
-<b>Articolo: <input type="text" style="width:400px" placeholder="Digita il codice o le iniziali del nome dell'articolo" id="searchbycode"/>
-</div>
-
-<?php
-echo "</div>";
-$form->End();
-?>
-
 <script>
 var tb = null;
+var currentStoreSrc = 0;
+var currentStoreDest = 0;
+var AT = "<?php echo $_AT; ?>";
 
-function bodyOnLoad()
-{
- var mE = EditSearch.init(document.getElementById('searchbycode'),
-	"dynarc search -at `gmart` -fields barcode,code_str,name `","` -limit 10 --order-by 'code_str,name ASC'",
-	"id","name","items",true,"code_str",onSearchQry);
- if(!mE.value)
-  mE.value = mE.getAttribute('emptyvalue');
+Template.OnInit = function(){
+ 	this.initBtn(document.getElementById('menubutton'), "popupmenu");
+ 	this.initBtn(document.getElementById('columnsmenubutton'), "popupmenu");
+	this.initEd(document.getElementById('archivetype'), "dropdown").onchange = function(){
+		 var sE = document.getElementById("search");
+		 switch(this.getValue())
+		 {
+		  case 'gmart' : {sE.placeholder = "Cerca un articolo";} break;
+		  case 'gproducts' : {sE.placeholder = "Cerca un prodotto finito";} break;
+		  case 'gpart' : {sE.placeholder = "Cerca un componente";} break;
+		  case 'gmaterial' : {sE.placeholder = "Cerca un materiale";} break;
+		  case 'gbook' : {sE.placeholder = "Cerca un libro";} break;
+		 }
+		 sE.setAT(this.getValue());
+		};
 
- mE.onfocus = function(){
-	 if(this.value == this.getAttribute('emptyvalue'))
-	  this.value = "";
-	}
+	this.initEd(document.getElementById("search"), AT, "barcode").OnSearch = function(){
+		 if(this.value && this.data)
+		  insertRow(this.data);
+		};
+	this.initBtn(document.getElementById("searchbtn")).onclick = function(){document.getElementById("search").OnSearch();}
+	this.initEd(document.getElementById('storeselect'), "dropdown").onchange = function(){
+		 if(currentStoreSrc && (currentStoreSrc != this.getValue()) && (tb.O.rows.length > 1))
+		 {
+		  if(!confirm("Se cambi magazzino devo ricalcolare le disponibilità di tutti gli articoli nella lista. Procedo?"))
+		  {
+		   /* ripristina il vecchio magazzino */
+		   this.restoreOldValue();
+		   return;
+		  }
+		  else
+		  {
+		   /* ricalcola le giacenze di tutti gli articoli */
+		   checkAvailability();
+		  }
+		 }
+		 currentStoreSrc = this.getValue();
+		};
 
- mE.onchange = function(){
-	 if(!this.value)
-	 {
-	  this.value = this.getAttribute('emptyvalue');
-	  return;
-	 }
+	this.initEd(document.getElementById('storeselect2'), "dropdown").onchange = function(){
+		 if(this.getValue() == currentStoreSrc)
+		 {
+		  alert("Il magazzino di destinazione deve essere diverso dal magazzino di prelievo");
+		  this.restoreOldValue();
+		  return;
+		 }
+		 currentStoreDest = this.getValue();
+		};
 
-	 if(this.data && this.data['id'])
-	  insertRow(this.data);
-	 else
-	 {
-	  var sh = new GShell();
-	  sh.OnError = function(msg){alert(msg);}
-	  sh.OnOutput = function(o,a){
-		 if(!a || !a['items'])
-		  return alert("Articolo inesistente");
-		 insertRow(a['items'][0]);
+    currentStoreSrc = document.getElementById('storeselect').getValue();
+    currentStoreDest = document.getElementById('storeselect2').getValue();
+	this.initEd(document.getElementById('causalselect'), "dropdown").onchange = function(){};
+
+	this.initEd(document.getElementById('cdate'), 'date');
+
+	tb = new GMUTable(document.getElementById('itemlist'), {autoresize:true, autoaddrows:false});
+	tb.OnCellEdit = function(r,cell,value){
+		 switch(cell.tag)
+		 {
+		  case 'qty' : checkAvailability(r,value); break;
+		  case 'avail' : {
+			 if(!confirm("Sei sicuro di voler forzare la giacenza fisica di questo articolo?"))
+			  return cell.restoreOldValue();
+			 else
+			 {
+			  var sh = new GShell();
+			  sh.OnError = function(err){alert(err);}
+			  sh.OnOutput = function(o,a){
+				 r.data['store_'+currentStoreSrc+'_qty'] = value;
+				 alert("La giacenza di questo articolo è stata modificata");
+				}
+			  sh.sendCommand("store update-qty -ap '"+r.data['ap']+"' -id '"+r.data['id']+"' -store '"+currentStoreSrc+"' -qty '"+value+"'");
+			 }
+			} break;
+		 case 'coltint' : {
+		 	 var sh = new GShell();
+			 sh.OnError = function(err){alert(err);}
+		 	 sh.OnOutput = function(o,a){
+				 if(a && a['code']) r.cell['code_str'].setValue(a['code']); 
+				 var storeQty = a['store_'+currentStoreSrc+'_qty'] ? a['store_'+currentStoreSrc+'_qty'] : 0;
+				 r.data['store_'+currentStoreSrc+'_qty'] = storeQty;
+				 r.cell['avail'].setValue(value ? storeQty : a['avail']);
+				 checkAvailability(r);
+				}
+		 	 sh.sendCommand("dynarc ext-find -ap '"+r.data['ap']+"' -itemid '"+r.data['id']+"' -ext varcodes -types color,tint -name `"+value+"` --get-availability -coltint `"+value+"` -sizmis `"+r.cell['sizmis'].getValue()+"`");
+			} break;
+	  	 case 'sizmis' : {
+		 	 var sh = new GShell();
+			 sh.OnError = function(err){alert(err);}
+		 	 sh.OnOutput = function(o,a){
+				 if(a && a['code']) r.cell['code_str'].setValue(a['code']); 
+				 var storeQty = a['store_'+currentStoreSrc+'_qty'] ? a['store_'+currentStoreSrc+'_qty'] : 0;
+				 r.data['store_'+currentStoreSrc+'_qty'] = storeQty;
+				 r.cell['avail'].setValue(value ? storeQty : a['avail']);
+				 checkAvailability(r);
+				}
+		 	 sh.sendCommand("dynarc ext-find -ap '"+r.data['ap']+"' -itemid '"+r.data['id']+"' -ext varcodes -types size,dim,other -name `"+value+"` --get-availability -coltint `"+r.cell['coltint'].getValue()+"` -sizmis `"+value+"`");
+			} break;
+
+		 }
 		}
-	  sh.sendCommand("dynarc search -at `gmart` -fields barcode,code_str `"+this.value+"` -limit 1");
-	 }
+	tb.OnBeforeAddRow = function(r){
+		 r.cells[0].innerHTML = "<input type='checkbox'/ >"; r.cells[0].style.textAlign='center';
+		 r.cells[1].style.textAlign='center'; r.cells[1].innerHTML = "<span class='graybold'></span>";
+		 r.cells[2].style.textAlign='center'; r.cells[2].innerHTML = "<span class='graybold'></span>";
+		 r.cells[3].style.textAlign='center'; r.cells[3].innerHTML = "<span class='graybold'></span>";
+		 r.cells[4].innerHTML = "<span class='graybold'></span>";
 
-	 this.value = "";
-	 this.data = null;
-	}
-
- mE.focus();
-
- tb = new GMUTable(document.getElementById('itemstable'), {autoresize:false, autoaddrows:false});
- tb.OnCellEdit = function(r,cell,value){
-
-	}
-
- tb.OnBeforeAddRow = function(r){
-	 r.cells[0].innerHTML = "<input type='checkbox'/ >"; r.cells[0].style.textAlign='center';
-	 r.cells[1].style.textAlign='center';
-	 r.cells[2].style.textAlign='left';
-	 r.cells[3].style.textAlign='center';
-
-	}
-
- tb.OnDeleteRow = function(r){
-	}
-}
-
-function onSearchQry(items,resArr,retVal)
-{
- for(var c=0; c < items.length; c++)
- {
-  resArr.push(items[c]['code_str']+" - "+items[c]['name']);
-  retVal.push(items[c]['id']);
- } 
+		 r.cells[6].style.textAlign='center'; r.cells[6].innerHTML = "<span class='graybold'></span>";
+		 r.cells[7].style.textAlign='center'; r.cells[7].innerHTML = "<span class='graybold'></span>";
+		 r.cells[8].style.textAlign='center'; r.cells[8].innerHTML = "<span class='graybold'></span>";
+		 r.cells[9].style.textAlign='center'; r.cells[9].innerHTML = "<span class='graybold'></span>";
+		 r.cells[10].style.textAlign='center'; r.cells[10].innerHTML = "<span class='graybold'></span>";
+		}
+	tb.OnDeleteRow = function(r){}
+	document.getElementById("search").focus();
 }
 
 function insertRow(data)
 {
  for(var c=1; c < tb.O.rows.length; c++)
  {
-  var r = tb.O.rows[c];
-  if((r.getAttribute('refap') == data['tb_prefix']) && (r.getAttribute('refid') == data['id']))
+  if((tb.O.rows[c].data['ap'] == data['ap']) && (tb.O.rows[c].data['id'] == data['id']))
   {
-   var qty = parseFloat(r.cell['qty'].getValue());
-   qty++;
+   var r = tb.O.rows[c];
+   if(r.cell['coltint'].getValue() || r.cell['sizmis'].getValue())
+	continue;
+   var storeQty = parseFloat(r.cell['avail'].getValue());
+   var qty = parseFloat(r.cell['qty'].getValue())+1;
+   if(storeQty < qty)
+   {
+	alert("Disponibilità insufficiente!\nLa giacenza fisica in questo magazzino dell'articolo "+(r.data['code_str'] ? "cod. "+r.data['code_str']+" - " : "")+r.data['name']+" è di "+storeQty+" pezzi");
+	return false;
+   }
    r.cell['qty'].setValue(qty);
-   return r;
+   return;
   }
  }
 
+ var storeId = document.getElementById('storeselect').getValue();
+ if(!storeId)
+  return alert("Devi selezionare prima il magazzino da cui scaricare");
 
  var r = tb.AddRow();
  r.data = data;
- r.setAttribute('refap',data['tb_prefix']);
- r.setAttribute('refid',data['id']);
- r.cell['code'].setValue(data['code_str']);
+ var html = "<div class='glproductinfo'>";
+ html+= "<div class='glproduct-name'><span class='glproduct-code'>"+data['code_str']+"</span> - "+data['name']+"</div>";
+ html+= "<div class='glproduct-barcode'>barcode:"+data['barcode']+"</div>";
+ html+= "</div>";
+ r.cell['code_str'].setValue(data['code_str']);
+ r.cell['manufacturer_code'].setValue(data['manufacturer_code']);
+ r.cell['barcode'].setValue(data['barcode']);
  r.cell['name'].setValue(data['name']);
+ r.cell['smalldesc'].setValue(html);
  r.cell['qty'].setValue("1");
- r.cells[4].innerHTML = "<img src='"+ABSOLUTE_URL+"share/widgets/gstore/img/delete.png' style='cursor:pointer' title='elimina'/"+">";
- r.cells[4].getElementsByTagName("IMG")[0].onclick = function(){this.parentNode.parentNode.remove();}
+ var storeQty = parseFloat(data['store_'+storeId+'_qty']);
+ r.cell['avail'].setValue(storeQty);
+ if(storeQty < 1)
+ {
+  alert("L'articolo "+(data['code_str'] ? "cod. "+data['code_str']+" - " : "")+data['name']+" non c'è in questo magazzino");
+  r.select();
+ }
+
+ if(data)
+ {
+  var sh = new GShell();
+  sh.OnError = function(err){alert(err);}
+  sh.OnOutput = function(o,a){
+	 if(!a) return;
+	 //r.data = a;
+	 if(a['variants'])
+	 {
+	  var options = new Array();
+	  if(a['variants']['colors'])
+	  {
+	   var arr = new Array();
+	   for(var c=0; c < a['variants']['colors'].length; c++)
+	    arr.push(a['variants']['colors'][c]['name']);
+	   options.push(arr);
+	  }
+	  if(a['variants']['tint'])
+	  {
+	   var arr = new Array();
+	   for(var c=0; c < a['variants']['tint'].length; c++)
+	    arr.push(a['variants']['tint'][c]['name']);
+	   options.push(arr);
+	  }
+	  r.cell['coltint'].setOptions(options);
+	  var options = new Array();
+	  if(a['variants']['sizes'])
+	  {
+	   var arr = new Array();
+	   for(var c=0; c < a['variants']['sizes'].length; c++)
+	    arr.push(a['variants']['sizes'][c]['name']);
+	   options.push(arr);
+	  }
+	  if(a['variants']['dim'])
+	  {
+	   var arr = new Array();
+	   for(var c=0; c < a['variants']['dim'].length; c++)
+	    arr.push(a['variants']['dim'][c]['name']);
+	   options.push(arr);
+	  }
+	  if(a['variants']['other'])
+	  {
+	   var arr = new Array();
+	   for(var c=0; c < a['variants']['other'].length; c++)
+	    arr.push(a['variants']['other'][c]['name']);
+	   options.push(arr);
+	  }
+	  r.cell['sizmis'].setOptions(options);
+	 } 
+	}
+  sh.sendCommand("commercialdocs getfullinfo -ap '"+data['ap']+"' -id '"+data['id']+"' --get-variants");
+ }
+
 }
 
-function OnFormSubmit()
+function checkAvailability(r,qty)
 {
+ var storeId = document.getElementById('storeselect').getValue();
+ var ok = true;
+ if(r)
+ {
+  var storeQty = parseFloat(r.data['store_'+storeId+'_qty']);
+  if(!qty)
+   qty = parseFloat(r.cell['qty'].getValue());
+  if(storeQty < qty)
+  {
+   alert("Disponibilità insufficiente!\nLa giacenza fisica in questo magazzino dell'articolo "+(r.data['code_str'] ? "cod. "+r.data['code_str']+" - " : "")+r.data['name']+" è di "+storeQty+" pezzi");
+   return false;
+  }
+  return true;
+ }
+ else
+ {
+  tb.selectAll(false);
+  for(var c=1; c < tb.O.rows.length; c++)
+  {
+   var r = tb.O.rows[c];
+   var storeQty = parseFloat(r.data['store_'+storeId+'_qty']);
+   r.cell['avail'].setValue(storeQty);
+   var qty = parseFloat(r.cell['qty'].getValue());
+   if(storeQty < qty)
+   {
+    r.select();
+    ok = false;
+   }
+  }
+  if(!ok)
+   alert("Ci sono degli articoli con disponibilità insufficente");
+ }
+ return ok;
+}
+
+function SubmitAction()
+{
+ var ctime = document.getElementById('cdate').isodate;
+ if(document.getElementById('ctime').value != "")
+  ctime+= " "+document.getElementById('ctime').value;
+
+ var storeSrc = document.getElementById('storeselect').getValue();
+ if(!storeSrc)
+  return alert("Devi selezionare un magazzino");
+
+ var storeDest = document.getElementById('storeselect2').getValue();
+ if(!storeDest)
+  return alert("Devi selezionare il magazzino di destinazione");
+
+ if(tb.O.rows.length < 2)
+  return alert("Nessun articolo da scaricare.");
+
+ var causal = document.getElementById('causalselect').getValue();
+
+ var ok = checkAvailability();
+ if(!ok)
+  return;
+
  var q = "";
  for(var c=1; c < tb.O.rows.length; c++)
  {
   var r = tb.O.rows[c];
-  q+= " -ap `"+r.data['tb_prefix']+"` -id `"+r.data['id']+"` -qty `"+r.cell['qty'].getValue()+"`";
- }
+  //q+= " -ap '"+r.data['ap']+"' -id '"+r.data['id']+"' -qty '"+r.cell['qty'].getValue()+"' -lot '"+r.cell['lot'].getValue()+"'";
+  q+= " -ap '"+(r.data ? r.data['ap'] : '')+"'";
+  q+= " -id '"+(r.data ? r.data['id'] : '0')+"'";
+  q+= " -qty '"+r.cell['qty'].getValue()+"'";
+  q+= " -lot '"+r.cell['lot'].getValue()+"'";
+  q+= " -code `"+r.cell['code_str'].getValue()+"`";
+  q+= " -mancode `"+r.cell['manufacturer_code'].getValue()+"`";
+  q+= " -barcode `"+r.cell['barcode'].getValue()+"`";
+  q+= " -name `"+r.cell['name'].getValue()+"`";
+  q+= " -coltint '"+r.cell['coltint'].getValue().E_QUOT()+"'";
+  q+= " -sizmis '"+r.cell['sizmis'].getValue().E_QUOT()+"'";
 
- var storeFrom = document.getElementById("storefrom").value;
- var storeTo = document.getElementById("storeto").value;
- var destStoreName = document.getElementById("storeto").options[document.getElementById("storeto").selectedIndex].innerHTML;
+ }
  
+ var notes = document.getElementById("notes").value;
+
  var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
  sh.OnOutput = function(o,a){
 	 if(a && a['ddtinfo'])
-	 {
 	  alert("E' stata generata la bolla di movimentazione n. "+a['ddtinfo']['code_num']+(a['ddtinfo']['code_ext'] ? "/"+a['ddtinfo']['code_ext'] : ""));
-	 }
-	 gframe_close(o,a);
+	 gframe_close(o,a); 
 	}
-
- sh.sendCommand("store move -from `"+storeFrom+"` -to `"+storeTo+"` --generate-ddt"+q);
+ sh.sendCommand("store move -ctime '"+ctime+"' -from '"+storeSrc+"' -to '"+storeDest+"' --generate-ddt"+q+" -notes `"+notes+"` -causal '"+causal+"'");
 }
 
+function ImportFromExcel()
+{
+}
+
+function ExportToExcel()
+{
+ var date = new Date();
+ var fileName = "movimentazione-magazzino-"+date.printf("dmYHi");
+ tb.ExportToExcel(fileName);
+}
+
+function SendMail()
+{
+}
+
+function PrintTable()
+{
+}
+
+function DeleteSelected()
+{
+ var list = tb.GetSelectedRows();
+ if(!list.length)
+  return alert("Nessun articolo è stato selezionato");
+ if(!confirm("Sei sicuro di voler rimuovere le righe selezionate?"))
+  return;
+ tb.DeleteSelectedRows();
+}
 </script>
-</body></html>
 <?php
+//-------------------------------------------------------------------------------------------------------------------//
+$template->End();
+//-------------------------------------------------------------------------------------------------------------------//
 

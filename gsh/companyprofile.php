@@ -1,16 +1,20 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2015 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 04-10-2013
+ #DATE: 25-03-2015
  #PACKAGE: companyprofile-config 
  #DESCRIPTION: Company profile manager
- #VERSION: 2.4beta
- #CHANGELOG: 04-10-2013 : Aggiunto -contr-cassa-prev-vatid su edit-accounting
+ #VERSION: 2.8beta
+ #CHANGELOG: 25-03-2015 : Aggiornata funz. editExtraColumns (su valuta messo decimal al posto di float).
+			 27-02-2015 : Aggiunto regime fiscale su edit-accounting.
+			 20-01-2015 : Aggiunto bic-swift su edit bank.
+			 29-01-2014 : Aggiunto codice SIA su conti correnti e funzione get-banks
+			 04-10-2013 : Aggiunto -contr-cassa-prev-vatid su edit-accounting
 			 05-07-2013 : Aggiunta riv.inps,rit.acconto,rit.enasarco,contr.cassa.prev, ecc..
 			 11-04-2013 : Sistemato i permessi ai files ora impostabili dal file di configurazione.
 			 10-04-2013 : Predisposto per le colonne extra.
@@ -31,6 +35,8 @@ function shell_companyprofile($args, $sessid, $shellid=0)
   case 'edit-banks' : return companyprofile_editBanks($args, $sessid, $shellid); break;
   case 'edit-accounting' : return companyprofile_editAccounting($args, $sessid, $shellid); break;
   case 'edit-extracolumns' : return companyprofile_editExtraColumns($args, $sessid, $shellid); break;
+
+  case 'get-banks' : case 'bank-list' : return companyprofile_bankList($args, $sessid, $shellid); break;
 
   default : return companyprofile_invalidArguments(); break;
  }
@@ -245,6 +251,8 @@ function companyprofile_editBanks($args, $sessid, $shellid)
    case '-cab' : {$_BANKS[count($_BANKS)-1]['cab']=$args[$c+1]; $c++;} break;
    case '-cc' : {$_BANKS[count($_BANKS)-1]['cc']=$args[$c+1]; $c++;} break;
    case '-iban' : {$_BANKS[count($_BANKS)-1]['iban']=$args[$c+1]; $c++;} break;
+   case '-sia' : {$_BANKS[count($_BANKS)-1]['sia']=$args[$c+1]; $c++;} break;
+   case '-bic' : case '-swift' : case '-bicswift' : {$_BANKS[count($_BANKS)-1]['bicswift']=$args[$c+1]; $c++;} break;
    case '-start-balance' : {$_BANKS[count($_BANKS)-1]['start_balance']=$args[$c+1]; $c++;} break;
    case '-current-balance' : {$_BANKS[count($_BANKS)-1]['current_balance']=$args[$c+1]; $c++;} break;
 
@@ -294,6 +302,7 @@ function companyprofile_editAccounting($args, $sessid, $shellid)
    case '-ir-vat-quarterly' : {$outArr['ir_vat_quarterly']=$args[$c+1]; $c++;} break;
    case '-decimals-pricing' : {$outArr['decimals_pricing']=$args[$c+1]; $c++;} break;
    case '-freq-vat-used' : {$outArr['freq_vat_used']=$args[$c+1]; $c++;} break;
+   case '-tax-regime' : {$outArr['tax_regime']=$args[$c+1]; $c++;} break;
    case '-perc-tax-payment' : {$outArr['perc_tax_payment']=$args[$c+1]; $c++;} break;
    case '-amount-stamp-receipt' : {$outArr['amount_stamp_receipt']=$args[$c+1]; $c++;} break;
    case '-rate-stamp-routes' : {$outArr['rate_stamp_routes']=$args[$c+1]; $c++;} break;
@@ -369,7 +378,7 @@ function companyprofile_editExtraColumns($args, $sessid, $shellid)
   switch($column['format'])
   {
    case 'number' : $formatQry="INT(11) NOT NULL"; break;
-   case 'currency' : $formatQry="FLOAT NOT NULL"; break;
+   case 'currency' : $formatQry="DECIMAL (10,5) NOT NULL"; break;
    case 'text' : $formatQry="VARCHAR(255) NOT NULL"; break;
    case 'longtext' : $formatQry="TEXT NOT NULL"; break;
    default : $formatQry="VARCHAR(32) NOT NULL"; break;
@@ -383,6 +392,34 @@ function companyprofile_editExtraColumns($args, $sessid, $shellid)
  $db->Close();
 
  $out = "ExtraColumns has been updated."; 
+
+ return array('message'=>$out,'outarr'=>$outArr);
+}
+//-------------------------------------------------------------------------------------------------------------------//
+function companyprofile_bankList($args, $sessid, $shellid)
+{
+ global $_BASE_PATH, $_COMPANY_PROFILE;
+ include_once($_BASE_PATH."include/company-profile.php");
+
+ $out = "";
+ $outArr = $_COMPANY_PROFILE['banks'];
+
+ for($c=1; $c < count($args); $c++)
+  switch($args[$c])
+  {
+   case '--verbose' : case '-verbose' : $verbose=true; break;
+  }
+
+ if($verbose)
+ {
+  $out = "List of company banks:\n";
+  for($c=0; $c < count($outArr); $c++)
+  {
+   $bank = $outArr[$c];
+   $out.= ($c+1).". ".$bank['name']." (ABI: ".$bank['abi'].", CAB: ".$bank['cab'].", CC: ".$bank['cc'].")\n";
+  }
+ }
+ $out.= count($_COMPANY_PROFILE['banks'])." banks found.";
 
  return array('message'=>$out,'outarr'=>$outArr);
 }

@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 23-04-2013
+ #DATE: 27-10-2016
  #PACKAGE: makedist
  #DESCRIPTION: Database import.
- #VERSION: 2.1beta
- #CHANGELOG: 23-04-2013 : Bug fix su default file perms.
+ #VERSION: 2.2beta
+ #CHANGELOG: 27-10-2016 : MySQLi integration.
+			 23-04-2013 : Bug fix su default file perms.
  #TODO:
  
 */
@@ -41,20 +42,20 @@ else
  $_ERR_PHASE = "";
  $_ERR_MSG = "";
 
- $dbhost = mysql_escape_string(trim($_REQUEST['database-host']));
- $dbname = mysql_escape_string(trim($_REQUEST['database-name']));
- $dbuser = mysql_escape_string(trim($_REQUEST['database-user']));
- $dbpass = mysql_escape_string(trim($_REQUEST['database-passwd']));
+ $dbhost = trim($_REQUEST['database-host']);
+ $dbname = trim($_REQUEST['database-name']);
+ $dbuser = trim($_REQUEST['database-user']);
+ $dbpass = trim($_REQUEST['database-passwd']);
 
  $_DATABASE_NAME =	$dbname;
  $_DATABASE_USER =	$dbuser;
  $_DATABASE_PASSWORD =	$dbpass;
  $_DATABASE_HOST =	$dbhost;
 
- $ftpServer = mysql_escape_string(trim($_REQUEST['ftp-server']));
- $ftpUser = mysql_escape_string(trim($_REQUEST['ftp-user']));
- $ftpPasswd = mysql_escape_string(trim($_REQUEST['ftp-passwd']));
- $ftpPath = mysql_escape_string(trim($_REQUEST['ftp-path']));
+ $ftpServer = trim($_REQUEST['ftp-server']);
+ $ftpUser = trim($_REQUEST['ftp-user']);
+ $ftpPasswd = trim($_REQUEST['ftp-passwd']);
+ $ftpPath = trim($_REQUEST['ftp-path']);
 
  $_FTP_SERVER =	$ftpServer;
  $_FTP_USERNAME = $ftpUser;
@@ -80,7 +81,7 @@ else
  }
 
  /* CREATE ROOT USER */
- $rootPassword = mysql_escape_string(trim($_REQUEST['root-password']));
+ $rootPassword = trim($_REQUEST['root-password']);
  $now = time();
  $cryptpassword = md5($rootPassword.$now);
 
@@ -94,7 +95,7 @@ else
  else
  {
   $db->RunQuery("INSERT INTO gnujiko_users (username,password,regtime,enableshell) VALUES('root','".$cryptpassword."','$now','1')");
-  $id = mysql_insert_id();
+  $id = $db->GetInsertId();
  }
  $db->Close();
 
@@ -113,8 +114,8 @@ else
 
 
  /* CREATE FIRST USER */
- $username = mysql_escape_string(trim($_REQUEST['primary-user']));
- $password = mysql_escape_string(trim($_REQUEST['primary-password']));
+ $username = trim($_REQUEST['primary-user']);
+ $password = trim($_REQUEST['primary-password']);
  $cryptpassword = md5($password.$now);
 
  $db = new AlpaDatabase($dbhost, $dbuser, $dbpass, $dbname);

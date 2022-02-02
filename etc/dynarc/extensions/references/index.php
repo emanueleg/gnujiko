@@ -1,16 +1,16 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 08-05-2013
+ #DATE: 24-10-2016
  #PACKAGE: rubrica
  #DESCRIPTION: References extension for Dynarc archives.
- #VERSION: 2.0beta
- #CHANGELOG: 
+ #VERSION: 2.1beta
+ #CHANGELOG: 24-10-2016 : MySQLi integration.
  #TODO: 
  
 */
@@ -74,7 +74,7 @@ function dynarcextension_references_set($args, $sessid, $shellid, $archiveInfo, 
  $db = new AlpaDatabase();
  $db->RunQuery("INSERT INTO dynarc_".$archiveInfo['prefix']."_references(item_id,name,reftype,phone,email) VALUES('"
 	.$itemInfo['id']."','".$db->Purify($name)."','".$type."','".$phone."','".$email."')");
- $recid = mysql_insert_id();
+ $recid = $db->GetInsertId();
  $itemInfo['last_reference'] = array('id'=>$recid);
  $db->Close();
  return $itemInfo; 

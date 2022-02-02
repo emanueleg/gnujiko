@@ -1,16 +1,21 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 15-04-2013
+ #DATE: 29-01-2016
  #PACKAGE: gnujiko-accounting-base
  #DESCRIPTION: Collection of functions for accounting.
- #VERSION: 2.0beta
- #CHANGELOG: 
+ #VERSION: 2.7beta
+ #CHANGELOG: 29-01-2016 : Bug fix arrotondamenti sulle rate.
+			 02-03-2015 : Aggiunto pa_mode.
+			 10-02-2014 : Risolto una volta per tutte le date delle scadenze.
+			 05-02-2014 : Bug fix sulle scadenze.
+			 16-12-2013 : Bug fix sulle scadenze.
+			 14-11-2013 : Sistemato le scadenze
  #TODO: 
  
 */
@@ -35,7 +40,10 @@ function accounting_invalidArguments()
 //-------------------------------------------------------------------------------------------------------------------//
 function accounting_paymentModeInfo($args, $sessid, $shellid)
 {
- global $_BASE_PATH;
+ global $_BASE_PATH, $_COMPANY_PROFILE;
+ include_once($_BASE_PATH."include/company-profile.php");
+
+ $_DECIMALS = $_COMPANY_PROFILE['accounting']['decimals_pricing'] ? $_COMPANY_PROFILE['accounting']['decimals_pricing'] : 2;
 
  $out = "";
  $outArr = array();
@@ -59,6 +67,7 @@ function accounting_paymentModeInfo($args, $sessid, $shellid)
  $pmDF = false; /* pagamento data fattura */
  $pmMS = false; /* pagamento a partire dal mese successivo */
  $pmTerms = array(); /* lista dei termini. (es: 30,60,90,...) */
+ $paMode = "";
 
  /* ITALIAN DICTIONARY */
  $dictPM = array(
@@ -80,6 +89,7 @@ function accounting_paymentModeInfo($args, $sessid, $shellid)
    $pmTerms = explode(",",$pmInfo['terms']);
   if($pmInfo['day_after'])
    $_DD_AFTER = $pmInfo['day_after'];
+  $paMode = $pmInfo['pa_mode'];
  }
  else
  {
@@ -124,7 +134,18 @@ function accounting_paymentModeInfo($args, $sessid, $shellid)
   }
  }
 
+ if(!$paMode)
+ {
+  switch($pmType)
+  {
+   case 'RB' : $paMode = "MP12"; break;
+   case 'BB' : $paMode = "MP05"; break;
+   default : $paMode = "MP01"; break;
+  }
+ }
+
  $outArr['type'] = $pmType;
+ $outArr['pa_mode'] = $paMode;
  $outArr['terms'] = $pmTerms;
  $outArr['termstring'] = count($pmTerms) ? implode(",",$pmTerms) : "";
  $outArr['day_after'] = $_DD_AFTER;
@@ -162,30 +183,68 @@ function accounting_paymentModeInfo($args, $sessid, $shellid)
   if(!$dateFrom) $dateFrom=time();
   $outArr['deadlines'] = array();
   if($amount && count($pmTerms))
-   $am = $amount/count($pmTerms);
+   $am = round($amount/count($pmTerms), $_DECIMALS);
   else
    $am = 0;
   if($verbose)
    $out.= "Deadlines from ".date('Y-m-d',$dateFrom).":\n";
-  for($c=0; $c < count($pmTerms); $c++)
+  if(!count($pmTerms))
   {
-   $days = $pmTerms[$c];
-   $time = $dateFrom;
-   if($pmDF)
-	$time = strtotime(date("Y-m",$time)."-".date('d',$dateFrom));
-   else if($pmFM)
-	$time = strtotime(date("Y-m",$time)."-".date('t',$time));
-   $time = strtotime("+".$days." DAYS",$time);
-   if($_DD_AFTER)
-   {
-	$time = strtotime(date("Y-m",$time)."-".$_DD_AFTER);
-	$time = strtotime("+1 MONTH",$time);
-   }
-
-   $outArr['deadlines'][] = array('date'=>date("Y-m-d",$time), 'amount'=>$am);
+   $outArr['deadlines'][] = array('date'=>date('Y-m-d',$dateFrom), 'amount'=>$amount);
    if($verbose)
-	$out.= "#".($c+1)." - ".date('d/m/Y',$time)." ".($amount ? number_format($am,2,",",".") : "")."\n";  
+	$out.= "#1 - ".date('d/m/Y',$dateFrom)." ".($amount ? number_format($amount,$_DECIMALS,",",".") : "")."\n";  
   }
+  else
+  {
+   for($c=0; $c < count($pmTerms); $c++)
+   {
+    $days = $pmTerms[$c];
+    $time = $dateFrom;
+    switch($days)
+    {
+	 case '30' : $time = ($pmFM || $_DD_AFTER || $pmDF) ? strtotime("first day of +1month",$time) : strtotime("+30 days",$time); break;
+	 case '60' : $time = ($pmFM || $_DD_AFTER || $pmDF) ? strtotime("first day of +2month",$time) : strtotime("+60 days",$time); break;
+	 case '90' : $time = ($pmFM || $_DD_AFTER || $pmDF) ? strtotime("first day of +3month",$time) : strtotime("+90 days",$time); break;
+	 case '120' : $time = ($pmFM || $_DD_AFTER || $pmDF) ? strtotime("first day of +4month",$time) : strtotime("+120 days",$time); break;
+     default : {
+		 $time = strtotime("+".$days." days",$time);
+		 $pmDF = false;
+		} break;
+    }
+
+    if($pmDF)
+	{
+	 if(strtotime(date("Y-m",$time)."-".date('t',$time)) < strtotime(date("Y-m",$time)."-".date('d',$dateFrom)))
+	  $time = strtotime(date("Y-m",$time)."-".date('t',$time));
+	 else
+	  $time = strtotime(date("Y-m",$time)."-".date('d',$dateFrom));
+	}
+    else if($pmFM)
+     $time = strtotime(date("Y-m",$time)."-".date('t',$time));
+
+    if($_DD_AFTER)
+    {
+	 if(strtotime(date("Y-m",$time)."-".date('t',$time)) < strtotime(date("Y-m",$time)."-".$_DD_AFTER))
+	  $time = strtotime(date("Y-m",$time)."-".date('t',$time));
+	 else
+	  $time = strtotime(date("Y-m",$time)."-".$_DD_AFTER);
+    }
+
+    $outArr['deadlines'][] = array('date'=>date("Y-m-d",$time), 'amount'=>$am);
+    if($verbose)
+	 $out.= "#".($c+1)." - ".date('d/m/Y',$time)." ".($amount ? number_format($am,$_DECIMALS,",",".") : "")."\n";  
+   }
+  }
+
+  // verifica problemi di arrotondamento
+  $tot = 0;
+  for($c=0; $c < count($outArr['deadlines']); $c++)
+   $tot+= $outArr['deadlines'][$c]['amount'];
+  if($tot < $amount)
+   $outArr['deadlines'][0]['amount']+= round($amount-$tot, $_DECIMALS); // se < dell'importo totale aumenta nella prima rata
+  else if($tot > $amount)
+   $outArr['deadlines'][count($outArr['deadlines'])-1]['amount']-= round($tot-$amount,$_DECIMALS); // se > dell'importo tot. diminuisce sull'ultima rata
+
  }
 
  return array('message'=>$out,'outarr'=>$outArr);

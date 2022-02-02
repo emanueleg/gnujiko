@@ -1,0 +1,44 @@
+div.topcharts-container {
+
+}
+
+div.topcharts-container div.topchart-section {
+	width: 219px;
+	border-right: 1px solid #e5e5e5;
+	float: left;
+	margin-left: 10px;
+	margin-right: 10px;
+	padding-right: 20px;
+	margin-bottom: 40px;
+}
+
+div.topchart-title {
+	font-family: arial, times;
+	font-size: 20px;
+	color: #333333;
+	height: 55px;
+	line-height: 22px;
+}
+
+div.topchart-pie {
+	height: 135px;
+}
+
+div.topchart-list {
+	height: 200px;
+	overflow: auto;
+}
+
+table.topchart-items td {
+	height: 34px;
+	vertical-align: middle;
+	border-bottom: 1px solid #e5e5e5;
+	font-family: arial, times;
+	font-size: 13px;
+	color: #000;
+}
+
+table.topchart-items td.pos {
+	color: #777777;
+}
+

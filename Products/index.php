@@ -1,33 +1,52 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2017 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 10-10-2013
+ #DATE: 05-06-2017
  #PACKAGE: gmart
  #DESCRIPTION: GMart is a official Gnujiko products manager.
- #VERSION: 2.5beta
- #CHANGELOG: 10-10-2013 : Bug fix prezzi sulla clipboard.
+ #VERSION: 2.22beta
+ #CHANGELOG: 05-06-2017 : Bugfix shell error su alcune funzioni.
+			 29-04-2017 : Bugfix (di poco rilievo, scritte errate) su funzione copyCatalog.
+			 04-12-2016 : Integrazione con Amazon MWS.
+			 06-09-2016 : Bug fix in function importFromExcel.
+			 30-07-2016 : Prima integrazione con Gnujiko Transponder.
+			 02-03-2016 : Aggiornate funzioni import ed export to excel.
+			 28-09-2015 : Aggiunto funzioni mostra e nascondi dal magazzino.
+			 24-02-2015 : Bug fix su funzione esporta in excel.
+			 19-09-2014 : Restricted access bugfix.
+			 27-08-2014 : restricted access integration.
+			 12-06-2014 : Integrato con bsmcompat
+			 01-06-2014 : Cambiato voci menu in italiano. Fare internazionalizzazione
+			 17-05-2014 : Aggiunto parametro fast su importazione da excel.
+			 17-02-2014 : Aggiunto funzione copia e sposta su altro catalogo e campo ricerca in alto.
+			 14-12-2013 : bug fix.
+			 10-10-2013 : Bug fix prezzi sulla clipboard.
 			 13-09-2013 : Aggiunto modifiche di gruppo.
 			 24-07-2013 : Modifiche varie.
 			 11-02-2013 : Aggiunto il cestino.
 			 13-01-2013 : Bug fix.
- #TODO:
+ #TODO: Internazionalization.
  
 */
 
-global $_BASE_PATH, $_ABSOLUTE_URL, $_DESKTOP_SHOW_TOOLBAR, $_DESKTOP_TITLE, $_DECIMALS, $_PRICELISTS, $_CATALOGS;
+global $_BASE_PATH, $_ABSOLUTE_URL, $_DESKTOP_SHOW_TOOLBAR, $_DESKTOP_TITLE, $_DECIMALS, $_PRICELISTS, $_CATALOGS, $_RESTRICTED_ACCESS;
 
 $_DESKTOP_SHOW_TOOLBAR = false;
 $_DESKTOP_TITLE = "Prodotti";
 $_DESKTOP_BACKGROUND = "#ffffff";
 $_BASE_PATH = "../";
+$_RESTRICTED_ACCESS = "gmart";
 
 include($_BASE_PATH.'init/init1.php');
 include($_BASE_PATH.'include/session.php');
+include($_BASE_PATH."var/templates/glight/index.php");
+
+$template = new GLightTemplate();
 
 ?>
 <html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8"><title>Prodotti</title></head>
@@ -49,6 +68,12 @@ include($_BASE_PATH."var/templates/basicapp/index.php");
 include($_BASE_PATH."var/objects/htmlgutility/menu.php");
 include_once($_BASE_PATH."include/company-profile.php");
 
+
+$template->includeInternalObject("productsearch");
+$template->includeObject("editsearch");
+$template->includeCoreCode();
+
+$_TRANSPONDER_SERVICE_TAGS = is_array($template->config['transponder']) ? $template->config['transponder']['service_tags'] : "";
 $_DECIMALS = $_COMPANY_PROFILE['accounting']['decimals_pricing'];
 
 $ret = GShell("pricelists list");
@@ -65,9 +90,9 @@ if(count($_PRICELISTS))
 }
 
 $ret = GShell("dynarc archive-list -type gmart -get `thumb_img,thumb_mode` -a");
+$_CATALOGS = $ret['outarr'];
 if(((count($ret['outarr']) > 1) && !$_REQUEST['aid'] && !$_REQUEST['ap']) || isset($_REQUEST['showcatalogs']))
 {
- $_CATALOGS = $ret['outarr'];
  include_once($_BASE_PATH."Products/catalogchoice.php");
  exit;
 }
@@ -85,15 +110,27 @@ if(!$ret['error'])
  $_AT = $archiveInfo['type'];
 }
 
+$catInfo = null;
+if($_REQUEST['catid'])
+{
+ $ret = GShell("dynarc cat-info -ap '".$_AP."' -id '".$_REQUEST['catid']."'");
+ if(!$ret['error'])
+  $catInfo = $ret['outarr'];
+}
+
 basicapp_header_begin();
 ?>
 <table width='100%' border='0' cellspacing="4" cellpadding="5">
 <tr><td width='180' align='right' valign='middle'><img src="<?php echo $_ABSOLUTE_URL; ?>Products/img/logo.png"/></td>
-	<td>
+	<td width='350'> 
 	<ul class='basicbuttons' style="margin-left:40px;">
 	 <li><a href='#' onclick="newCategory()"><img src="<?php echo $_ABSOLUTE_URL; ?>Products/img/new-folder.png" border='0'/>Nuova categoria</a></li>
 	 <li><a href='#' onclick="newArticle()"><img src="<?php echo $_ABSOLUTE_URL; ?>Products/img/new-article.gif" border='0'/>Nuovo articolo</a></li>
 	</ul>
+	</td>
+	<td width='450'>
+	 <input type='text' class='edit' style='width:390px;float:left' placeholder="Cerca un prodotto" id='search' value="" ap="<?php echo $_AP; ?>" emptyonclick='true'/>
+	 <input type='button' class='button-search' id='searchbtn'/>
 	</td>
 	<?php
 	$ret = GShell("dynarc trash count -ap `".$_AP."`");
@@ -186,12 +223,51 @@ basicapp_contents_begin();
 
 <!-- PATHWAY -->
 <ul class='pathbar' style='margin-top:0px;'>
- <li class='first'><a href="<?php echo $_ABSOLUTE_URL; ?>Products/index.php?showcatalogs">Prodotti</a></li>
+ <li class='first'><a href="<?php echo $_ABSOLUTE_URL; ?>Products/index.php?showcatalogs">Tutti i cataloghi</a></li>
  <li class='last'><a href="<?php echo $_ABSOLUTE_URL; ?>Products/index.php?aid=<?php echo $archiveInfo['id']; ?>"><?php echo $archiveInfo['name']; ?></a></li>
 </ul>
 <ul class='pathway' id='pathway' style="float:left;margin-top:3px;margin-left:10px;"></ul>
 
 <br/>
+
+<?php
+/* FA APPARIRE LA RICERCA PER PART-NUMBER O MARCA-SERIE-MODELLO */
+$db = new AlpaDatabase();
+$db->RunQuery("SELECT id FROM dynarc_archive_extensions WHERE archive_id='".$archiveInfo['id']."' AND extension_name='bsmcompat'");
+if($db->Read())
+{
+ ?>
+ <div class='bsmcompat-search-container' style='height:70px'>
+  <table width='100%' cellspacing='3' cellpadding='0' border='0' class='bsmcompat-search-table'>
+   <tr><th width='100' style='text-align:right'>RICERCA</th>
+	   <th width='200' style='text-align:center' class='bg-gray'>PART NUMBER</th>
+	   <th style='text-align:right'>RICERCA GUIDATA</th>
+	   <th width='120' style='text-align:center' class='bg-gray'>MARCA</th>
+	   <th width='120' style='text-align:center' class='bg-gray'>SERIE</th>
+	   <th width='180' style='text-align:center' class='bg-gray'>MODELLO</th>
+   </tr>
+   <tr>
+	   <td>&nbsp;</td>
+	   <td><input type='text' class='edit' style='width:200px' id='bsmcompat-search-partnumber' ap="<?php echo $_AP; ?>" ext="partnumbers" retvalfield="item_id" rettxtfield="partnumber" retarrname="results"/></td>
+	   <td>&nbsp;</td>
+	   <td><select style='width:120px' id='bsmcompat-select-brand' onchange="bsmcompatBrandChanged(this)">
+			<option value=''></option>
+			<?php
+			$ret = GShell("dynarc cat-list -ap '".$_AP."_bsm'");
+			$list = $ret['outarr'];
+			for($c=0; $c < count($list); $c++)
+			 echo "<option value='".$list[$c]['id']."'>".$list[$c]['name']."</option>";
+			?>
+		   </select></td>
+	   <td><select style='width:120px' id='bsmcompat-select-serie' onchange="bsmcompatSerieChanged(this)"><option value=''></option></select></td>
+	   <td><select style='width:180px' id='bsmcompat-select-model' onchange="bsmcompatModelChanged(this)"><option value=''></option></select></td>
+   </tr>
+  </table>
+ </div>
+ <?php
+}
+$db->Close();
+?>
 
 <div class='catblock-container' style="height:138px;clear:both;" id='catblock-container'>
 <?php
@@ -225,7 +301,7 @@ for($c=0; $c < count($list); $c++)
 <br/>
 
 <table width='100%' cellspacing='0' cellpadding='0' border='0'>
-<tr><td>
+<tr><td valign='bottom'>
 	
 	 <ul class='basicmenu' id='mainmenu'>
 	  <li class='gray'><span>Menu</span>
@@ -243,6 +319,29 @@ for($c=0; $c < count($list); $c++)
 			 <li onclick="exportToXML()"><img src="<?php echo $_ABSOLUTE_URL; ?>share/icons/16x16/xml.png"/>su file XML</li>
 			 <li onclick="exportToExcel()"><img src="<?php echo $_ABSOLUTE_URL; ?>share/icons/16x16/page_white_excel.gif"/>su file Excel</li>
 			</ul></li>
+		 <?php
+		 if(is_array($template->config['transponder']) && count($template->config['transponder']['servers']))
+		 {
+		  ?>
+		  <li class="separator">&nbsp;</li>
+		  <li><img src="<?php echo $_ABSOLUTE_URL; ?>share/icons/16x16/icon_websites.gif"/>Pubblica categoria su server
+			<ul class="submenu">
+			 <?php
+			  for($c=0; $c < count($template->config['transponder']['servers']); $c++)
+			  {
+			   $transponderServerInfo = $template->config['transponder']['servers'][$c];
+			   echo "<li onclick='addCatToTransponderBasket(this)' data-serverid='".$transponderServerInfo['id']."' data-servicetag='"
+				.$transponderServerInfo['tag']."'>".$transponderServerInfo['name']
+				.($transponderServerInfo['tagname'] ? " - ".$transponderServerInfo['tagname'] : "")."</li>";
+			  }
+			 ?>
+			 <li class="separator">&nbsp;</li>
+			 <li onclick='addCatToTransponderBasket()'>Seleziona server</li>
+			</ul>
+		  </li>	 
+		  <?php
+		 }
+		 ?>
 		 <li class="separator">&nbsp;</li>
 		 <li onclick="editCat(SELECTED_CAT_ID)">Propriet&agrave; categoria</li>
 		</ul>
@@ -250,10 +349,32 @@ for($c=0; $c < count($list); $c++)
 
 	  <li class='lightgray'><span>Modifica</span>
 		<ul class='submenu'>
-		 <li id='cutmenubtn' class='disabled' onclick="cut()"><img src="<?php echo $_ABSOLUTE_URL; ?>share/icons/16x16/cut.gif"/><?php echo i18n("cut"); ?></li>
-		 <li id='copymenubtn' class='disabled' onclick="copy()"><img src="<?php echo $_ABSOLUTE_URL; ?>share/icons/16x16/copy.png"/><?php echo i18n("copy"); ?></li>
-		 <li id='pastemenubtn' class='disabled' onclick="paste()"><img src="<?php echo $_ABSOLUTE_URL; ?>share/icons/16x16/paste.gif"/><?php echo i18n("paste"); ?></li>
+		 <li id='cutmenubtn' class='disabled' onclick="cut()"><img src="<?php echo $_ABSOLUTE_URL; ?>share/icons/16x16/cut.gif"/><?php echo i18n("taglia"); ?></li>
+		 <li id='copymenubtn' class='disabled' onclick="copy()"><img src="<?php echo $_ABSOLUTE_URL; ?>share/icons/16x16/copy.png"/><?php echo i18n("copia"); ?></li>
+		 <li id='pastemenubtn' class='disabled' onclick="paste()"><img src="<?php echo $_ABSOLUTE_URL; ?>share/icons/16x16/paste.gif"/><?php echo i18n("incolla"); ?></li>
 		 <li class='separator'>&nbsp;</li>
+		 <?php
+		 if(count($_CATALOGS) > 1)
+		 {
+		  echo "<li>Copia su altro catalogo... <ul class='submenu'>";
+		  for($c=0; $c < count($_CATALOGS); $c++)
+		  {
+		   if($_CATALOGS[$c]['id'] == $archiveInfo['id'])
+			continue;
+		   echo "<li onclick='copyToCatalog(\"".$_CATALOGS[$c]['prefix']."\",this)'>".$_CATALOGS[$c]['name']."</li>";
+		  }
+		  echo "</ul></li>";
+		  echo "<li>Sposta su altro catalogo... <ul class='submenu'>";
+		  for($c=0; $c < count($_CATALOGS); $c++)
+		  {
+		   if($_CATALOGS[$c]['id'] == $archiveInfo['id'])
+			continue;
+		   echo "<li onclick='moveToCatalog(\"".$_CATALOGS[$c]['prefix']."\",this)'>".$_CATALOGS[$c]['name']."</li>";
+		  }
+		  echo "</ul></li>";
+		  echo "<li class='separator'>&nbsp;</li>";
+		 }
+		 ?>
 		 <li onclick="bulkActions()">Modifiche di gruppo</li>
 		 <li>Listini
 		  <ul class='submenu'>
@@ -293,6 +414,9 @@ for($c=0; $c < count($list); $c++)
 		   <li onclick="editSelectedItems('vatrate')">Aliquota IVA</li>
 		   <li onclick="editSelectedItems('vendor')">Fornitore</li>
 		   <li onclick="editSelectedItems('pricelists')">Listini prezzi</li>
+		   <li class='separator'>&nbsp;</li>
+		   <li onclick="showInStore()">Mostra in magazzino</li>
+		   <li onclick="hideInStore()">Nascondi dal magazzino</li>
 		  </ul>
 		 </li>
 
@@ -301,13 +425,86 @@ for($c=0; $c < count($list); $c++)
 			 <li onclick="exportToXML()"><img src="<?php echo $_ABSOLUTE_URL; ?>share/icons/16x16/xml.png"/>su file XML</li>
 			 <li onclick="exportToExcel()"><img src="<?php echo $_ABSOLUTE_URL; ?>share/icons/16x16/page_white_excel.gif"/>su file Excel</li>
 			</ul></li>
+
+		 <!-- PUBBLICA -->
+		 <?php
+		 if(is_array($template->config['transponder']) && count($template->config['transponder']['servers']))
+		 {
+		  ?>
+		  <li><img src="<?php echo $_ABSOLUTE_URL; ?>share/icons/16x16/icon_websites.gif"/>Pubblica su server
+			<ul class="submenu">
+			 <?php
+			  for($c=0; $c < count($template->config['transponder']['servers']); $c++)
+			  {
+			   $transponderServerInfo = $template->config['transponder']['servers'][$c];
+			   echo "<li onclick='addToTransponderBasket(this)' data-serverid='".$transponderServerInfo['id']."' data-servicetag='"
+				.$transponderServerInfo['tag']."'>".$transponderServerInfo['name']
+				.($transponderServerInfo['tagname'] ? " - ".$transponderServerInfo['tagname'] : "")."</li>";
+			  }
+			 ?>
+			 <li class="separator">&nbsp;</li>
+			 <li onclick='addToTransponderBasket()'>Seleziona server</li>
+			</ul>
+		  </li>	 
+		  <?php
+		 }
+
+		 if(file_exists($_BASE_PATH.$_SHELL_CMD_PATH."amazonmws.php"))
+		 {
+		  $_AMAZON_STORES = array();
+		  $ret = GShell("aboutconfig get-config -app amazon");
+		  if(!$ret['error'])
+		  {
+		   $amazonAboutConfig = $ret['outarr']['config'];
+		   $amazonMarketplaceCountries = array('it'=>'Italia', 'uk'=>'Regno Unito', 'de'=>'Germania', 'es'=>'Spagna', 'fr'=>'Francia');
+		   $amazonMarketplaceIcons = array('it'=>'ITA.png', 'uk'=>'GBR.png', 'de'=>'DEU.png', 'es'=>'ESP.png', 'fr'=>'FRA.png');
+		   if(is_array($amazonAboutConfig['mwsconfig']))
+		   {
+			reset($amazonMarketplaceCountries);
+			while(list($cc,$cname) = each($amazonMarketplaceCountries))
+			{
+			 if($amazonAboutConfig['mwsconfig']['marketplace_id_'.$cc])
+			  $_AMAZON_STORES[] = array('title'=>$cname, 'cc'=>$cc);
+			}
+		   }
+		  }
+
+		  if(count($_AMAZON_STORES))
+		  {
+		   ?>
+		   <li><img src="<?php echo $_ABSOLUTE_URL; ?>share/icons/16x16/amazon.png"/>Pubblica su Amazon
+			<ul class="submenu">
+			 <?php
+			  for($c=0; $c < count($_AMAZON_STORES); $c++)
+			   echo "<li onclick='publishOnAmazon(\"".$_AMAZON_STORES[$c]['cc']."\")'><img src='".$_ABSOLUTE_URL."share/icons/countries/"
+				.$amazonMarketplaceIcons[$_AMAZON_STORES[$c]['cc']]."'/>pubblica in ".$_AMAZON_STORES[$c]['title']."</li>";
+			 ?>
+			 <li class="separator">&nbsp;</li>
+			 <li onclick='publishOnAmazon()'>pubblica su tutti gli store</li>
+			</ul>
+		   </li>
+		   <?php
+		  }
+		 }
+
+		 ?>
 		 <li class="separator">&nbsp;</li>
-		 <li onclick="deleteSelectedItems()"><img src="<?php echo $_ABSOLUTE_URL; ?>share/icons/16x16/delete.gif"/><?php echo i18n("Delete selected"); ?></li>
+		 <li onclick="deleteSelectedItems()"><img src="<?php echo $_ABSOLUTE_URL; ?>share/icons/16x16/delete.gif"/><?php echo i18n("Elimina selezionati"); ?></li>
 		</ul>
 	  </li>
 	 </ul>
 
-	</td><td align='right'>&nbsp;</td>
+	</td><td align='right' valign='top'><?php
+	 if($_COOKIE['GMART_TRANSPONDER_BASKET_COUNT'])
+	 {
+	  echo "<div class='transp-basket-pubbtn' onclick='transponderBasketPublish()'>";
+	  echo "<span class='transp-basket-pubbtn-title'>Pubblica su internet</span><br/>";
+	  echo "<span class='transp-basket-pubbtn-subtitle'>ci sono <b>".$_COOKIE['GMART_TRANSPONDER_BASKET_COUNT']."</b> elementi da pubblicare</span>";
+	  echo "</div>";
+	 }
+	 else
+	  echo "&nbsp;";
+	?></td>
 </tr>
 </table>
 
@@ -319,6 +516,7 @@ for($c=0; $c < count($list); $c++)
 </table>
 
 <?php
+
 //-------------------------------------------------------------------------------------------------------------------//
 basicapp_contents_end();
 
@@ -332,6 +530,7 @@ else
 var MainMenu = null;
 var SELECTED_IDS = new Array();
 var SELECTED_CAT_ID = <?php echo $_REQUEST['catid'] ? $_REQUEST['catid'] : "0"; ?>;
+var SELECTED_CAT_NAME = "<?php echo $catInfo ? $catInfo['name'] : ''; ?>";
 var ITEMLISTIFRAME = null;
 var MODSEL = new Array();
 var MODACT = "";
@@ -341,6 +540,7 @@ var PLGET = "<?php echo $_PLGET; ?>";
 var DECIMALS = <?php echo $_DECIMALS ? $_DECIMALS : "2"; ?>;
 var AP = "<?php echo $_AP ? $_AP : 'gmart'; ?>";
 var AT = "<?php echo $_AT ? $_AT : 'gmart'; ?>";
+var TRANSPONDER_SERVICE_TAGS = "<?php echo $_TRANSPONDER_SERVICE_TAGS; ?>";
 
 function loadFrameView(view,params)
 {
@@ -443,6 +643,26 @@ function desktopOnLoad()
 	 this.tim = window.setTimeout(function(){document.getElementById('catblock-container').style.height = 138;},200);
 	}
  loadFrameView("<?php echo $_REQUEST['view'] ? $_REQUEST['view'] : $archiveInfo['params']['defaultview']; ?>","thumbmode=<?php echo $archiveInfo['params']['thumbmode']; ?>");
+
+ /* GLIGHT TEMPLATE */
+ Template.OnInit = function(){
+	this.initEd(document.getElementById("search"), "gmart").OnSearch = function(){
+		 if(this.value && this.data)
+		  editItem(this.data['id']);
+		};
+	this.initBtn(document.getElementById("searchbtn")).onclick = function(){document.getElementById("search").OnSearch();}
+	// search partnumber
+	var ed = document.getElementById("bsmcompat-search-partnumber");
+	if(ed)
+	{
+	 this.initEd(ed, "extfind", {startqry: "-partnumber `", endqry: "` -limit 10 --order-by 'partnumber ASC' --distinct"});
+	 ed.onchange = function(){
+		 if(this.value && this.data)
+		  editItem(this.data['item_id'],AP,AT);
+		}
+	}
+ }
+ Template.init();
 }
 
 function editItem(id,archivePrefix,archiveType)
@@ -526,7 +746,7 @@ function editItem(id,archivePrefix,archiveType)
 		 	 alert("L'articolo è stato copiato negli appunti!");
 			}
 	 	 sh2.sendCommand("dynarc item-info -ap `"+a['element']['ap']+"` -id `"+a['element']['id']+"` -extget `thumbnails,pricing`"+(PLGET ? " -get `"+PLGET+"`" : ""));
-		}
+		} break;
 	 }
 	}
 
@@ -628,6 +848,7 @@ function openNode(li)
   ITEMLISTIFRAME.OnSelectCategory(li.id);
 
  SELECTED_CAT_ID = li.id;
+ SELECTED_CAT_NAME = li.textContent;
 
  unselectAll();
 
@@ -794,28 +1015,51 @@ function importFromExcel()
 	 var fileName = a['files'][0]['fullname'];
 
 	 var sh2 = new GShell();
-	 sh2.OnFinish = function(){
-		 unselectAll();
-		 ITEMLISTIFRAME.document.location.reload();
+	 sh2.showProcessMessage("Caricamento file","Attendere prego, &egrave; in corso il caricamento del file Excel");
+	 sh2.OnError = function(err){alert(err);}
+	 sh2.OnPreOutput = function(msg,data,msgType){
+		 if(msgType == "LOADED")
+		  this.hideProcessMessage();
 		}
-	 sh2.sendCommand("gframe -f excel/import -params `ap="+AP+"&cat="+SELECTED_CAT_ID+"&parser=gmart&file="+fileName+"`");
+	 sh2.OnOutput = function(o,a){
+		 if(!a) return this.hideProcessMessage();
+		 this.hideProcessMessage();
+		 if(a > 1)
+		  document.location.reload();
+		 else
+		 {
+		  unselectAll();
+		  ITEMLISTIFRAME.document.location.reload();
+		 }
+		}
+	 sh2.sendCommand("gframe -f excel/import -params `ap="+AP+"&cat="+SELECTED_CAT_ID+"&group=gmart&parser=gmart&fast=true&file="+fileName+"`");
 	}
  sh.sendCommand("gframe -f fileupload");
 }
 
 function exportToXML()
 {
- var title = "articoli";
- var q = "";
- for(var c=0; c < SELECTED_IDS.length; c++)
-  q+= " -id "+SELECTED_IDS[c];
-
  var sh = new GShell();
  sh.OnPreOutput = function(){}
  sh.OnOutput = function(o,a){
 	 if(!a) return;
 	 document.location.href = ABSOLUTE_URL+"getfile.php?file="+a['filename'];
 	}
+ var q = "";
+ if(SELECTED_IDS.length)
+ {
+  var title = "articoli";
+  for(var c=0; c < SELECTED_IDS.length; c++)
+   q+= " -id "+SELECTED_IDS[c];
+ }
+ else if(SELECTED_CAT_ID)
+ {
+  var title = SELECTED_CAT_NAME;
+  q = " -cat '"+SELECTED_CAT_ID+"'";
+ }
+ else
+  alert("Devi selezionare almeno un'articolo oppure entrare in una categoria (se desideri esportarla totalmente)");
+
  sh.sendCommand("dynarc export -ap `"+AP+"` -f `"+title+"`"+q);
 }
 
@@ -825,12 +1069,12 @@ function exportToExcel()
  {
   // export categories or the entire archive //
   var sh = new GShell();
-  //sh.OnPreOutput = function(){}
+  sh.OnError = function(err){alert(err);}
   sh.OnOutput = function(o,a){
 	 if(!a) return;
 	 document.location.href = ABSOLUTE_URL+"getfile.php?file="+a['filename'];
 	}
-  sh.sendCommand("gframe -f gmart/excel.export -params `"+AP+"`");
+  sh.sendCommand("gframe -f gmart/excel.export -params `ap="+AP+"`");
   return;  
  }
 
@@ -840,6 +1084,7 @@ function exportToExcel()
   q+= " -id "+SELECTED_IDS[c];
 
  var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
  sh.OnPreOutput = function(){}
  sh.OnOutput = function(o,a){
 	 if(!a) return;
@@ -862,6 +1107,7 @@ function deleteSelectedItems()
   q+= " -id "+SELECTED_IDS[c];
 
  var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
  sh.OnOutput = function(){
 	 unselectAll();
 	 ITEMLISTIFRAME.document.location.reload();
@@ -893,12 +1139,12 @@ function editSelectedItems(prop)
 
  switch(prop)
  {
-  case 'brand' : sh.sendCommand("gframe -f gmart/bulkedit.brand -params `ids="+ids+"`"); break;
-  case 'baseprice' : sh.sendCommand("gframe -f gmart/bulkedit.baseprice -params `ids="+ids+"`"); break;
-  case 'units' : sh.sendCommand("gframe -f gmart/bulkedit.units -params `ids="+ids+"`"); break;
-  case 'vatrate' : sh.sendCommand("gframe -f gmart/bulkedit.vatrate -params `ids="+ids+"`"); break;
-  case 'vendor' : sh.sendCommand("gframe -f gmart/bulkedit.vendor -params `ids="+ids+"`"); break;
-  case 'pricelists' : sh.sendCommand("gframe -f gmart/bulkedit.pricelists -params `ids="+ids+"`"); break;
+  case 'brand' : sh.sendCommand("gframe -f gmart/bulkedit.brand -params `ap="+AP+"&ids="+ids+"`"); break;
+  case 'baseprice' : sh.sendCommand("gframe -f gmart/bulkedit.baseprice -params `ap="+AP+"&ids="+ids+"`"); break;
+  case 'units' : sh.sendCommand("gframe -f gmart/bulkedit.units -params `ap="+AP+"&ids="+ids+"`"); break;
+  case 'vatrate' : sh.sendCommand("gframe -f gmart/bulkedit.vatrate -params `ap="+AP+"&ids="+ids+"`"); break;
+  case 'vendor' : sh.sendCommand("gframe -f gmart/bulkedit.vendor -params `ap="+AP+"&ids="+ids+"`"); break;
+  case 'pricelists' : sh.sendCommand("gframe -f gmart/bulkedit.pricelists -params `ap="+AP+"&ids="+ids+"`"); break;
  }
 
 }
@@ -952,6 +1198,7 @@ function unselectAll(reloadFrame)
 function editCat(id)
 {
  var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
  sh.OnOutput = function(o,a){
 	 if(!a) return;
 	 if(a['removed'] || a['trashed'])
@@ -978,6 +1225,7 @@ function copyToClipboard(id)
 
  var idx = 0;
  var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
  sh.OnOutput = function(o,a){
 	 if(!id && (idx == 0))
 	 {
@@ -1038,6 +1286,7 @@ function copyToClipboard(id)
 function editClipboard(id)
 {
  var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
  sh.OnPreOutput = function(o,a,msgType){
 	 switch(msgType)
 	 {
@@ -1047,6 +1296,330 @@ function editClipboard(id)
 
 	}
  sh.sendCommand("gframe -f gmart/edit.clipboard -params `id="+id+"`");
+}
+
+function copyToCatalog(destAP,li)
+{
+ var qry = "";
+ if(SELECTED_IDS.length)
+ {
+  if(!confirm("Sei sicuro di voler copiare tutti gli articoli selezionati nel catalogo "+li.innerHTML+" ?"))
+   return;
+  for(var c=0; c < SELECTED_IDS.length; c++)
+   qry+= " -id "+SELECTED_IDS[c];
+ }
+ else if(SELECTED_CAT_ID)
+ {
+  if(!confirm("Sei sicuro di voler copiare tutti gli articoli di questa categoria nel catalogo "+li.innerHTML+" ?"))
+   return;
+  qry+= " -cat "+SELECTED_CAT_ID;
+ }
+ else
+  return alert("Devi selezionare almeno un articolo, oppure entrare in una categoria (se desideri copiarla tutta su un altro catalogo).");
+
+ var cmd = "dynarc export -ap '"+AP+"'"+qry+" || dynarc import -ap '"+destAP+"' -xml *.xml";
+
+ var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
+ sh.OnPreOutput = function(){}
+ sh.OnOutput = function(o,a){
+	 document.location.href = ABSOLUTE_URL+"Products/index.php?ap="+destAP;
+	}
+ sh.sendCommand(cmd);
+}
+
+function moveToCatalog(destAP,li)
+{
+ var qry = "";
+ if(SELECTED_IDS.length)
+ {
+  if(!confirm("Sei sicuro di voler spostare tutti gli articoli selezionati nel catalogo "+li.innerHTML+" ?"))
+   return;
+  for(var c=0; c < SELECTED_IDS.length; c++)
+   qry+= " -id "+SELECTED_IDS[c];
+ }
+ else if(SELECTED_CAT_ID)
+ {
+  if(!confirm("Sei sicuro di voler spostare tutti gli articoli di questa categoria nel catalogo "+li.innerHTML+" ?"))
+   return;
+  qry+= " -cat "+SELECTED_CAT_ID;
+ }
+ else
+  return alert("Devi selezionare almeno un articolo, oppure entrare in una categoria (se desideri spostarla tutta su un altro catalogo).");
+
+ var cmd = "dynarc export -ap '"+AP+"'"+qry+" || dynarc import -ap '"+destAP+"' -xml *.xml";
+ if(SELECTED_IDS.length)
+  cmd+= " || dynarc delete-item -ap '"+AP+"'"+qry+" -r";
+ else
+  cmd+= " || dynarc delete-cat -ap '"+AP+"' -id '"+SELECTED_CAT_ID+"' -r";
+
+ var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
+ sh.OnPreOutput = function(){}
+ sh.OnOutput = function(o,a){
+	 document.location.href = ABSOLUTE_URL+"Products/index.php?ap="+destAP;
+	}
+ sh.sendCommand(cmd);
+}
+
+/* BSMCOMPAT FUNCTIONS */
+function bsmcompatBrandChanged(sel)
+{
+ // reset serie select
+ var serieSel = document.getElementById("bsmcompat-select-serie");
+ while(serieSel.options.length > 1)
+  serieSel.removeChild(serieSel.options[1]);
+
+ // reset model select 
+ var modelSel = document.getElementById("bsmcompat-select-model");
+ while(modelSel.options.length > 1)
+  modelSel.removeChild(modelSel.options[1]);
+
+ if(!sel.value)
+  return;
+
+ var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
+ sh.OnOutput = function(o,a){
+	 if(!a || !a.length)
+	  return;
+	 for(var c=0; c < a.length; c++)
+	 {
+	  var opt = document.createElement('OPTION');
+	  opt.value = a[c]['id'];
+	  opt.innerHTML = a[c]['name'];
+	  serieSel.appendChild(opt);
+	 }
+	}
+ sh.sendCommand("dynarc cat-list -ap '"+AP+"_bsm' -parent '"+sel.value+"'");
+}
+
+function bsmcompatSerieChanged(sel)
+{
+ // reset model select 
+ var modelSel = document.getElementById("bsmcompat-select-model");
+ while(modelSel.options.length > 1)
+  modelSel.removeChild(modelSel.options[1]);
+ modelSel.options[0].innerHTML = "<i>attendere...</i>";
+
+ if(!sel.value)
+  return;
+
+ var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
+ sh.OnOutput = function(o,a){
+	 if(!a || !a['items'])
+	 {
+	  modelSel.options[0].innerHTML = "<i>nessun risultato</i>";
+	  return;
+	 }
+	 for(var c=0; c < a['items'].length; c++)
+	 {
+	  var opt = document.createElement('OPTION');
+	  opt.value = a['items'][c]['id'];
+	  opt.innerHTML = a['items'][c]['name'];
+	  modelSel.appendChild(opt);
+	 }
+	 modelSel.options[0].innerHTML = "<i>seleziona un modello</i>";
+	}
+ sh.sendCommand("dynarc item-list -ap '"+AP+"_bsm' -cat '"+sel.value+"'");
+
+}
+
+function bsmcompatModelChanged(sel)
+{
+ if(!sel.value)
+  return;
+
+ var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
+ sh.OnOutput = function(o,a){
+	 if(!a) return;
+	 if(a['link_ap'] && a['link_id'])
+	  editItem(a['link_id'],a['link_ap'],AT);
+	 else
+	  alert("Articolo inesistente. LinkAp: "+a['link_ap']+", LinkId: "+a['link_id']);
+	}
+ sh.sendCommand("dynarc item-info -ap '"+AP+"_bsm' -id '"+sel.value+"'");
+}
+
+function showInStore()
+{
+ if(!SELECTED_IDS.length)
+  return alert("Devi selezionare almeno un prodotto");
+
+ if(!confirm("Sei sicuro di voler mostrare gli articoli selezionati in magazzino?"))
+  return;
+
+ var ids = "";
+
+ for(var c=0; c < SELECTED_IDS.length; c++)
+  ids+= ","+AP+":"+SELECTED_IDS[c];
+ ids = ids.substr(1);
+
+
+ var sh = new GShell();
+ sh.OnError = function(msg){alert(msg);}
+ sh.OnOutput = function(o,a){
+	 unselectAll();
+	 ITEMLISTIFRAME.document.location.reload();
+	}
+ sh.sendCommand("store showinstore -ids `"+ids+"`");
+}
+
+function hideInStore()
+{
+ if(!SELECTED_IDS.length)
+  return alert("Devi selezionare almeno un prodotto");
+
+ if(!confirm("Sei sicuro di voler nascondere gli articoli selezionati dal magazzino?"))
+  return;
+
+ var ids = "";
+
+ for(var c=0; c < SELECTED_IDS.length; c++)
+  ids+= ","+AP+":"+SELECTED_IDS[c];
+ ids = ids.substr(1);
+
+
+ var sh = new GShell();
+ sh.OnError = function(msg){alert(msg);}
+ sh.OnOutput = function(o,a){
+	 unselectAll();
+	 ITEMLISTIFRAME.document.location.reload();
+	}
+ sh.sendCommand("store hideinstore -ids `"+ids+"`");
+}
+
+// TRANSPONDER
+function addToTransponderBasket(li, list)
+{
+ if(!SELECTED_IDS.length)
+  return alert("Devi selezionare almeno un prodotto");
+ 
+ if(li)
+ {
+  var list = new Array();
+  var a = new Array();
+  a['id'] = li.getAttribute('data-serverid');
+  a['tag'] = li.getAttribute('data-servicetag');
+  list.push(a);
+ }
+ else if(!list)
+ {
+  var sh = new GShell();
+  sh.OnError = function(err){alert(err);}
+  sh.OnOutput = function(o,a){
+	 if(!a) return;
+	 return addToTransponderBasket(null, a);
+	}
+
+  sh.sendCommand("gframe -f transponder/select.server -params `tags="+TRANSPONDER_SERVICE_TAGS+"`");
+  return;
+ }
+
+
+ var sh = new GShell();
+ sh.showProcessMessage("Pubblicazione articoli", "Attendere prego, &egrave; in corso l&lsquo;inserimento degli articoli selezionati nel basket");
+ sh.OnError = function(err){this.processMessage.error(err);}
+ sh.OnFinish = function(){
+	 this.hideProcessMessage();
+	 document.location.reload();
+	}
+
+ for(var i=0; i < list.length; i++)
+ {
+  var serverId = list[i]['id'];
+  var serviceTag = list[i]['tag'];
+
+  for(var c=0; c < SELECTED_IDS.length; c++)
+  {
+   sh.sendCommand("transponder add-to-basket -refat gmart -refap '"+AP+"' -refid '"+SELECTED_IDS[c]+"' -serverid '"+serverId+"' -servicetag '"+serviceTag+"' -action sync-products");
+  }
+ }
+ // reset environment variable 
+ sh.sendCommand("export -var GMART_TRANSPONDER_BASKET_COUNT");
+
+}
+
+function addCatToTransponderBasket(li, list)
+{
+ if(li)
+ {
+  var list = new Array();
+  var a = new Array();
+  a['id'] = li.getAttribute('data-serverid');
+  a['tag'] = li.getAttribute('data-servicetag');
+  list.push(a);
+ }
+ else if(!list)
+ {
+  var sh = new GShell();
+  sh.OnError = function(err){alert(err);}
+  sh.OnOutput = function(o,a){
+	 if(!a) return;
+	 return addCatToTransponderBasket(null, a);
+	}
+
+  sh.sendCommand("gframe -f transponder/select.server -params `tags="+TRANSPONDER_SERVICE_TAGS+"`");
+  return;
+ }
+
+
+ var sh = new GShell();
+ sh.showProcessMessage("Pubblicazione categoria", "Attendere prego, &egrave; in corso l&lsquo;inserimento di questa categoria nel basket");
+ sh.OnError = function(err){this.processMessage.error(err);}
+ sh.OnFinish = function(){
+	 this.hideProcessMessage();
+	 document.location.reload();
+	}
+
+ for(var i=0; i < list.length; i++)
+ {
+  var serverId = list[i]['id'];
+  var serviceTag = list[i]['tag'];
+
+  sh.sendCommand("transponder add-to-basket -refat gmart -refap '"+AP+"' -refcat '"+SELECTED_CAT_ID+"' -serverid '"+serverId+"' -servicetag '"+serviceTag+"' -action sync-products --include-subcat --include-items");
+
+ }
+ // reset environment variable 
+ sh.sendCommand("export -var GMART_TRANSPONDER_BASKET_COUNT");
+}
+
+function transponderBasketPublish()
+{
+ var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
+ sh.OnFinish = function(o,a){
+	 document.location.reload();
+	}
+
+ sh.sendCommand("export -var GMART_TRANSPONDER_BASKET_COUNT && gframe -f transponder/basket.publish -params `at=gmart`");
+}
+
+function publishOnAmazon(countryCode)
+{
+ if(!SELECTED_IDS.length)
+  return alert("Devi selezionare almeno un prodotto");
+
+ if(!confirm("I prodotti selezionati verranno pubblicati su Amazon. Desideri procedere?"))
+  return;
+
+ var ids = "";
+ for(var c=0; c < SELECTED_IDS.length; c++)
+  ids+= ","+SELECTED_IDS[c];
+ ids = ids.substr(1);
+
+ var sh = new GShell();
+ sh.showProcessMessage("Pubblica su Amazon", "Attendere prego, &egrave; in corso il caricamento dei prodotti selezionati su Amazon");
+ sh.OnError = function(err){this.processMessage.error(err);}
+ sh.OnOutput = function(){
+	 this.hideProcessMessage();
+	 //unselectAll();
+	 ITEMLISTIFRAME.document.location.reload();
+	}
+ sh.sendCommand("amazonmws publish -ap `"+AP+"` -ids `"+ids+"`"+(countryCode ? " -marketplace '"+countryCode+"'" : " --all-marketplace"));
+
 }
 </script>
 

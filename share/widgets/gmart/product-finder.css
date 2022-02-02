@@ -1,0 +1,52 @@
+div.glproductinfo {
+	float: left;
+	margin-left: 10px;
+	overflow: hidden;
+}
+
+div.glproduct-name {
+	font-family: Arial,sans-serif;
+	font-size: 13px;
+	font-weight: bold;
+	color: #333;
+	white-space: nowrap;
+	height: 20px;
+	line-height: 20px;
+}
+
+div.glproduct-coords, div.glproduct-barcode {
+	font-family: Arial,sans-serif;
+	font-size: 10px;
+	color: #999;
+	white-space: nowrap;
+	height: 12px;
+	line-height: 12px;
+}
+
+/* SERP */
+div.serp {
+	background: #ffffff;
+	height: 40px;
+	font-family: arial, sans-serif;
+	font-size: 12px;
+	color: #000;
+	line-height: 40px;
+	border-top: 1px solid #d8d8d8;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+}
+
+div.serp td {
+	font-family: arial, sans-serif;
+	font-size: 14px;
+	padding-left: 10px;
+}
+
+/* BASKET */
+div.basket {
+	height: 30px;
+	font-family: arial, sans-serif;
+	font-size: 12px;
+	line-height: 30px;
+	padding-left: 5px;
+}

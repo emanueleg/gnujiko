@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 28-01-2013
+ #DATE: 31-12-2016
  #PACKAGE: gserv
  #DESCRIPTION: Edit category form.
- #VERSION: 2.2beta
- #CHANGELOG: 28-01-2013 - Bug fix vari.
+ #VERSION: 2.3beta
+ #CHANGELOG: 31-12-2016 : Integrato con scontistica predefinita per cliente.
+			 28-01-2013 - Bug fix vari.
 			 12-01-2013 : Bug fix. 
  #DEPENDS: guploader
  #TODO:
@@ -24,12 +25,12 @@ define("VALID-GNUJIKO",1);
 
 include_once($_BASE_PATH."include/gshell.php");
 
-$ap = $_REQUEST['ap'] ? $_REQUEST['ap'] : "gserv";
-$id = $_REQUEST['id'];
+$_AP = $_REQUEST['ap'] ? $_REQUEST['ap'] : "gserv";
+$_ID = $_REQUEST['id'];
 
-if($id)
+if($_ID)
 {
- $ret = GShell("dynarc cat-info -ap `".$ap."` -id `".$id."` -extget `idoc,thumbnails.mode`",$_REQUEST['sessid'],$_REQUEST['shellid']);
+ $ret = GShell("dynarc cat-info -ap `".$_AP."` -id `".$_ID."` -extget `idoc,thumbnails.mode`",$_REQUEST['sessid'],$_REQUEST['shellid']);
  if($ret['error'])
   return;
 
@@ -67,6 +68,7 @@ $sessInfo = sessionInfo($_REQUEST['sessid']);
 <link rel="stylesheet" href="<?php echo $_ABSOLUTE_URL; ?>share/widgets/gserv/edit-cat.css" type="text/css" />
 <?php
 include_once($_BASE_PATH."include/js/gshell.php");
+include_once($_BASE_PATH."var/objects/gmutable/index.php");
 ?>
 </head><body>
 
@@ -74,7 +76,7 @@ include_once($_BASE_PATH."include/js/gshell.php");
 <tr><td class="header-left"><span style="margin-left:20px;">Propriet&agrave; categoria:</span></td>
 	<td class="header-top">
 			<div class="title" id="title-outer"><span id="title" onclick="rename()"><?php echo html_entity_decode($catInfo['name'],ENT_QUOTES,'UTF-8'); ?></span></div>
-			<span id="titleedit" style="display:none;" class="editinput"><span class="editinput-inner"><input type="text" id="title-ed" value="<?php echo html_entity_decode($catInfo['name'],ENT_QUOTES,'UTF-8'); ?>" style="width:240px;"/></span></span>
+			<span id="titleedit" style="display:none;" class="spaneditinput"><span class="spaneditinput-inner"><input type="text" id="title-ed" value="<?php echo html_entity_decode($catInfo['name'],ENT_QUOTES,'UTF-8'); ?>" style="width:240px;"/></span></span>
 		</td>
 	<td class="header-right"><img src="<?php echo $_ABSOLUTE_URL; ?>share/widgets/gserv/img/widget-close.png" onclick="gframe_close()" class="close-btn"/></td></tr>
 
@@ -83,19 +85,20 @@ include_once($_BASE_PATH."include/js/gshell.php");
 	 <li class="selected" id="nav-properties" onclick="selectPage(this)"><span>Propriet&agrave;</span></li>
 	 <li id="nav-thumbnail" onclick="selectPage(this)"><span>Immagine di anteprima</span></li>
 	 <li id="nav-idocs" onclick="selectPage(this)"><span>Schede servizi</span></li>
+	 <li id="nav-discount" onclick="selectPage(this)"><span>Scontistica</span></li>
 	</ul>
 
 	<div class="page" id="page-properties" style="background:url(img/folder-bg.png) center center no-repeat;">
 	 <table class="prop-table" width='100%' height='100%' cellspacing="0" cellpadding="5" border="0">
 	  <tr><td colspan="2" style="border-bottom:1px solid #cccccf;height:40px;" valign="middle">
 		   <span class="tit">Codice:</span> 
-		   <span class="editinput" style="width:130px;"><span class="editinput-inner"><input type="text" id="code" value="<?php echo $catInfo['code']; ?>" style="width:100px;"/></span></span>
+		   <span class="spaneditinput" style="width:130px;"><span class="spaneditinput-inner"><input type="text" id="code" value="<?php echo $catInfo['code']; ?>" style="width:100px;"/></span></span>
 		   <span class="tit" style="margin-left:40px;">Categoria di app.:</span>&nbsp;<select id="parent-cat-select" style="width:120px;" onchange="parentCatSelectChange(this)">
 			 <option value='0'>Cartella principale</option>
 			 <option value='other'>Altro...</option>
 			 <optgroup label="Categorie principali">
 			 <?php
-			 $ret = GShell("dynarc cat-list -ap `".$ap."`",$_REQUEST['sessid'], $_REQUEST['shellid']);
+			 $ret = GShell("dynarc cat-list -ap `".$_AP."`",$_REQUEST['sessid'], $_REQUEST['shellid']);
 			 for($c=0; $c < count($ret['outarr']); $c++)
 			  echo "<option value='".$ret['outarr'][$c]['id']."'".($ret['outarr'][$c]['id'] == $catInfo['parent_id'] ? " selected='selected'>" : ">").$ret['outarr'][$c]['name']."</option>";
 			 ?>
@@ -230,6 +233,47 @@ include_once($_BASE_PATH."include/js/gshell.php");
 	 </div>
 	</div>
 
+	<!-- DISCOUNT -->
+	<div class="page" id="page-discount" style="display:none;">
+	 <div>
+	  <table width='100%' border='0' cellspacing='0' cellpadding='10'>
+	   <tr><td><h3 class='lightblue'>Scontistiche per cliente</h3></td>
+		   <td align='right'><img src="<?php echo $_ABSOLUTE_URL; ?>share/widgets/gserv/img/add-btn-orange.png" class="add-idoc-btn" onclick="discountAdd()" title="Aggiungi"/></td>
+	   </tr>
+	  </table>
+	 </div>
+
+	 <div class="gmutable" style="width:500px;height:320px;border:0px;">
+	  <table id="predefdiscount-table" class='gmutable' width='492' cellspacing="0" cellpadding="0" border="0">
+	   <tr><th width='20'><input type="checkbox" onchange="PREDEFDISCTB.selectAll(this.checked)"/></th>
+		   <th id='predefdiscount-subject' editable='true' style="text-align:left;">CLIENTE</th>
+		   <th width='70' id='predefdiscount-percentage' editable='true' format="percentage">SCONTO</th>
+	   </tr>
+
+	   <?php
+		$db = new AlpaDatabase();
+		$qry = "SELECT d.id, d.percentage, d.item_id, r.name FROM dynarc_rubrica_predefdiscount AS d";
+		$qry.= " LEFT JOIN dynarc_rubrica_items AS r ON r.id=d.item_id";
+		$qry.= " WHERE d.ap='".$_AP."' AND d.cat_id='".$_ID."' ORDER BY r.name ASC";
+		$db->RunQuery($qry);
+		while($db->Read())
+		{
+		 echo "<tr id='".$db->record['id']."'><td align='center'><input type='checkbox'/></td>";
+		 echo "<td><span class='graybold'>".$db->record['name']."</span></td>";
+		 echo "<td><span class='graybold'>".($db->record['percentage'] ? $db->record['percentage'] : '0')."%</span></td></tr>";
+		}
+		$db->Close();
+	   ?>
+
+	  </table>
+	 </div>
+	 <div style="border-top:1px solid #dadada;height:20px;line-height:20px">
+	  <img src="<?php echo $_ABSOLUTE_URL; ?>share/icons/16x16/trash.gif" style='cursor:pointer;margin-top:2px;vertical-align:top'/> 
+	  <span class='smalltext' style='cursor:pointer' onclick='discountDeleteSelected()'>Elimina selezionati</span>
+	 </div>
+	</div>
+	<!-- EOF - DISCOUNT -->
+
 	</div></td></tr>
 
 <tr><td class="footer-left" valign="top">
@@ -247,9 +291,66 @@ include_once($_BASE_PATH."include/js/gshell.php");
 </table>
 
 <script>
-var ARCHIVE_PREFIX = "<?php echo $ap; ?>";
-var CAT_ID = <?php echo $id ? $id : "0"; ?>;
+var ARCHIVE_PREFIX = "<?php echo $_AP; ?>";
+var CAT_ID = <?php echo $_ID ? $_ID : "0"; ?>;
 var LAST_UPLOADED_FILENAME = "";
+var PREDEFDISCTB = null;
+
+function bodyOnLoad()
+{
+ /* CUSTOM PRICING TABLE */
+ PREDEFDISCTB = new GMUTable(document.getElementById('predefdiscount-table'), {autoresize:false, autoaddrows:false});
+ PREDEFDISCTB.NEW_ROWS = new Array();
+ PREDEFDISCTB.UPDATED_ROWS = new Array();
+ PREDEFDISCTB.DELETED_ROWS = new Array();
+
+
+ PREDEFDISCTB.OnBeforeAddRow = function(r){
+	 r.cells[0].innerHTML = "<input type='checkbox'/"+">"; r.cells[0].style.textAlign='center';
+	 r.cells[1].innerHTML = "<span class='graybold'></span>";
+	 r.cells[2].innerHTML = "<span class='graybold'></span>";
+	 r.cells[2].style.textAlign='center';
+
+	 this.NEW_ROWS.push(r);
+	}
+
+ PREDEFDISCTB.OnCellEdit = function(r,cell,value,data){
+	 if(r.id && (this.UPDATED_ROWS.indexOf(r) < 0))
+	  this.UPDATED_ROWS.push(r);
+	 cell.data = data;
+	}
+
+ PREDEFDISCTB.OnDeleteRow = function(r){
+	 if(r.id)
+	 {
+	  if(this.UPDATED_ROWS.indexOf(r) >= 0)
+	   this.UPDATED_ROWS.splice(this.UPDATED_ROWS.indexOf(r),1);
+	  this.DELETED_ROWS.push(r);
+	 }
+	 else
+	  this.NEW_ROWS.splice(this.NEW_ROWS.indexOf(r),1);
+	}
+
+
+ PREDEFDISCTB.FieldByName['predefdiscount-subject'].enableSearch("dynarc item-find -ap rubrica -field name `","` -limit 10 --order-by 'name ASC'","id","name","items",true);
+
+}
+
+function discountAdd()
+{
+ var r = PREDEFDISCTB.AddRow();
+ r.edit();
+}
+
+function discountDeleteSelected()
+{
+ var sel = PREDEFDISCTB.GetSelectedRows();
+ if(!sel.length) return alert("Nessun contatto selezionato");
+ if(!confirm("Sei sicuro di voler rimuovere i contatti selezionati dalla lista delle scontistiche di questa categoria?"))
+  return;
+
+ PREDEFDISCTB.DeleteSelectedRows();
+}
 
 function selectPage(li)
 {
@@ -420,6 +521,45 @@ function submit()
    q+= ","+set[c];
   qry+= " -set `"+q.substr(1)+"`";
  }
+
+ if(PREDEFDISCTB.DELETED_ROWS.length)
+ {
+  var ids = "";
+  for(var c=0; c < PREDEFDISCTB.DELETED_ROWS.length; c++)
+   ids+= ","+PREDEFDISCTB.DELETED_ROWS[c].id;
+
+  qry+= " && dynarc exec-func ext:predefdiscount.delete -params `id="+ids.substr(1)+"`";
+ }
+ if(PREDEFDISCTB.NEW_ROWS.length)
+ {
+  var subjIds = "";
+  var percs = "";
+  for(var c=0; c < PREDEFDISCTB.NEW_ROWS.length; c++)
+  {
+   var r = PREDEFDISCTB.NEW_ROWS[c];
+   if(!r.cell['predefdiscount-subject'].data) continue;
+   subjIds+= ","+r.cell['predefdiscount-subject'].data['id'];
+   percs+= ","+parseFloat(r.cell['predefdiscount-percentage'].getValue());
+  }
+  if(subjIds)
+   qry+= " && dynarc exec-func ext:predefdiscount.newbycat -params `ap="+ARCHIVE_PREFIX+"&cat=<?php echo $catInfo['id']; ?>&subjid="+subjIds.substr(1)+"&perc="+percs.substr(1)+"`";
+ }
+ if(PREDEFDISCTB.UPDATED_ROWS.length)
+ {
+  var subjIds = "";
+  var percs = "";
+  var ids = "";
+  for(var c=0; c < PREDEFDISCTB.UPDATED_ROWS.length; c++)
+  {
+   var r = PREDEFDISCTB.UPDATED_ROWS[c];
+   ids+= ","+r.id;
+   subjIds+= ","+(r.cell['predefdiscount-subject'].data ? r.cell['predefdiscount-subject'].data['id'] : 0);
+   percs+= ","+parseFloat(r.cell['predefdiscount-percentage'].getValue());
+  }
+
+  qry+= " && dynarc exec-func ext:predefdiscount.edit -params `id="+ids.substr(1)+"&subjid="+subjIds.substr(1)+"&perc="+percs.substr(1)+"`";
+ }
+
 
  var sh = new GShell();
  sh.OnOutput = function(o,a){gframe_close(o,a);}

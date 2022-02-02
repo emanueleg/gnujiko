@@ -20,6 +20,20 @@ table.gmutable th {
 	white-space: nowrap;
 }
 
+table.gmutable th.sortasc {
+	background-image: url(img/sortascdesc.png);
+	background-position: right 3px;
+	background-repeat: no-repeat;
+	cursor: pointer;
+}
+
+table.gmutable th.sortdesc {
+	background-image: url(img/sortascdesc.png);
+	background-position: right -14px;
+	background-repeat: no-repeat;
+	cursor: pointer;
+}
+
 table.gmutable tr {
 	user-select: none;
 	-moz-user-select: none;
@@ -107,9 +121,9 @@ table.gmutable tr.selected:hover td {
 	background: #ffff99;
 }
 
-table.gmutable tr:hover td span.graybold {
+/*table.gmutable tr:hover td span.graybold {
 	background: #ffffff;
-}
+}*/
 
 /* EDIT INPUT */
 span.editinput {
@@ -137,4 +151,68 @@ span.editinput-inner input:focus {
 	outline: none;
 }
 
+
+input.gmutdropdown {
+	background: #ffffff url(img/dropdown-arrow.png) right center no-repeat;
+	padding-right: 14px;
+	cursor: default;
+}
+
+
+/* POPUPMENU */
+ul.gmut-popupmenu {
+	list-style: none;
+	border: 1px solid #dadada;
+	margin: 0px;
+	padding: 0px;
+	position: absolute;
+	background: #fff;
+	visibility: hidden;
+    -moz-box-shadow: 2px 2px 2px #d8d8d8;
+    -webkit-box-shadow: 2px 2px 2px #d8d8d8;
+    box-shadow: 2px 2px 2px #d8d8d8;
+	top: 0px;
+	left: 0px;
+	z-index: 10000;
+}
+
+ul.gmut-popupmenu li {
+	height: 24px;
+	font-family: "Helvetica Neue","HelveticaNeue",Helvetica,sans-serif;
+	font-size: 10px;
+	text-align: left;
+	background-color: #fff;
+	line-height: 24px;
+	padding-right: 4px;
+	cursor: pointer;
+	white-space: nowrap;
+	-moz-user-select:none;
+	-webkit-user-select: none;
+	padding-left: 5px;
+}
+
+ul.gmut-popupmenu img {
+	float: left;
+	vertical-align: top;
+	margin: 4px;
+}
+
+ul.gmut-popupmenu li.disabled:hover, ul.gmut-popupmenu li.separator:hover {
+	background: #ffffff;
+}
+
+ul.gmut-popupmenu li.subitem {
+	background: url(img/rightarrow.png) center right no-repeat;
+	cursor: default;
+}
+
+ul.gmut-popupmenu li:hover {background-color: #fafafa;}
+
+ul.gmut-popupmenu li.separator {
+	height: 3px;
+	border-bottom: 1px solid #cccccf;
+	margin-bottom: 3px;
+}
+
+ul.gmut-popupmenu li.selected {background:#f1f1f1}
 

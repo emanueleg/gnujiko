@@ -1,16 +1,18 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 03-12-2012
+ #DATE: 23-06-2014
  #PACKAGE: gserv
  #DESCRIPTION: Archive functions for GServ archives
- #VERSION: 2.1beta
- #CHANGELOG: 03-12-2012 : Completamento delle funzioni principali.
+ #VERSION: 2.3beta
+ #CHANGELOG: 23-06-2014 : Bug fix copia e incolla
+			 10-06-2014 : Aggiunta funzione onarchiveempty
+			 03-12-2012 : Completamento delle funzioni principali.
  #TODO:
  
 */
@@ -39,8 +41,8 @@ function dynarcfunction_gserv_onedititem($args, $sessid, $shellid, $archiveInfo,
  {
   $oldItemInfo = $itemInfo;
   $oldItemInfo['cat_id'] = $itemInfo['old_cat_id'];
-  dynarcfunction_gmart_decreaseItemCounter($sessid, $shellid, $archiveInfo, $oldItemInfo);
-  dynarcfunction_gmart_increaseItemCounter($sessid, $shellid, $archiveInfo, $itemInfo);
+  dynarcfunction_gserv_decreaseItemCounter($sessid, $shellid, $archiveInfo, $oldItemInfo);
+  dynarcfunction_gserv_increaseItemCounter($sessid, $shellid, $archiveInfo, $itemInfo);
  }
  return $itemInfo;
 }
@@ -51,8 +53,8 @@ function dynarcfunction_gserv_oneditcategory($args, $sessid, $shellid, $archiveI
  {
   $oldCatInfo = $catInfo;
   $oldCatInfo['parent_id'] = $catInfo['old_parent_id'];
-  dynarcfunction_gmart_decreaseCatCounter($sessid, $shellid, $archiveInfo, $oldCatInfo);
-  dynarcfunction_gmart_increaseCatCounter($sessid, $shellid, $archiveInfo, $catInfo);
+  dynarcfunction_gserv_decreaseCatCounter($sessid, $shellid, $archiveInfo, $oldCatInfo);
+  dynarcfunction_gserv_increaseCatCounter($sessid, $shellid, $archiveInfo, $catInfo);
  }
 
  return $catInfo;
@@ -82,15 +84,15 @@ function dynarcfunction_gserv_ondeleteitem($args, $sessid, $shellid, $archiveInf
 //-------------------------------------------------------------------------------------------------------------------//
 function dynarcfunction_gserv_onmoveitem($sessid, $shellid, $archiveInfo, $oldItemInfo, $newItemInfo)
 {
- dynarcfunction_gmart_decreaseItemCounter($sessid, $shellid, $archiveInfo, $oldItemInfo);
- dynarcfunction_gmart_increaseItemCounter($sessid, $shellid, $archiveInfo, $newItemInfo);
+ dynarcfunction_gserv_decreaseItemCounter($sessid, $shellid, $archiveInfo, $oldItemInfo);
+ dynarcfunction_gserv_increaseItemCounter($sessid, $shellid, $archiveInfo, $newItemInfo);
  return true;
 }
 //-------------------------------------------------------------------------------------------------------------------//
 function dynarcfunction_gserv_onmovecategory($sessid, $shellid, $archiveInfo, $oldCatInfo, $newCatInfo)
 {
- dynarcfunction_gmart_decreaseCatCounter($sessid, $shellid, $archiveInfo, $oldCatInfo);
- dynarcfunction_gmart_increaseCatCounter($sessid, $shellid, $archiveInfo, $newCatInfo);
+ dynarcfunction_gserv_decreaseCatCounter($sessid, $shellid, $archiveInfo, $oldCatInfo);
+ dynarcfunction_gserv_increaseCatCounter($sessid, $shellid, $archiveInfo, $newCatInfo);
  return true;
 }
 //-------------------------------------------------------------------------------------------------------------------//
@@ -110,6 +112,11 @@ function dynarcfunction_gserv_onrestorecategory($args, $sessid, $shellid, $archi
 }
 //-------------------------------------------------------------------------------------------------------------------//
 function dynarcfunction_gserv_onrestoreitem($args, $sessid, $shellid, $archiveInfo, $itemInfo)
+{
+ return true;
+}
+//-------------------------------------------------------------------------------------------------------------------//
+function dynarcfunction_gserv_onarchiveempty($args, $sessid, $shellid, $archiveInfo)
 {
  return true;
 }

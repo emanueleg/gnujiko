@@ -1,16 +1,20 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 14-03-2013
+ #DATE: 24-10-2016
  #PACKAGE: rubrica
  #DESCRIPTION: Contacts extension for Dynarc archives.
- #VERSION: 2.3beta
- #CHANGELOG: 14-03-2013 : Completato funzioni sync import & export.
+ #VERSION: 2.9beta
+ #CHANGELOG: 24-10-2016 : MySQLi integration.
+			 23-10-2014 : Aggiornata dimensione CAP a 8 caratteri.
+			 03-07-2014 : Aggiunto campo codice.
+			 01-05-2014 : Bug fix su dynarcextension_contacts_import
+			 14-03-2013 : Completato funzioni sync import & export.
 			 04-02-2013 : Bug fix with special chars.
 			 03-12-2012 : Completamento delle funzioni principali.
 			 27-06-2012 : Portato country code a larghezza 3 caratteri.
@@ -29,9 +33,10 @@ function dynarcextension_contacts_install($params, $sessid, $shellid=0, $archive
 `item_id` INT( 11 ) NOT NULL ,
 `label` VARCHAR( 40 ) NOT NULL ,
 `name` VARCHAR( 80 ) NOT NULL ,
+`code` VARCHAR( 32 ) NOT NULL ,
 `address` VARCHAR( 80 ) NOT NULL ,
 `city` VARCHAR( 40 ) NOT NULL ,
-`zipcode` VARCHAR( 5 ) NOT NULL ,
+`zipcode` VARCHAR( 8 ) NOT NULL ,
 `province` VARCHAR( 2 ) NOT NULL ,
 `countrycode` VARCHAR( 3 ) NOT NULL ,
 `latitude` FLOAT( 10, 6 ) NOT NULL ,
@@ -67,6 +72,7 @@ function dynarcextension_contacts_set($args, $sessid, $shellid, $archiveInfo, $i
    case 'id' : {$id=$args[$c+1]; $c++;} break;
    case 'label' : {$label=$args[$c+1]; $c++;} break;
    case 'name' : {$name=$args[$c+1]; $c++;} break;
+   case 'code' : {$code=$args[$c+1]; $c++;} break;
    case 'address' : {$address=$args[$c+1]; $c++;} break;
    case 'city' : {$city=$args[$c+1]; $c++;} break;
    case 'zipcode' : {$zipcode=$args[$c+1]; $c++;} break;
@@ -97,6 +103,7 @@ function dynarcextension_contacts_set($args, $sessid, $shellid, $archiveInfo, $i
   $q = "";
   if($label) $q.=",label='".$db->Purify($label)."'";
   if($name) $q.=",name='".$db->Purify($name)."'";
+  if(isset($code)) $q.=",code='".$db->Purify($code)."'";
   if($address) $q.=",address='".$db->Purify($address)."'";
   if($city) $q.= ",city='".$db->Purify($city)."'";
   if($zipcode) $q.=",zipcode='$zipcode'";
@@ -134,11 +141,11 @@ function dynarcextension_contacts_set($args, $sessid, $shellid, $archiveInfo, $i
   $name = $itemInfo['name'];
 
  $db = new AlpaDatabase();
- $db->RunQuery("INSERT INTO dynarc_".$archiveInfo['prefix']."_contacts(item_id,label,name,address,city,zipcode,province,countrycode,latitude,longitude,phone,phone2,fax,cell,email,email2,email3,skype,isdefault) VALUES('"
-	.$itemInfo['id']."','".$db->Purify($label)."','".$db->Purify($name)."','".$db->Purify($address)."','"
+ $db->RunQuery("INSERT INTO dynarc_".$archiveInfo['prefix']."_contacts(item_id,label,name,code,address,city,zipcode,province,countrycode,latitude,longitude,phone,phone2,fax,cell,email,email2,email3,skype,isdefault) VALUES('"
+	.$itemInfo['id']."','".$db->Purify($label)."','".$db->Purify($name)."','".$db->Purify($code)."','".$db->Purify($address)."','"
 	.$db->Purify($city)."','".$zipcode."','".$province."','".$countrycode."','".$latitude."','".$longitude."','"
 	.$phone."','".$phone2."','".$fax."','".$cell."','".$email."','".$email2."','".$email3."','".$skype."','".$isdefault."')");
- $recid = mysql_insert_id();
+ $recid = $db->GetInsertId();
  $itemInfo['last_contact'] = array('id'=>$recid,'isdefault'=>$isdefault);
  $db->Close();
  return $itemInfo; 
@@ -170,6 +177,7 @@ function dynarcextension_contacts_get($args, $sessid, $shellid, $archiveInfo, $i
   {
    case 'label' : $label=true; break;
    case 'name' : $name=true; break;
+   case 'code' : $code=true; break;
    case 'address' : $address=true; break;
    case 'city' : $city=true; break;
    case 'zipcode' : $zipcode=true; break;
@@ -198,6 +206,7 @@ function dynarcextension_contacts_get($args, $sessid, $shellid, $archiveInfo, $i
   $a = array('id'=>$db->record['id']);
   if($label || $all) $a['label'] = $db->record['label'];
   if($name || $all) $a['name'] = $db->record['name'];
+  if($code || $all) $a['code'] = $db->record['code'];
   if($address || $all) $a['address'] = $db->record['address'];
   if($city || $all) $a['city'] = $db->record['city'];
   if($zipcode || $all) $a['zipcode'] = $db->record['zipcode'];
@@ -276,10 +285,10 @@ function dynarcextension_contacts_info($params, $sessid, $shellid)
    return array("message"=>"Permission denied!, you have not permission to read this contact.","error"=>"ITEM_PERMISSION_DENIED");
  }
 
- $outArr = array('id'=>$a['id'],'item_id'=>$a['item_id'],'label'=>$a['label'],'name'=>$a['name'],'address'=>$a['address'],'city'=>$a['city'],
-	'zipcode'=>$a['zipcode'],'province'=>$a['province'],'countrycode'=>$a['countrycode'],'latitude'=>$a['latitude'],'longitude'=>$a['longitude'],
-	'phone'=>$a['phone'],'phone2'=>$a['phone2'],'fax'=>$a['fax'],'cell'=>$a['cell'],'email'=>$a['email'],'email2'=>$a['email2'],'email3'=>$a['email3'],
-	'skype'=>$a['skype'],'isdefault'=>$a['isdefault']);
+ $outArr = array('id'=>$a['id'],'item_id'=>$a['item_id'],'label'=>$a['label'],'name'=>$a['name'],'code'=>$a['code'],'address'=>$a['address'],
+	'city'=>$a['city'],'zipcode'=>$a['zipcode'],'province'=>$a['province'],'countrycode'=>$a['countrycode'],'latitude'=>$a['latitude'],
+	'longitude'=>$a['longitude'],'phone'=>$a['phone'],'phone2'=>$a['phone2'],'fax'=>$a['fax'],'cell'=>$a['cell'],'email'=>$a['email'],
+	'email2'=>$a['email2'],'email3'=>$a['email3'],'skype'=>$a['skype'],'isdefault'=>$a['isdefault']);
  return array('message'=>$out, 'outarr'=>$outArr);
 }
 //-------------------------------------------------------------------------------------------------------------------//
@@ -304,8 +313,8 @@ function dynarcextension_contacts_export($sessid, $shellid, $archiveInfo, $itemI
  $db->RunQuery("SELECT * FROM dynarc_".$archiveInfo['prefix']."_contacts WHERE item_id='".$itemInfo['id']."' ORDER BY isdefault DESC,id ASC");
  while($db->Read())
  {
-  $xml.= '<item label="'.sanitize($db->record['label']).'" name="'.sanitize($db->record['name']).'" address="'
-	.sanitize($db->record['address']).'" city="'.sanitize($db->record['city']).'" zipcode="'.$db->record['zipcode'].'" province="'
+  $xml.= '<item label="'.sanitize($db->record['label']).'" name="'.sanitize($db->record['name']).'" code="'.sanitize($db->record['code'])
+	.'" address="'.sanitize($db->record['address']).'" city="'.sanitize($db->record['city']).'" zipcode="'.$db->record['zipcode'].'" province="'
 	.$db->record['province'].'" countrycode="'.$db->record['countrycode'].'" phone="'.$db->record['phone'].'"';
 
   if($db->record['phone2']) $xml.= ' phone2="'.$db->record['phone2'].'"';
@@ -324,13 +333,16 @@ function dynarcextension_contacts_export($sessid, $shellid, $archiveInfo, $itemI
  return array('xml'=>$xml);
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function dynarcextension_contacts_import($sessid, $shellid, $archiveInfo, $itemInfo, $extNode, $isCategory=false)
+function dynarcextension_contacts_import($sessid, $shellid, $archiveInfo, $itemInfo, $node, $isCategory=false)
 {
  if($isCategory)
   return true;
 
+ if(!$node)
+  return;
+
  $list = $node->GetElementsByTagName('item');
- $fields = array('label','name','address','city','zipcode','prov','countrycode','phone','phone2','fax','cell','email','email2','email3','skype');
+ $fields = array('label','name','code','address','city','zipcode','prov','countrycode','phone','phone2','fax','cell','email','email2','email3','skype');
  for($c=0; $c < count($list); $c++)
  {
   $n = $list[$c];
@@ -357,8 +369,9 @@ function dynarcextension_contacts_oncopyitem($sessid, $shellid, $archiveInfo, $s
  $db->RunQuery("SELECT * FROM dynarc_".$archiveInfo['prefix']."_contacts WHERE item_id='".$srcInfo['id']."' ORDER BY id ASC");
  while($db->Read())
  {
-  $db2->RunQuery("INSERT INTO dynarc_".$archiveInfo['prefix']."_contacts(item_id,label,name,address,city,zipcode,province,countrycode,latitude,longitude,phone,phone2,fax,cell,email,email2,email3,skype,isdefault) VALUES('"
-	.$cloneInfo['id']."','".$db2->Purify($db->record['label'])."','".$db2->Purify($db->record['name'])."','".$db2->Purify($db->record['address'])."','"
+  $db2->RunQuery("INSERT INTO dynarc_".$archiveInfo['prefix']."_contacts(item_id,label,name,code,address,city,zipcode,province,countrycode,latitude,longitude,phone,phone2,fax,cell,email,email2,email3,skype,isdefault) VALUES('"
+	.$cloneInfo['id']."','".$db2->Purify($db->record['label'])."','".$db2->Purify($db->record['name'])."','"
+	.$db2->Purify($db->record['code'])."','".$db2->Purify($db->record['address'])."','"
 	.$db2->Purify($db->record['city'])."','".$db->record['zipcode']."','".$db->record['province']."','".$db->record['countrycode']."','"
 	.$db->record['latitude']."','".$db->record['longitude']."','".$db->record['phone']."','".$db->record['phone2']."','"
 	.$db->record['fax']."','".$db->record['cell']."','".$db->record['email']."','".$db->record['email2']."','"
@@ -461,7 +474,7 @@ function dynarcextension_contacts_syncexport($sessid, $shellid, $archiveInfo, $i
  $db->RunQuery("SELECT * FROM dynarc_".$archiveInfo['prefix']."_contacts WHERE item_id='".$itemInfo['id']."' ORDER BY isdefault DESC,id ASC");
  while($db->Read())
  {
-  $xml.= '<item label="'.sanitize($db->record['label']).'" name="'.sanitize($db->record['name']).'" address="'
+  $xml.= '<item label="'.sanitize($db->record['label']).'" name="'.sanitize($db->record['name']).'" code="'.sanitize($db->record['code']).'" address="'
 	.sanitize($db->record['address']).'" city="'.sanitize($db->record['city']).'" zipcode="'.$db->record['zipcode'].'" province="'
 	.$db->record['province'].'" countrycode="'.$db->record['countrycode'].'" phone="'.$db->record['phone'].'"';
 
@@ -490,7 +503,7 @@ function dynarcextension_contacts_syncimport($sessid, $shellid, $archiveInfo, $i
   return true;
 
  $list = $node->GetElementsByTagName('item');
- $fields = array('label','name','address','city','zipcode','prov','countrycode','phone','phone2','fax','cell','email','email2','email3','skype');
+ $fields = array('label','name','code','address','city','zipcode','prov','countrycode','phone','phone2','fax','cell','email','email2','email3','skype');
  for($c=0; $c < count($list); $c++)
  {
   $n = $list[$c];

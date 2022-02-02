@@ -1,0 +1,27 @@
+div.gjkappmenu-block {
+ width: 88px;
+ border: 1px solid transparent;
+ border-radius: 2px;
+ cursor: pointer;
+ float: left;
+ margin: 1px;
+}
+
+div.gjkappmenu-block:hover {border-color: #cccccc;}
+
+div.gjkappmenu-block-icon {
+ width: 88px;
+ height: 68px;
+ text-align: center;
+}
+
+div.gjkappmenu-block-icon img {margin-top:8px;}
+
+div.gjkappmenu-block-title {
+ width: 88px;
+ height: 32px;
+ text-align: center;
+ font-size: 12px;
+ font-family: arial;
+ color: #333333;
+}

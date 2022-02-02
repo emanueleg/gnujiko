@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 19-12-2012
+ #DATE: 24-10-2016
  #PACKAGE: bookkeeping
  #DESCRIPTION: Official Gnujiko VAT register.
- #VERSION: 2.0beta
- #CHANGELOG: 
+ #VERSION: 2.2beta
+ #CHANGELOG: 24-10-2016 : MySQLi integration.
+			 04-05-2016 : Bugfix su funzione list.
  #DEPENDS:
  #TODO:
  
@@ -269,7 +270,7 @@ INDEX ( `rec_type` )";
  $qry.= ")";
 
  $db->RunQuery($qry);
- $recId = mysql_insert_id();
+ $recId = $db->GetInsertId();
  $db->Close();
 
  $out.= "Record #".$recId." has been inserted into VAT register ".$year;
@@ -361,10 +362,11 @@ function vatregister_edit($args, $sessid, $shellid)
  $oldCtime = strtotime($db->record['ctime']);
  $type = $db->record['rec_type'];
  /* Get VAT fields */
- $fields_count = @mysql_num_fields($db->lastQueryResult);
+ $fields_count = @mysqli_num_fields($db->lastQueryResult);
  for ($c = 0; $c < $fields_count; $c++)
  {
-  $name = @mysql_field_name($db->lastQueryResult,$c);
+  $finfo = @mysqli_fetch_field_direct($db->lastQueryResult,$c);
+  $name = $finfo->name;
   if((substr($name,0,3) == "vr_") && (substr($name,-7) == "_amount"))
   {
    $k = substr($name,3,strlen($name)-10);
@@ -481,10 +483,11 @@ function vatregister_delete($args, $sessid, $shellid)
  $ctime = strtotime($db->record['ctime']);
  $type = $db->record['rec_type'];
  /* Get VAT fields */
- $fields_count = @mysql_num_fields($db->lastQueryResult);
+ $fields_count = @mysqli_num_fields($db->lastQueryResult);
  for ($c = 0; $c < $fields_count; $c++)
  {
-  $name = @mysql_field_name($db->lastQueryResult,$c);
+  $finfo = @mysqli_fetch_field_direct($db->lastQueryResult,$c);
+  $name = $finfo->name;
   if((substr($name,0,3) == "vr_") && (substr($name,-7) == "_amount"))
   {
    $k = substr($name,3,strlen($name)-10);
@@ -522,6 +525,7 @@ function vatregister_list($args, $sessid, $shellid)
  $outArr = array();
 
  $_VAT_IDS = array();
+ $_VAT_BY_ID = array();
 
  for($c=1; $c < count($args); $c++)
   switch($args[$c])
@@ -542,6 +546,16 @@ function vatregister_list($args, $sessid, $shellid)
    case '-limit' : {$limit=$args[$c+1]; $c++;} break;
    case '--get-totals' : $getTotals=true; break;
   }
+
+ $out.= "Get vatrates...";
+ $db = new AlpaDatabase();
+ $db->RunQuery("SELECT id,vat_type,percentage FROM dynarc_vatrates_items WHERE trash='0' ORDER BY id ASC");
+ while($db->Read())
+ {
+  $_VAT_BY_ID[$db->record['id']] = $db->record;
+ }
+ $db->Close();
+ $out.= "done!\n";
 
  if(!$from && !$to)
   $year = date('Y');
@@ -624,10 +638,11 @@ function vatregister_list($args, $sessid, $shellid)
   if(!$outArr['items']) // if is the first cicle ...
   {
    /* Get VAT fields */
-   $fields_count = @mysql_num_fields($db->lastQueryResult);
+   $fields_count = @mysqli_num_fields($db->lastQueryResult);
    for ($c = 0; $c < $fields_count; $c++)
    {
-    $fname = @mysql_field_name($db->lastQueryResult,$c);
+    $finfo = @mysqli_fetch_field_direct($db->lastQueryResult,$c);
+    $fname = $finfo->name;
     if((substr($fname,0,3) == "vr_") && (substr($fname,-7) == "_amount"))
     {
      $k = substr($fname,3,strlen($fname)-10);
@@ -636,17 +651,27 @@ function vatregister_list($args, $sessid, $shellid)
    }
   }
 
+  $a['vatrates'] = array();
   $a['amount'] = 0;
   $a['vat'] = 0;
+  $a['vat_nd'] = 0;
 
   for($c=0; $c < count($_VAT_IDS); $c++)
   {
    $k = $_VAT_IDS[$c];
    if($db->record["vr_".$k."_amount"])
    {
-	$a['vatrates'][] = array('id'=>$k, 'amount'=>$db->record["vr_".$k."_amount"], 'vat'=>$db->record["vr_".$k."_vat"]);
+	$vrarr = array('id'=>$k, 'amount'=>$db->record["vr_".$k."_amount"], 'vat'=>0);
 	$a['amount']+= $db->record["vr_".$k."_amount"];
-	$a['vat']+= $db->record["vr_".$k."_vat"];
+    switch($_VAT_BY_ID[$k]['vat_type'])
+	{
+	 case 'TAXABLE' : {
+		 $a['vat']+= $db->record["vr_".$k."_vat"]; 
+		 $vrarr['vat'] = $db->record["vr_".$k."_vat"];
+		} break;
+	 case 'PURCH_EXEUR' : case 'PURCH_INEUR' : case 'SPLIT_PAYMENT' : case 'REVERSE_CHARGE' : $a['vat_nd']+= $db->record["vr_".$k."_vat"]; break;
+	}
+	$a['vatrates'][] = $vrarr;
    }
   }
 
@@ -669,16 +694,17 @@ function vatregister_list($args, $sessid, $shellid)
    $db->RunQuery("SELECT * FROM totvatreg_purchases WHERE 1 LIMIT 1");
    $db->Read();
    /* Get VAT fields */
-   $fields_count = @mysql_num_fields($db->lastQueryResult);
+   $fields_count = @mysqli_num_fields($db->lastQueryResult);
    for ($c = 0; $c < $fields_count; $c++)
    {
-    $fname = @mysql_field_name($db->lastQueryResult,$c);
+    $finfo = @mysqli_fetch_field_direct($db->lastQueryResult,$c);
+    $fname = $finfo->name;
     if((substr($fname,0,3) == "vr_") && (substr($fname,-7) == "_amount"))
     {
      $k = substr($fname,3,strlen($fname)-10);
  	 $_VAT_IDS[] = $k;
-	 $outArr['tot_purchases'][] = array('id'=>$k, 'amount'=>0, 'vat'=>0);
-	 $outArr['tot_sales'][] = array('id'=>$k, 'amount'=>0, 'vat'=>0);
+	 $outArr['tot_purchases'][] = array('id'=>$k, 'amount'=>0, 'vat'=>0, 'vat_nd'=>0);
+	 $outArr['tot_sales'][] = array('id'=>$k, 'amount'=>0, 'vat'=>0, 'vat_nd'=>0);
     }
    }
    $db->Close();
@@ -693,8 +719,13 @@ function vatregister_list($args, $sessid, $shellid)
 	for($c=0; $c < count($_VAT_IDS); $c++)
 	{
 	 $k = $_VAT_IDS[$c];
+	 $outArr['tot_purchases'][$c]['id'] = $k;
 	 $outArr['tot_purchases'][$c]['amount']+= $db->record['vr_'.$k.'_amount'];
-	 $outArr['tot_purchases'][$c]['vat']+= $db->record['vr_'.$k.'_vat'];
+	 switch($_VAT_BY_ID[$k]['vat_type'])
+	 {
+	  case 'TAXABLE' : $outArr['tot_purchases'][$c]['vat']+= $db->record['vr_'.$k.'_vat']; break;
+	  case 'PURCH_EXEUR' : case 'PURCH_INEUR' : case 'SPLIT_PAYMENT' : case 'REVERSE_CHARGE' : $outArr['tot_purchases'][$c]['vat_nd']+= $db->record['vr_'.$k.'_vat']; break;
+	 }
 	}
    }
    else
@@ -702,8 +733,13 @@ function vatregister_list($args, $sessid, $shellid)
 	for($c=0; $c < count($_VAT_IDS); $c++)
 	{
 	 $k = $_VAT_IDS[$c];
+	 $outArr['tot_sales'][$c]['id'] = $k;
 	 $outArr['tot_sales'][$c]['amount']+= $db->record['vr_'.$k.'_amount'];
-	 $outArr['tot_sales'][$c]['vat']+= $db->record['vr_'.$k.'_vat'];
+	 switch($_VAT_BY_ID[$k]['vat_type'])
+	 {
+	  case 'TAXABLE' : $outArr['tot_sales'][$c]['vat']+= $db->record['vr_'.$k.'_vat']; break;
+	  case 'PURCH_EXEUR' : case 'PURCH_INEUR' : case 'SPLIT_PAYMENT' : case 'REVERSE_CHARGE' : $outArr['tot_sales'][$c]['vat_nd']+= $db->record['vr_'.$k.'_vat']; break;
+	 }
 	}
    } 
   }
@@ -722,16 +758,17 @@ function vatregister_list($args, $sessid, $shellid)
    $db->RunQuery("SELECT * FROM totvatreg_purchases WHERE 1 LIMIT 1");
    $db->Read();
    /* Get VAT fields */
-   $fields_count = @mysql_num_fields($db->lastQueryResult);
+   $fields_count = @mysqli_num_fields($db->lastQueryResult);
    for ($c = 0; $c < $fields_count; $c++)
    {
-    $fname = @mysql_field_name($db->lastQueryResult,$c);
+    $finfo = @mysqli_fetch_field_direct($db->lastQueryResult,$c);
+    $fname = $finfo->name;
     if((substr($fname,0,3) == "vr_") && (substr($fname,-7) == "_amount"))
     {
      $k = substr($fname,3,strlen($fname)-10);
  	 $_VAT_IDS[] = $k;
-	 $outArr['tot_purchases'][] = array('id'=>$k, 'amount'=>0, 'vat'=>0);
-	 $outArr['tot_sales'][] = array('id'=>$k, 'amount'=>0, 'vat'=>0);
+	 $outArr['tot_purchases'][] = array('id'=>$k, 'amount'=>0, 'vat'=>0, 'vat_nd'=>0);
+	 $outArr['tot_sales'][] = array('id'=>$k, 'amount'=>0, 'vat'=>0, 'vat_nd'=>0);
     }
    }
    $db->Close();
@@ -749,9 +786,13 @@ function vatregister_list($args, $sessid, $shellid)
 	 {
 	  $k = $_VAT_IDS[$c];
 	  if(!$outArr['tot_purchases'][$c])
-	   $outArr['tot_purchases'][$c] = array('id'=>$k, 'amount'=>0, 'vat'=>0);
+	   $outArr['tot_purchases'][$c] = array('id'=>$k, 'amount'=>0, 'vat'=>0, 'vat_nd'=>0);
 	  $outArr['tot_purchases'][$c]['amount']+= $db->record['vr_'.$k.'_amount'];
-	  $outArr['tot_purchases'][$c]['vat']+= $db->record['vr_'.$k.'_vat'];
+	  switch($_VAT_BY_ID[$k]['vat_type'])
+	  {
+	   case 'TAXABLE' : $outArr['tot_purchases'][$c]['vat']+= $db->record['vr_'.$k.'_vat']; break;
+	   case 'PURCH_EXEUR' : case 'PURCH_INEUR' : case 'SPLIT_PAYMENT' : case 'REVERSE_CHARGE' : $outArr['tot_purchases'][$c]['vat_nd']+= $db->record['vr_'.$k.'_vat']; break;
+	  }
 	 }
 	}
 	$db->Close();
@@ -766,9 +807,13 @@ function vatregister_list($args, $sessid, $shellid)
 	 {
 	  $k = $_VAT_IDS[$c];
 	  if(!$outArr['tot_sales'][$c])
-	   $outArr['tot_sales'][$c] = array('id'=>$k, 'amount'=>0, 'vat'=>0);
+	   $outArr['tot_sales'][$c] = array('id'=>$k, 'amount'=>0, 'vat'=>0, 'vat_nd'=>0);
 	  $outArr['tot_sales'][$c]['amount']+= $db->record['vr_'.$k.'_amount'];
-	  $outArr['tot_sales'][$c]['vat']+= $db->record['vr_'.$k.'_vat'];
+	  switch($_VAT_BY_ID[$k]['vat_type'])
+	  {
+	   case 'TAXABLE' : $outArr['tot_sales'][$c]['vat']+= $db->record['vr_'.$k.'_vat']; break;
+	   case 'PURCH_EXEUR' : case 'PURCH_INEUR' : case 'SPLIT_PAYMENT' : case 'REVERSE_CHARGE' : $outArr['tot_sales'][$c]['vat_nd']+= $db->record['vr_'.$k.'_vat']; break;
+	  }
 	 }
 	}
 	$db->Close();
@@ -802,9 +847,13 @@ function vatregister_list($args, $sessid, $shellid)
 	  {
 	   $k = $_VAT_IDS[$c];
 	   if(!$outArr['tot_purchases'][$c])
-	    $outArr['tot_purchases'][$c] = array('id'=>$k, 'amount'=>0, 'vat'=>0);
+	    $outArr['tot_purchases'][$c] = array('id'=>$k, 'amount'=>0, 'vat'=>0, 'vat_nd'=>0);
 	   $outArr['tot_purchases'][$c]['amount']+= $db->record['vr_'.$k.'_amount'];
-	   $outArr['tot_purchases'][$c]['vat']+= $db->record['vr_'.$k.'_vat'];
+	   switch($_VAT_BY_ID[$k]['vat_type'])
+	   {
+	    case 'TAXABLE' : $outArr['tot_purchases'][$c]['vat']+= $db->record['vr_'.$k.'_vat']; break;
+	    case 'PURCH_EXEUR' : case 'PURCH_INEUR' : case 'SPLIT_PAYMENT' : case 'REVERSE_CHARGE' : $outArr['tot_purchases'][$c]['vat_nd']+= $db->record['vr_'.$k.'_vat']; break;
+	   }
 	  }
 	  $db->Close();
 	 }
@@ -817,9 +866,13 @@ function vatregister_list($args, $sessid, $shellid)
 	  {
 	   $k = $_VAT_IDS[$c];
 	   if(!$outArr['tot_sales'][$c])
-	    $outArr['tot_sales'][$c] = array('id'=>$k, 'amount'=>0, 'vat'=>0);
+	    $outArr['tot_sales'][$c] = array('id'=>$k, 'amount'=>0, 'vat'=>0, 'vat_nd'=>0);
 	   $outArr['tot_sales'][$c]['amount']+= $db->record['vr_'.$k.'_amount'];
-	   $outArr['tot_sales'][$c]['vat']+= $db->record['vr_'.$k.'_vat'];
+	   switch($_VAT_BY_ID[$k]['vat_type'])
+	   {
+	    case 'TAXABLE' : $outArr['tot_sales'][$c]['vat']+= $db->record['vr_'.$k.'_vat']; break;
+	    case 'PURCH_EXEUR' : case 'PURCH_INEUR' : case 'SPLIT_PAYMENT' : case 'REVERSE_CHARGE' : $outArr['tot_sales'][$c]['vat_nd']+= $db->record['vr_'.$k.'_vat']; break;
+	   }
 	  }
 	  $db->Close();
 	 }
@@ -836,9 +889,13 @@ function vatregister_list($args, $sessid, $shellid)
 	   {
 	    $k = $_VAT_IDS[$c];
 	    if(!$outArr['tot_sales'][$c])
-	     $outArr['tot_sales'][$c] = array('id'=>$k, 'amount'=>0, 'vat'=>0);
+	     $outArr['tot_sales'][$c] = array('id'=>$k, 'amount'=>0, 'vat'=>0, 'vat_nd'=>0);
 	    $outArr['tot_sales'][$c]['amount']+= $db->record['vr_'.$k.'_amount'];
-	    $outArr['tot_sales'][$c]['vat']+= $db->record['vr_'.$k.'_vat'];
+	    switch($_VAT_BY_ID[$k]['vat_type'])
+	    {
+	     case 'TAXABLE' : $outArr['tot_sales'][$c]['vat']+= $db->record['vr_'.$k.'_vat']; break;
+	     case 'PURCH_EXEUR' : case 'PURCH_INEUR' : case 'SPLIT_PAYMENT' : case 'REVERSE_CHARGE' : $outArr['tot_sales'][$c]['vat_nd']+= $db->record['vr_'.$k.'_vat']; break;
+	    }
 	   }
 	  }
 	  else
@@ -847,9 +904,13 @@ function vatregister_list($args, $sessid, $shellid)
 	   {
 	    $k = $_VAT_IDS[$c];
 	    if(!$outArr['tot_purchases'][$c])
-	     $outArr['tot_purchases'][$c] = array('id'=>$k, 'amount'=>0, 'vat'=>0);
+	     $outArr['tot_purchases'][$c] = array('id'=>$k, 'amount'=>0, 'vat'=>0, 'vat_nd'=>0);
 	    $outArr['tot_purchases'][$c]['amount']+= $db->record['vr_'.$k.'_amount'];
-	    $outArr['tot_purchases'][$c]['vat']+= $db->record['vr_'.$k.'_vat'];
+	    switch($_VAT_BY_ID[$k]['vat_type'])
+	    {
+	     case 'TAXABLE' : $outArr['tot_purchases'][$c]['vat']+= $db->record['vr_'.$k.'_vat']; break;
+	     case 'PURCH_EXEUR' : case 'PURCH_INEUR' : case 'SPLIT_PAYMENT' : case 'REVERSE_CHARGE' : $outArr['tot_purchases'][$c]['vat_nd']+= $db->record['vr_'.$k.'_vat']; break;
+	    }
 	   }
 	  }
 	 }
@@ -868,9 +929,13 @@ function vatregister_list($args, $sessid, $shellid)
 	   {
 	    $k = $_VAT_IDS[$c];
 	    if(!$outArr['tot_purchases'][$c])
-	     $outArr['tot_purchases'][$c] = array('id'=>$k, 'amount'=>0, 'vat'=>0);
+	     $outArr['tot_purchases'][$c] = array('id'=>$k, 'amount'=>0, 'vat'=>0, 'vat_nd'=>0);
 	    $outArr['tot_purchases'][$c]['amount']+= $db->record['vr_'.$k.'_amount'];
-	    $outArr['tot_purchases'][$c]['vat']+= $db->record['vr_'.$k.'_vat'];
+	    switch($_VAT_BY_ID[$k]['vat_type'])
+	    {
+	     case 'TAXABLE' : $outArr['tot_purchases'][$c]['vat']+= $db->record['vr_'.$k.'_vat']; break;
+	     case 'PURCH_EXEUR' : case 'PURCH_INEUR' : case 'SPLIT_PAYMENT' : case 'REVERSE_CHARGE' : $outArr['tot_purchases'][$c]['vat_nd']+= $db->record['vr_'.$k.'_vat']; break;
+	    }
 	   }
 	  }
 	  $db->Close();
@@ -887,9 +952,13 @@ function vatregister_list($args, $sessid, $shellid)
 	   {
 	    $k = $_VAT_IDS[$c];
 	    if(!$outArr['tot_sales'][$c])
-	     $outArr['tot_sales'][$c] = array('id'=>$k, 'amount'=>0, 'vat'=>0);
+	     $outArr['tot_sales'][$c] = array('id'=>$k, 'amount'=>0, 'vat'=>0, 'vat_nd'=>0);
 	    $outArr['tot_sales'][$c]['amount']+= $db->record['vr_'.$k.'_amount'];
-	    $outArr['tot_sales'][$c]['vat']+= $db->record['vr_'.$k.'_vat'];
+	    switch($_VAT_BY_ID[$k]['vat_type'])
+	    {
+	     case 'TAXABLE' : $outArr['tot_sales'][$c]['vat']+= $db->record['vr_'.$k.'_vat']; break;
+	     case 'PURCH_EXEUR' : case 'PURCH_INEUR' : case 'SPLIT_PAYMENT' : case 'REVERSE_CHARGE' : $outArr['tot_sales'][$c]['vat_nd']+= $db->record['vr_'.$k.'_vat']; break;
+	    }
 	   }
 	  }
 	  $db->Close();
@@ -909,9 +978,13 @@ function vatregister_list($args, $sessid, $shellid)
 	   {
 	    $k = $_VAT_IDS[$c];
 	    if(!$outArr['tot_sales'][$c])
-	     $outArr['tot_sales'][$c] = array('id'=>$k, 'amount'=>0, 'vat'=>0);
+	     $outArr['tot_sales'][$c] = array('id'=>$k, 'amount'=>0, 'vat'=>0, 'vat_nd'=>0);
 	    $outArr['tot_sales'][$c]['amount']+= $db->record['vr_'.$k.'_amount'];
-	    $outArr['tot_sales'][$c]['vat']+= $db->record['vr_'.$k.'_vat'];
+	    switch($_VAT_BY_ID[$k]['vat_type'])
+	    {
+	     case 'TAXABLE' : $outArr['tot_sales'][$c]['vat']+= $db->record['vr_'.$k.'_vat']; break;
+	     case 'PURCH_EXEUR' : case 'PURCH_INEUR' : case 'SPLIT_PAYMENT' : case 'REVERSE_CHARGE' : $outArr['tot_sales'][$c]['vat_nd']+= $db->record['vr_'.$k.'_vat']; break;
+	    }
 	   }
 	  }
 	  else
@@ -920,9 +993,13 @@ function vatregister_list($args, $sessid, $shellid)
 	   {
 	    $k = $_VAT_IDS[$c];
 	    if(!$outArr['tot_purchases'][$c])
-	     $outArr['tot_purchases'][$c] = array('id'=>$k, 'amount'=>0, 'vat'=>0);
+	     $outArr['tot_purchases'][$c] = array('id'=>$k, 'amount'=>0, 'vat'=>0, 'vat_nd'=>0);
 	    $outArr['tot_purchases'][$c]['amount']+= $db->record['vr_'.$k.'_amount'];
-	    $outArr['tot_purchases'][$c]['vat']+= $db->record['vr_'.$k.'_vat'];
+	    switch($_VAT_BY_ID[$k]['vat_type'])
+	    {
+	     case 'TAXABLE' : $outArr['tot_purchases'][$c]['vat']+= $db->record['vr_'.$k.'_vat']; break;
+	     case 'PURCH_EXEUR' : case 'PURCH_INEUR' : case 'SPLIT_PAYMENT' : case 'REVERSE_CHARGE' : $outArr['tot_purchases'][$c]['vat_nd']+= $db->record['vr_'.$k.'_vat']; break;
+	    }
 	   }
 	  }
 	 }
@@ -943,9 +1020,13 @@ function vatregister_list($args, $sessid, $shellid)
 	  {
 	   $k = $_VAT_IDS[$c];
 	   if(!$outArr['tot_sales'][$c])
-	    $outArr['tot_sales'][$c] = array('id'=>$k, 'amount'=>0, 'vat'=>0);
+	    $outArr['tot_sales'][$c] = array('id'=>$k, 'amount'=>0, 'vat'=>0, 'vat_nd'=>0);
 	   $outArr['tot_sales'][$c]['amount']+= $db->record['vr_'.$k.'_amount'];
-	   $outArr['tot_sales'][$c]['vat']+= $db->record['vr_'.$k.'_vat'];
+	   switch($_VAT_BY_ID[$k]['vat_type'])
+	   {
+	    case 'TAXABLE' : $outArr['tot_sales'][$c]['vat']+= $db->record['vr_'.$k.'_vat']; break;
+	    case 'PURCH_EXEUR' : case 'PURCH_INEUR' : case 'SPLIT_PAYMENT' : case 'REVERSE_CHARGE' : $outArr['tot_sales'][$c]['vat_nd']+= $db->record['vr_'.$k.'_vat']; break;
+	   }
 	  }
 	 }
 	 else
@@ -954,9 +1035,13 @@ function vatregister_list($args, $sessid, $shellid)
 	  {
 	   $k = $_VAT_IDS[$c];
 	   if(!$outArr['tot_purchases'][$c])
-	    $outArr['tot_purchases'][$c] = array('id'=>$k, 'amount'=>0, 'vat'=>0);
+	    $outArr['tot_purchases'][$c] = array('id'=>$k, 'amount'=>0, 'vat'=>0, 'vat_nd'=>0);
 	   $outArr['tot_purchases'][$c]['amount']+= $db->record['vr_'.$k.'_amount'];
-	   $outArr['tot_purchases'][$c]['vat']+= $db->record['vr_'.$k.'_vat'];
+	   switch($_VAT_BY_ID[$k]['vat_type'])
+	   {
+	    case 'TAXABLE' : $outArr['tot_purchases'][$c]['vat']+= $db->record['vr_'.$k.'_vat']; break;
+	    case 'PURCH_EXEUR' : case 'PURCH_INEUR' : case 'SPLIT_PAYMENT' : case 'REVERSE_CHARGE' : $outArr['tot_purchases'][$c]['vat_nd']+= $db->record['vr_'.$k.'_vat']; break;
+	   }
 	  }
 	 }
 	}

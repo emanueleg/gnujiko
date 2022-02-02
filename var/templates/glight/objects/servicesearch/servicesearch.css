@@ -1,0 +1,103 @@
+div.glservicesearch-container {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	visibility: hidden;
+	z-index: 10000;
+}
+
+div.glservicesearch-menu-div {
+	border: 1px solid #e6e6e6;
+	border-radius: 2px;
+	background: #ffffff;
+}
+
+ul.glservicesearch-menu {
+	list-style: none;
+	margin: 0px;
+	padding: 0px;
+}
+
+ul.glservicesearch-menu li {
+	background: #ffffff;
+	height: 34px;
+	border-bottom: 1px solid #e6e6e6;
+	cursor: pointer;
+}
+
+ul.glservicesearch-menu li.selected {background-color: #ffff99;}
+
+ul.glservicesearch-menu li.extended {
+	/*background-image: url(img/service-details.png);
+	background-position: 10px center;
+	background-repeat: no-repeat;*/
+}
+
+ul.glservicesearch-menu li.emptymessage {
+	font-family: Arial, sans-serif;
+	font-size: 10px;
+	text-align: center;
+	line-height: 34px;
+	color: #777;
+}
+
+ul.glservicesearch-menu li.extended:hover {background-color: #fafafa;}
+
+div.glserviceinfo {
+	float: left;
+	margin-left: 10px;
+	overflow: hidden;
+}
+
+div.glservice-name {
+	font-family: Arial,sans-serif;
+	font-size: 13px;
+	font-weight: bold;
+	color: #333;
+	white-space: nowrap;
+	height: 20px;
+	line-height: 20px;
+}
+
+div.glservice-coords, div.glservice-barcode {
+	font-family: Arial,sans-serif;
+	font-size: 10px;
+	color: #999;
+	white-space: nowrap;
+	height: 12px;
+	line-height: 12px;
+}
+
+/* OPTBOX */
+div.glservicesearch-optbox {
+	margin-top: 2px;
+	border: 1px solid #e6e6e6;
+	border-radius: 2px;
+	background: #ffffff;
+	padding-left: 10px;
+	padding-right: 10px;
+}
+
+div.glservicesearch-optbox-header {
+	height: 16px;
+	line-height: 16px;
+}
+
+span.checkbox {
+	font-family: Arial, sans-serif;
+	font-size: 10px;
+	color: #333;
+	vertical-align: middle;
+	margin-right: 10px;
+	white-space: nowrap;
+	float: left;
+}
+
+input.checkbox {
+	font-family: Arial, sans-serif;
+	font-size: 10px;
+	color: #333;
+	vertical-align: middle;
+}
+
+

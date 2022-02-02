@@ -1,16 +1,16 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2015 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 11-09-2012
+ #DATE: 05-02-2015
  #PACKAGE: bookkeeping
  #DESCRIPTION: BookKeeping parser for print preview.
- #VERSION: 2.0beta
- #CHANGELOG:
+ #VERSION: 2.1beta
+ #CHANGELOG: 05-02-2015 : Bug fix.
  #TODO:
  
 */
@@ -79,6 +79,7 @@ function bookKeepingInsertRows(itemList)
  var fRHstart = fRH;
  var start = <?php echo $_START ? $_START : "0"; ?>;
  var elidx = 0;
+ var completed = true;
 
  for(var c=start; c < itemList.length; c++)
  {
@@ -176,6 +177,7 @@ function bookKeepingInsertRows(itemList)
    var page = {start:start, elements:elidx, freespace:px2mm(fRH)};
    if(window.parent && (typeof(window.parent.previewMessage) == "function"))
 	window.parent.previewMessage("PAGEBREAK",page);
+   completed = false;
    break;
   }
   elidx++;
@@ -203,7 +205,7 @@ function bookKeepingInsertRows(itemList)
  var contents = "<style type='text/css'>"+document.body.getElementsByTagName('STYLE')[1].innerHTML+"</style>" + document.getElementById("___printpreviewpagecontents").innerHTML;
  var page = {start:start, elements:elidx, freespace:px2mm(fRH), contents:contents};
  if(window.parent && (typeof(window.parent.previewMessage) == "function"))
-  window.parent.previewMessage("PAGEINFO",page);
+  window.parent.previewMessage("PAGEINFO",page,completed);
 }
 
 </script>

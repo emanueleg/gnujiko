@@ -1,16 +1,18 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2015 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 16-04-2013
+ #DATE: 02-10-2015
  #PACKAGE: paymentmodes-config
  #DESCRIPTION: Payment modes configuration form
- #VERSION: 2.2
- #CHANGELOG: 16-04-2013 : Nuova gestione delle modalità di pagamento. 
+ #VERSION: 2.4beta
+ #CHANGELOG: 02-10-2015 : Aggiunto campo collection_charges.
+			 02-03-2015 : Aggiunto campo pa_mode.
+			 16-04-2013 : Nuova gestione delle modalità di pagamento. 
 			 13-01-2013 : Aggiunto 'type' (BB=Bonifico bancario, RB=RiBa, RD=Rimessa diretta)
  #TODO: Alcune frasi sono da fare il multi-lingua.
  
@@ -324,7 +326,48 @@ echo "<div id='contents'>";
  </div>
 
  <div style="border-bottom:1px solid #666666;padding:4px;font-size:12px;margin-bottom:12px;">
-  <b>Giorno fisso scadenza: </b> <input type='text' size='10' id='day_after' value="<?php echo $itm['day_after']; ?>"/>
+  <b>Giorno fisso scadenza: </b> <input type='text' size='3' id='day_after' value="<?php echo $itm['day_after']; ?>"/>
+ </div>
+
+ <div style="border-bottom:1px solid #666666;padding:4px;font-size:12px;margin-bottom:12px;">
+  <b>Spese d&lsquo;incasso: </b> <input type='text' size='3' id='collection_charges' value="<?php echo number_format($itm['collection_charges'], 2, ',','.'); ?>"/>
+ </div>
+
+ <div style="border-bottom:1px solid #666666;padding:4px;font-size:12px;margin-bottom:12px;">
+  <b>Modalit&agrave; x fatt. elett. PA: </b> 
+  <select id='pa_mode'>
+   <?php
+	$_PA_MODES = array(
+	 "MP01" => "Contanti",
+	 "MP02" => "Assegno",
+	 "MP03" => "Assegno circolare",
+	 "MP04" => "Contanti presso Tesoreria",
+	 "MP05" => "Bonifico",
+	 "MP06" => "Vaglia cambiario",
+	 "MP07" => "Bollettino bancario",
+	 "MP08" => "Carta di pagamento",
+	 "MP09" => "RID",
+	 "MP10" => "RID utenze",
+	 "MP11" => "RID veloce",
+	 "MP12" => "RIBA",
+	 "MP13" => "MAV",
+	 "MP14" => "Quietanza erario",
+	 "MP15" => "Giroconto su conti di contabilit&agrave; speciale",
+	 "MP16" => "Domiciliazione bancaria",
+	 "MP17" => "Domiciliazione postale",
+	 "MP18" => "Bollettino di c/c postale",
+	 "MP19" => "SEPA Direct Debit",
+	 "MP20" => "SEPA Direct Debit CORE",
+	 "MP21" => "SEPA Direct Debit B2B"
+	);
+
+	reset($_PA_MODES);
+	while(list($k,$v) = each($_PA_MODES))
+	{
+	 echo "<option value='".$k."'".($itm['pa_mode'] == $k ? " selected='selected'>" : ">").$v."</option>";
+	}
+   ?>
+  </select>
  </div>
 
 </div>
@@ -355,6 +398,8 @@ function bodyOnLoad()
 		 else
 		  document.getElementById('date_terms_1').checked = true;
 		 document.getElementById('day_after').value = (a['day_after'] != "0") ? a['day_after'] : "";
+		 document.getElementById('collection_charges').value = formatCurrency(a['collection_charges']);
+		 document.getElementById('pa_mode').value = a['pa_mode'] ? a['pa_mode'] : "MP01";
 		}
 	 sh.sendCommand("accounting paymentmodeinfo `"+this.value+"`");
 	}
@@ -378,6 +423,8 @@ function show(id)
 	 else
 	  document.getElementById('date_terms_1').checked = true;
 	 document.getElementById('day_after').value = (a['day_after'] != "0") ? a['day_after'] : "";
+	 document.getElementById('collection_charges').value = formatCurrency(a['collection_charges']);
+	 document.getElementById('pa_mode').value = a['pa_mode'] ? a['pa_mode'] : "MP01";
 	}
  sh.sendCommand("paymentmodes info -id "+id);
 }
@@ -395,8 +442,10 @@ function OnFormSubmit()
  var terms = document.getElementById('terms').value;
  var date_terms = document.getElementById('date_terms_2').checked ? 1 : 0;
  var day_after = document.getElementById('day_after').value;
+ var collectionCharges = parseCurrency(document.getElementById('collection_charges').value);
+ var paMode = document.getElementById('pa_mode').value;
 
- var q = " -name `"+title+"` -type `"+type+"` -terms `"+terms+"` -dateterms '"+date_terms+"' -dayafter '"+day_after+"'";
+ var q = " -name `"+title+"` -type `"+type+"` -terms `"+terms+"` -dateterms '"+date_terms+"' -dayafter '"+day_after+"' -pamode '"+paMode+"' -collectioncharges '"+collectionCharges+"'";
 
  var sh = new GShell();
  if(ITEM_ID)

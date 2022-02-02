@@ -1,16 +1,16 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 29-11-2012
+ #DATE: 17-03-2016
  #PACKAGE: gstore
  #DESCRIPTION: 
- #VERSION: 2.0beta
- #CHANGELOG: 
+ #VERSION: 2.1beta
+ #CHANGELOG: 17-03-2016 : Aggiunto processMessage su funzione submit
  #TODO: 
  
 */
@@ -127,10 +127,17 @@ function formSubmit(close)
  }
 
  if(cmd == "")
+ {
+  if(!close) return;
+  gframe_close();
   return;
+ }
 
  var sh = new GShell();
+ sh.showProcessMessage("Salvataggio in corso", "Attendere prego, &egrave; in corso il salvataggio della configurazione");
+ sh.OnError = function(err){this.processMessage.error(err);}
  sh.OnFinish = function(){
+	 this.hideProcessMessage();
 	 if(!close)
 	 {
 	  alert("<?php echo i18n('Saved!'); ?>");

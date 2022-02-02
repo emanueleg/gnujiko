@@ -1,15 +1,15 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2013 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 20-01-2012
+ #DATE: 11-12-2013
  #PACKAGE: dynarc-language-pack-it
  #DESCRIPTION: Italian translation for Dynarc.
- #VERSION: 2.0beta
+ #VERSION: 2.1beta
  #CHANGELOG:
  #TODO:
  
@@ -47,6 +47,12 @@ $_DICTIONARY['Rename this category'] = "Rinomina questa categoria";
 $_DICTIONARY['Are you sure you want to delete the category %s ?'] = "Sei sicuro di voler eliminare la categoria %s ?";
 $_DICTIONARY['You must select at least one category'] = "Devi selezionare almeno una categoria";
 $_DICTIONARY['Are you sure you want to empty the trash?'] = "Sei sicuro di voler svuotare il cestino?";
+
+/* share/widgets/dynarc.categoryMultiSelect.php */
+$_DICTIONARY['Select one or more categories'] = "Seleziona una o più categorie";
+$_DICTIONARY['Select all'] = "Seleziona tutte";
+$_DICTIONARY['Unselect all'] = "Deseleziona tutte";
+
 
 /* share/widgets/dynarc.categoryPermissions.php */
 $_DICTIONARY['Category permissions'] = "Permessi categoria";

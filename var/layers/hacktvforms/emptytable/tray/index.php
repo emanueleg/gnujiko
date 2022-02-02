@@ -6,11 +6,11 @@
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 03-06-2013
- #PACKAGE: 
+ #DATE: 19-12-2013
+ #PACKAGE: hacktvsearch-common
  #DESCRIPTION: 
- #VERSION: 2.0beta
- #CHANGELOG: 
+ #VERSION: 2.1beta
+ #CHANGELOG: 19-12-2013 : Aggiunta funzione per importare da tabella HTML
  #TODO:
  
 */
@@ -34,6 +34,7 @@ var HOME_PATH = "<?php echo $_USERS_HOMES.$_SESSION['HOMEDIR'].'/'; ?>";
 
 <div class="hacktvforms-emptytable-tray">
  <!-- <div class="hacktvforms-emptytable-tray-button" onclick="hacktvform_emptytable_printPreview(<?php echo $_REQUEST['layerid']; ?>)"><img src="<?php echo $imgPath; ?>print.png"/><br/>Stampa</div> -->
+ <div class="hacktvforms-emptytable-tray-button" onclick="hacktvform_emptytable_htmlTableImport(<?php echo $_REQUEST['layerid'].',\''.$_REQUEST['hacktvformid'].'\''; ?>)"><img src="<?php echo $imgPath; ?>html.png"/><br/>Importa da HTML</div>
  <div class="hacktvforms-emptytable-tray-button" onclick="hacktvform_emptytable_excelImport(<?php echo $_REQUEST['layerid'].',\''.$_REQUEST['hacktvformid'].'\''; ?>)"><img src="<?php echo $imgPath; ?>excel.png"/><br/>Importa da Excel</div>
  <div class="hacktvforms-emptytable-tray-button" onclick="hacktvform_emptytable_excelExport(<?php echo $_REQUEST['layerid'].',\''.$_REQUEST['hacktvformid'].'\''; ?>)"><img src="<?php echo $imgPath; ?>excel.png"/><br/>Esporta in Excel</div>
  <div class="hacktvforms-emptytable-tray-button" onclick="hacktvform_emptytable_sendEmail(<?php echo $_REQUEST['layerid'].',\''.$_REQUEST['hacktvformid'].'\''; ?>)"><img src="<?php echo $imgPath; ?>sendmail.png"/><br/>Invia per email</div>

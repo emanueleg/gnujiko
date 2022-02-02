@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 21-11-2012
+ #DATE: 10-06-2014
  #PACKAGE: dynarc-thumbnails-extensions
  #DESCRIPTION: Thumbnails support for categories and items.
- #VERSION: 2.0beta
- #CHANGELOG: 21-11-2012 : Bug fix into thumbnails catget.
+ #VERSION: 2.1beta
+ #CHANGELOG: 10-06-2014 : Aggiunta funzione onarchiveempty
+			 21-11-2012 : Bug fix into thumbnails catget.
  #TODO:Rifare funzione import & export e completare funzioni syncimport & syncexport.
  
 */
@@ -297,21 +298,111 @@ function dynarcextension_thumbnails_onmovecategory($args, $sessid, $shellid, $ar
  return true;
 }
 //-------------------------------------------------------------------------------------------------------------------//
-
-//-------------------------------------------------------------------------------------------------------------------//
 function dynarcextension_thumbnails_oncopycategory($sessid, $shellid, $archiveInfo, $srcInfo, $cloneInfo)
 {
  return $cloneInfo;
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function dynarcextension_thumbnails_export($sessid, $shellid, $archiveInfo, $itemInfo)
+function dynarcextension_thumbnails_onarchiveempty($args, $sessid, $shellid, $archiveInfo)
 {
- $xml = "";
- return array('xml'=>$xml);
+ return true;
 }
 //-------------------------------------------------------------------------------------------------------------------//
-function dynarcextension_thumbnails_import($sessid, $shellid, $archiveInfo, $itemInfo, $node)
+function dynarcextension_thumbnails_export($sessid, $shellid, $archiveInfo, $itemInfo, $isCategory=false)
 {
+ global $_USERS_HOMES, $_BASE_PATH;
+
+ $xml = "<thumbnails>";
+ $attachments = array();
+
+ $db = new AlpaDatabase();
+ $db->RunQuery("SELECT thumb_img,thumb_img_2,thumb_img_3,thumb_img_4,thumb_img_5,thumb_img_6 FROM dynarc_".$archiveInfo['prefix']."_items WHERE id='".$itemInfo['id']."'");
+ $db->Read();
+ for($c=0; $c < 6; $c++)
+ {
+  $f = 'thumb_img'.($c>0 ? "_".($c+1) : "");
+  if($db->record[$f])
+  {
+   $srcFile = $db->record[$f];
+   $x = explode("/",$srcFile);
+   if(is_array($x) && count($x) && (($x[0]."/") == $_USERS_HOMES))
+   {
+	unset($x[0]); unset($x[1]); $destFile = implode("/",$x);
+   }
+   else
+    $destFile = $srcFile;
+
+   $attachments[] = array("src"=>$srcFile, "dest"=>$destFile);
+
+   $pos = strrpos($srcFile, ".");
+   $thumbSrc = ""; $thumbDest = "";
+   if($pos !== false)
+   {
+	$ext = substr($srcFile, $pos+1);
+    $thumbSrc = substr($srcFile, 0, $pos)."-thumb.".$ext;
+	if(file_exists($_BASE_PATH.$thumbSrc))
+	{
+     $x = explode("/",$thumbSrc);
+     if(is_array($x) && count($x) && (($x[0]."/") == $_USERS_HOMES))
+     {
+	  unset($x[0]); unset($x[1]); $thumbDest = implode("/",$x);
+     }
+     else
+      $thumbDest = $thumbSrc; 
+	 $attachments[] = array("src"=>$thumbSrc, "dest"=>$thumbDest);
+	}
+   }
+   $xml.= "<thumbnail src=\"{HOMEDIR}/".$destFile."\"".($thumbDest ? " thumb=\"{HOMEDIR}/".$thumbDest."\"" : "")."/>";
+  }
+ }
+ $db->Close();
+ $xml.= "</thumbnails>";
+
+ return array('xml'=>$xml, 'attachments'=>$attachments);
+}
+//-------------------------------------------------------------------------------------------------------------------//
+function dynarcextension_thumbnails_import($sessid, $shellid, $archiveInfo, $itemInfo, $node, $isCategory=false)
+{
+ global $_BASE_PATH, $_USERS_HOMES;
+
+ if($isCategory)
+  return ;
+
+ if(!$node)
+  return;
+
+ $sessInfo = sessionInfo($sessid);
+
+ if($sessInfo['uname'] == "root")
+  $homedir = "";
+ else if($sessInfo['uid'])
+ {
+  $db = new AlpaDatabase();
+  $db->RunQuery("SELECT homedir FROM gnujiko_users WHERE id='".$sessInfo['uid']."'");
+  $db->Read();
+  $homedir = $_USERS_HOMES.$db->record['homedir'];
+  $db->Close();
+ }
+ else
+  $homedir = "tmp";
+
+ $qry = "";
+ $list = $node->getElementsByTagName('thumbnail');
+ for($c=0; $c < count($list); $c++)
+ {
+  $n = $list[$c];
+  $src = $n->getString('src');
+  if($c == 0)	$qry.= "thumb_img='";
+  else          $qry.= ",thumb_img_".($c+1)."='";
+  $qry.= str_replace("{HOMEDIR}",$homedir,$src)."'";
+ }
+ if($qry)
+ {
+  $db = new AlpaDatabase();
+  $db->RunQuery("UPDATE dynarc_".$archiveInfo['prefix']."_items SET ".$qry." WHERE id='".$itemInfo['id']."'");
+  $db->Close();
+ }
+
  return true;
 }
 //-------------------------------------------------------------------------------------------------------------------//

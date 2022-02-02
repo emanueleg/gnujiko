@@ -1,0 +1,12 @@
+table.standard-table th {
+ font-family: arial, sans-serif;
+ font-size: 14px;
+ color: #3364c3;
+ text-align: left;
+ border-bottom: 2px solid #3364C3;
+}
+
+table.standard-table td {
+ font-family: arial, sans-serif;
+ font-size: 12px;
+}

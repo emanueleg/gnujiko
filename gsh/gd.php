@@ -1,17 +1,21 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 08-02-2013
+ #DATE: 09-03-2016
  #PACKAGE: gd-lib
  #DESCRIPTION: GD (Graphic Library) command-line tool
- #VERSION: 2.1beta
- #CHANGELOG: 08-02-2013 : Bug fix.
+ #VERSION: 2.3beta
+ #CHANGELOG: 09-03-2016 : Aggiunta funzione save-from-dataurl.
+			 12-02-2014 : Aggiunta funzione get-image-size
+			 08-02-2013 : Bug fix.
+
  #TODO: Fare le funzioni no-stretch e no-cut su gd resize.
+ #TODO: Save via FTP su funzione save-from-dataurl.
  
 */
 
@@ -31,7 +35,9 @@ function shell_gd($args, $sessid, $shellid=0)
   // ACTION //
   case 'info' : return gjkgd_info($args, $sessid, $shellid); break;
   case 'resize' : return gjkgd_resize($args, $sessid, $shellid); break;
- 
+  case 'get-image-size' : return gjkgd_getImageSize($args, $sessid, $shellid); break;
+  case 'save-from-dataurl' : return gjkgd_saveFromDataURL($args, $sessid, $shellid); break;
+
   default : return gjkgd_invalidArguments(); break;
  }
 }
@@ -194,4 +200,106 @@ function gjkgd_resize($args, $sessid, $shellid)
  return array('message'=>$out, 'outarr'=>$outArr);
 }
 //-------------------------------------------------------------------------------------------------------------------//
+function gjkgd_getImageSize($args, $sessid, $shellid)
+{
+ global $_BASE_PATH, $_USERS_HOMES;
+ $out = "";
+ $outArr = array();
+
+ $sessInfo = sessionInfo($sessid);
+ 
+ if($sessInfo['uname'] == "root")
+  $basepath = $_BASE_PATH;
+ else if($sessInfo['uid'])
+ {
+  $db = new AlpaDatabase();
+  $db->RunQuery("SELECT homedir FROM gnujiko_users WHERE id='".$sessInfo['uid']."'");
+  $db->Read();
+  $basepath = $_BASE_PATH.$_USERS_HOMES.$db->record['homedir']."/";
+  $db->Close();
+ }
+
+ for($c=1; $c < count($args); $c++)
+  switch($args[$c])
+  {
+   case '-file' : case '-f' : {$fileName=$args[$c+1]; $c++;} break;
+   case '-url' : {$url=$args[$c+1]; $c++;} break;
+   default : $url=$args[$c]; break;
+  }
+
+ if($fileName)
+ {
+  $file = $basepath.$fileName;
+  if(!file_exists($file))
+   return array("message"=>"Error: file ".$fileName." does not exists!", "error"=>"FILE_DOES_NOT_EXISTS");
+  $input = $file;
+ }
+ else if($url)
+  $input = $url;
+ else
+  return array("message"=>"You must specify the file name. (with: -file FILENAME || -url URL)", "error"=>"INVALID_FILE_NAME");
+
+ $size = @getimagesize($input);
+ if(!$size || !count($size))
+  return array("message"=>"Error: unable to detect size for image: ".$input, "error"=>"UNABLE_TO_DETECT_IMAGE_SIZE");
+
+ $out.= "Size = ".$size[0]."x".$size[1];
+ $outArr = array("width"=>$size[0], "height"=>$size[1]);
+
+ return array("message"=>$out, "outarr"=>$outArr);
+}
+//-------------------------------------------------------------------------------------------------------------------//
+function gjkgd_saveFromDataURL($args, $sessid, $shellid)
+{
+ global $_BASE_PATH, $_USERS_HOMES;
+ include_once($_BASE_PATH."include/filesfunc.php");
+
+ $out = "";
+ $outArr = array();
+
+ $sessInfo = sessionInfo($sessid);
+ 
+ if($sessInfo['uname'] == "root")
+  $basepath = $_BASE_PATH;
+ else if($sessInfo['uid'])
+ {
+  $db = new AlpaDatabase();
+  $db->RunQuery("SELECT homedir FROM gnujiko_users WHERE id='".$sessInfo['uid']."'");
+  $db->Read();
+  $basepath = $_BASE_PATH.$_USERS_HOMES.$db->record['homedir']."/";
+  $db->Close();
+ }
+ else
+  return array("message"=>"Unable to create file: you don't have a valid account!","error"=>"INVALID_USER");
+
+ $DATA = "";
+
+ for($c=1; $c < count($args); $c++)
+  switch($args[$c])
+  {
+   case '-f' : case '-file' : {$fileName=$args[$c+1]; $c++;} break;
+   case '-data' : {$DATA = $args[$c+1]; $c++;} break;
+
+   default : { if(!$DATA) $DATA=$args[$c]; } break;
+  }
+
+ $filteredData = substr($DATA, strpos($DATA, ",")+1);
+ $unencodedData = base64_decode($filteredData);
+
+ $fp = fwopen($fileName, 'wb', $basepath, $sessid, $shellid);
+ if(!$fp) return array('message'=>"Unable to create file ".$fileName.".\n", 'error'=>'UNABLE_TO_CREATE_FILE');
+ if(!@fwrite($fp, $unencodedData)) return array('message'=>"Unable to write to file ".$fileName.".\n", 'error'=>'UNABLE_TO_WRITE_TO_FILE');
+ @fclose($fp);
+ /* TODO: da fare in caso di scrittura via FTP. */
+
+
+ $outArr['filename'] = $fileName;
+ $outArr['absoluteurl'] = $outArr['fullfilename'] = $basepath.$fileName;
+
+ $out.= "done!\nImage has been saved into file ".$fileName."\n";
+
+ return array("message"=>$out, "outarr"=>$outArr);
+}
+//-------------------------------------------------------------------------------------------------------------------//
+
 

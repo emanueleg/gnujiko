@@ -159,6 +159,9 @@ Layer.prototype.empty = function()
 Layer.prototype.reload = function(arguments, callbackFunction, callbackTimer)
 {
  this.empty();
+ if(typeof(arguments) != "string")
+  arguments = this.Arguments;
+
  this.load(this.LayerName, arguments, this._destObj, false, callbackFunction, callbackTimer);
 }
 

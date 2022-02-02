@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2013 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 01-02-2012
+ #DATE: 19-12-2013
  #PACKAGE: gnujiko-base
  #DESCRIPTION: List of files and directory
- #VERSION: 2.1beta
- #CHANGELOG: 01-02-2012 : Bug fix sui filtri.
+ #VERSION: 2.2beta
+ #CHANGELOG: 19-12-2013 : Aggiunta opzione --get-basedir
+			 01-02-2012 : Bug fix sui filtri.
 			 30-01-2012 : Aggiunto funzionalità quali: filtri, limit, visualizzare solo directory o solo files.
 			 28-01-2012 : Aggiunto argomento -list e bug fix vari.
  #TODO:
@@ -21,6 +22,8 @@ function shell_ls($args, $sessid, $shellid=0)
 {
  global $_BASE_PATH, $_FTP_SERVER, $_FTP_USERNAME, $_FTP_PASSWORD, $_FTP_PATH, $_USERS_HOMES;
  $sessInfo = sessionInfo($sessid);
+
+ $userBasePath = "";
  
  if($sessInfo['uname'] == "root")
   $basepath = $_BASE_PATH ? $_BASE_PATH : "./";
@@ -37,7 +40,8 @@ function shell_ls($args, $sessid, $shellid=0)
   $db = new AlpaDatabase();
   $db->RunQuery("SELECT homedir FROM gnujiko_users WHERE id='".$sessInfo['uid']."'");
   $db->Read();
-  $basepath = $_BASE_PATH.$_USERS_HOMES.$db->record['homedir']."/";
+  $userBasePath = $_USERS_HOMES.$db->record['homedir']."/";
+  $basepath = $_BASE_PATH.$userBasePath;
   $db->Close();
  }
  else
@@ -57,6 +61,7 @@ function shell_ls($args, $sessid, $shellid=0)
    case '-f' : $onlyFiles=true; break;
    case '-limit' : {$limit=$args[$c+1]; $c++;} break;
    case '-filter' : {$filter=$args[$c+1]; $c++;} break;
+   case '--get-basepath' : $getBasepath=true; break;
    default : $dir = ltrim($args[$c],"/"); break;
   }
 
@@ -65,6 +70,9 @@ function shell_ls($args, $sessid, $shellid=0)
 
  if(!is_dir($basepath.$dir))
   return array("message"=>"Directory $dir does not exists.","error"=>"INVALID_DIRECTORY");
+
+ if($getBasepath)
+  $outArr['basepath'] = $userBasePath;
 
  if($limit)
  {

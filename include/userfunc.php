@@ -1,16 +1,19 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2017 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 19-04-2013
+ #DATE: 05-06-2017
  #PACKAGE: gnujiko-accounts
  #DESCRIPTION: Common users and groups functions
- #VERSION: 2.3beta
- #CHANGELOG: 19-04-2013 : Bug fix in function _userGroups()
+ #VERSION: 2.9beta
+ #CHANGELOG: 05-06-2017 : Aggiornata funzione _getGroupUserList.
+			 20-05-2017 : Bug fix with shared on functions canRead, canWrite, canExecute.
+			 07-02-2017 : Aggiunta funzione _getUserHomedir.
+			 19-04-2013 : Bug fix in function _userGroups()
 			 12-01-2013 : Aggiunto funzioni _getUserName e _getGroupName
 			 13-11-2012 : Bug fix in function _userInGroupId.
 			 02-08-2012 : Bug fix.
@@ -24,7 +27,7 @@
 function _isRoot($uid=0)
 {
  $db = new AlpaDatabase();
- $db->RunQuery("SELECT name FROM gnujiko_users WHERE id='$uid'");
+ $db->RunQuery("SELECT name FROM gnujiko_users WHERE id='".$uid."'");
  if(!$db->Read())
   return false;
  if($db->record['name'] != "root")
@@ -36,7 +39,7 @@ function _isRoot($uid=0)
 function _getGID($groupName)
 {
  $db = new AlpaDatabase();
- $db->RunQuery("SELECT id FROM gnujiko_groups WHERE name='$groupName' LIMIT 1");
+ $db->RunQuery("SELECT id FROM gnujiko_groups WHERE name='".$groupName."' LIMIT 1");
  if(!$db->Read())
   return false;
  $gid = $db->record['id'];
@@ -72,6 +75,29 @@ function _getGroupName($gid)
  $db->Read();
  $ret = $db->record['name'];
  $db->Close();
+ return $ret;
+}
+//----------------------------------------------------------------------------------------------------------------------//
+function _getUserHomedir($uid=0, $sessid=0)
+{
+ global $_USERS_HOMES;
+
+ $ret = "";
+ if(!$uid && $sessid)
+ {
+  $sessInfo = sessionInfo($sessid);
+  if($sessInfo['uname'] == "root")
+   return $ret;
+  $uid = $sessInfo['uid'];
+ }
+ if(!$uid) return false;
+
+ $db = new AlpaDatabase();
+ $db->RunQuery("SELECT homedir FROM gnujiko_users WHERE id='".$uid."'");
+ if(!$db->Read()) { $db->Close(); return false; }
+ $ret = $_USERS_HOMES.$db->record['homedir']."/";
+ $db->Close();
+
  return $ret;
 }
 //----------------------------------------------------------------------------------------------------------------------//
@@ -166,18 +192,20 @@ function _getGroupUserList($gid=null, $returnOnlyIds=false)
  //--- return a list of all users(members) of the group ---//
  $ret = array();
  $ids = array();
+
  $db = new AlpaDatabase();
- $db2 = new AlpaDatabase();
- $db->RunQuery("SELECT * FROM gnujiko_usergroups WHERE gid='".($gid ? $gid : $_SESSION['GID'])."'");
+ $qry = "SELECT u.id,u.username,u.fullname,u.email,u.homedir FROM gnujiko_usergroups AS i";
+ $qry.= " LEFT JOIN gnujiko_users AS u ON u.id=i.uid";
+ $qry.= " WHERE i.gid='".($gid ? $gid : $_SESSION['GID'])."'";
+ $db->RunQuery($qry);
  while($db->Read())
  {
-  $db2->RunQuery("SELECT * FROM gnujiko_users WHERE id='".$db->record['uid']."'");
-  $db2->Read();
-  $ret[] = array('id'=>$db2->record['id'],'name'=>$db2->record['name'],'fullname'=>$db2->record['fullname'],'email'=>$db2->record['email']);
-  $ids[] = $db2->record['id'];
+  $ret[] = array('id'=>$db->record['id'], 'name'=>$db->record['username'], 'fullname'=>$db->record['fullname'],
+	'email'=>$db->record['email'], 'homedir'=>$db->record['homedir']);
+  $ids[] = $db->record['id'];
  }
- $db2->Close();
  $db->Close();
+
  return $returnOnlyIds ? $ids : $ret;
 }
 //----------------------------------------------------------------------------------------------------------------------//
@@ -208,26 +236,28 @@ class GMOD
   /* shared groups */
   if($shGroups != "")
   {
-   $x = explode(",",ltrim(rtrim($shGroups,",#"),"#,"));
+   $tmp = str_replace(array('#,',',#'), "", $shGroups);
+   $x = explode(",",$tmp);
    for($c=0; $c < count($x); $c++)
    {
 	$xx = explode("=",$x[$c]);
 	if(!$xx[0])
 	 continue;
-	$this->SHGROUPS[$xx[0]] = $xx[1];
+	$this->SHGROUPS[trim($xx[0])] = trim($xx[1]);
    }
   }
 
   /* shared users */
   if($shUsers != "")
   {
-   $x = explode(",",ltrim(rtrim($shUsers,",#"),"#,"));
+   $tmp = str_replace(array('#,',',#'), "", $shUsers);
+   $x = explode(",",$tmp);
    for($c=0; $c < count($x); $c++)
    {
 	$xx = explode("=",$x[$c]);
 	if(!$xx[0])
 	 continue;
-	$this->SHUSERS[$xx[0]] = $xx[1];
+	$this->SHUSERS[trim($xx[0])] = trim($xx[1]);
    }
   }
 
@@ -302,6 +332,7 @@ class GMOD
 	return ($this->SHUSERS[$usrid] & 4 ? true : false);
    if(count($this->SHGROUPS))
    {
+	reset($this->SHGROUPS);
     while(list($k,$v) = each($this->SHGROUPS))
     {
 	 if(_userInGroupId($k,$usrid))
@@ -327,15 +358,15 @@ class GMOD
    return true;
   }
   $db->Close();
-  $mods = "".$this->MOD;
+  $mods = strval($this->MOD);
   if($usrid == $this->OWNER)
-   return ($mods[0] & 2 ? true : false);
+   return (($mods[0] & 2) ? true : false);
   else if(_userInGroupId($this->GROUP, $usrid))
-   return ($mods[1] & 2 ? true : false);
+   return (($mods[1] & 2) ? true : false);
   else
   {
    $db = new AlpaDatabase();
-   $db->RunQuery("SELECT username FROM gnujiko_users WHERE id='$usrid'");
+   $db->RunQuery("SELECT username FROM gnujiko_users WHERE id='".$usrid."'");
    if($db->Read() && ($db->record['username'] == "root"))
    {
     $db->Close();
@@ -348,6 +379,7 @@ class GMOD
 	return ($this->SHUSERS[$usrid] & 2 ? true : false);
    if(count($this->SHGROUPS))
    {
+	reset($this->SHGROUPS);
     while(list($k,$v) = each($this->SHGROUPS))
     {
 	 if(_userInGroupId($k,$usrid))
@@ -395,6 +427,7 @@ class GMOD
 	return ($this->SHUSERS[$usrid] & 1 ? true : false);
    if(count($this->SHGROUPS))
    {
+	reset($this->SHGROUPS);
     while(list($k,$v) = each($this->SHGROUPS))
     {
 	 if(_userInGroupId($k,$usrid))

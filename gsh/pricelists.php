@@ -1,16 +1,18 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 19-09-2013
+ #DATE: 17-12-2016
  #PACKAGE: companyprofile-config
  #DESCRIPTION: Official Gnujiko Pricelists manager.
- #VERSION: 2.2beta
- #CHANGELOG: 19-09-2013 : Aggiunto prezzo fornitore, % C&M, % sconto
+ #VERSION: 2.4beta
+ #CHANGELOG: 17-12-2016 : Aggiunto campo discount.
+			 24-10-2016 : MySQLi integration.
+			 19-09-2013 : Aggiunto prezzo fornitore, % C&M, % sconto
 			 17-04-2013 : Aggiunto i listini extra.
  #DEPENDS:
  #TODO:
@@ -53,6 +55,7 @@ function pricelists_new($args, $sessid, $shellid)
   {
    case '-name' : {$name=$args[$c+1]; $c++;} break;
    case '-markuprate' : {$markupRate=$args[$c+1]; $c++;} break;
+   case '-discount' : {$discount=$args[$c+1]; $c++;} break;
    case '-vat' : {$vat=$args[$c+1]; $c++;} break;
    case '--default' : $isDefault=true; break;
    case '--extra' : case '-isextra' : $isExtra=true; break;
@@ -75,9 +78,9 @@ function pricelists_new($args, $sessid, $shellid)
  $db->Close();
  
  $db = new AlpaDatabase();
- $db->RunQuery("INSERT INTO pricelists(name,markuprate,vat,isdefault,isextra) VALUES('"
-	.$db->Purify($name)."','".$markupRate."','".$vat."','".$isDefault."','".$isExtra."')");
- $id = mysql_insert_id();
+ $db->RunQuery("INSERT INTO pricelists(name,markuprate,discount,vat,isdefault,isextra) VALUES('"
+	.$db->Purify($name)."','".$markupRate."','".$discount."','".$vat."','".$isDefault."','".$isExtra."')");
+ $id = $db->GetInsertId();
  $db->Close();
 
  $db = new AlpaDatabase();
@@ -92,7 +95,7 @@ function pricelists_new($args, $sessid, $shellid)
  }
  $db->Close();
 
- $outArr = array('id'=>$id,'name'=>$name,'markuprate'=>$markupRate,'vat'=>$vat,'default'=>$isDefault,'extra'=>$isExtra);
+ $outArr = array('id'=>$id, 'name'=>$name, 'markuprate'=>$markupRate, 'discount'=>$discount, 'vat'=>$vat, 'default'=>$isDefault, 'extra'=>$isExtra);
  $out = "done!";
  return array('message'=>$out,'outarr'=>$outArr);
 }
@@ -109,6 +112,7 @@ function pricelists_edit($args, $sessid, $shellid)
    case '-id' : {$id=$args[$c+1]; $c++;} break;
    case '-name' : {$name=$args[$c+1]; $c++;} break;
    case '-markuprate' : {$markupRate=$args[$c+1]; $c++;} break;
+   case '-discount' : {$discount=$args[$c+1]; $c++;} break;
    case '-vat' : {$vat=$args[$c+1]; $c++;} break;
    case '--default' : $isDefault = true; break;
    case '-isextra' : {$isExtra=$args[$c+1]; $c++;} break;
@@ -125,18 +129,14 @@ function pricelists_edit($args, $sessid, $shellid)
 
  $db = new AlpaDatabase();
  $q = "";
- if($name)
-  $q.= ",name='".$db->Purify($name)."'";
- if(isset($markupRate))
-  $q.= ",markuprate='$markupRate'";
- if(isset($vat))
-  $q.= ",vat='".$vat."'";
- if($isDefault)
-  $q.= ",isdefault='1'";
- if(isset($isExtra))
-  $q.= ",isextra='".$isExtra."'";
+ if($name)					$q.= ",name='".$db->Purify($name)."'";
+ if(isset($markupRate))		$q.= ",markuprate='".$markupRate."'";
+ if(isset($discount))		$q.= ",discount='".$discount."'";
+ if(isset($vat))			$q.= ",vat='".$vat."'";
+ if($isDefault)				$q.= ",isdefault='1'";
+ if(isset($isExtra))		$q.= ",isextra='".$isExtra."'";
 
- $db->RunQuery("UPDATE pricelists SET ".ltrim($q,",")." WHERE id='$id'");
+ $db->RunQuery("UPDATE pricelists SET ".ltrim($q,",")." WHERE id='".$id."'");
  $db->Close();
 
  $out = "Pricelist has been updated!";
@@ -170,7 +170,7 @@ function pricelists_delete($args, $sessid, $shellid)
  $isDefault = $db->record['isdefault'];
 
  $id = $db->record['id'];
- $db->RunQuery("DELETE FROM pricelists WHERE id='$id'");
+ $db->RunQuery("DELETE FROM pricelists WHERE id='".$id."'");
  $db->Close();
 
  if($isDefault)
@@ -216,7 +216,9 @@ function pricelists_list($args, $sessid, $shellid)
  $db->RunQuery("SELECT * FROM pricelists WHERE ".($where ? $where : "1")." ORDER BY $orderBy");
  while($db->Read())
  {
-  $outArr[] = array('id'=>$db->record['id'],'name'=>$db->record['name'],'markuprate'=>$db->record['markuprate'],'vat'=>$db->record['vat'],'default'=>$db->record['isdefault'],'isextra'=>$db->record['isextra']);
+  $outArr[] = array('id'=>$db->record['id'], 'name'=>$db->record['name'], 'markuprate'=>$db->record['markuprate'],
+	'discount'=>$db->record['discount'], 'vat'=>$db->record['vat'], 'default'=>$db->record['isdefault'], 
+	'isextra'=>$db->record['isextra']);
   $out.= "#".$db->record['id']." - ".$db->record['name']."\n";
  }
  $db->Close();
@@ -258,7 +260,8 @@ function pricelists_include($args, $sessid, $shellid)
  {
   $db->RunQuery("SELECT * FROM pricelists WHERE id='".$plIds[$c]."'");
   $db->Read();
-  $_PRICELISTS[] = array('id'=>$plIds[$c], 'markuprate'=>$db->record['markuprate'], 'vatrate'=>$db->record['vat']);
+  $_PRICELISTS[] = array('id'=>$plIds[$c], 'markuprate'=>$db->record['markuprate'], 'discount'=>$db->record['discount'], 
+	'vatrate'=>$db->record['vat']);
  }
  $db->Close();
 
@@ -272,7 +275,8 @@ function pricelists_include($args, $sessid, $shellid)
   for($j=0; $j < count($_PRICELISTS); $j++)
    $qry.= ",pricelist_".$_PRICELISTS[$j]['id']."_baseprice=baseprice"
 	.",pricelist_".$_PRICELISTS[$j]['id']."_vat='".$_PRICELISTS[$j]['vatrate']."'"
-	.",pricelist_".$_PRICELISTS[$j]['id']."_mrate='".$_PRICELISTS[$j]['markuprate']."'";
+	.",pricelist_".$_PRICELISTS[$j]['id']."_mrate='".$_PRICELISTS[$j]['markuprate']."'"
+	.",pricelist_".$_PRICELISTS[$j]['id']."_discount='".$_PRICELISTS[$j]['discount']."'";
 	
 
   $db->RunQuery($qry." WHERE id='".$ids[$c]."'");	
@@ -287,7 +291,8 @@ function pricelists_include($args, $sessid, $shellid)
   for($j=0; $j < count($_PRICELISTS); $j++)
    $qry.= ",pricelist_".$_PRICELISTS[$j]['id']."_baseprice=baseprice"
 	.",pricelist_".$_PRICELISTS[$j]['id']."_vat='".$_PRICELISTS[$j]['vatrate']."'"
-	.",pricelist_".$_PRICELISTS[$j]['id']."_mrate='".$_PRICELISTS[$j]['markuprate']."'";
+	.",pricelist_".$_PRICELISTS[$j]['id']."_mrate='".$_PRICELISTS[$j]['markuprate']."'"
+	.",pricelist_".$_PRICELISTS[$j]['id']."_discount='".$_PRICELISTS[$j]['discount']."'";
 
 
   $db->RunQuery($qry." WHERE cat_id='".$catIds[$c]."'");
@@ -333,7 +338,8 @@ function pricelists_exclude($args, $sessid, $shellid)
  {
   $db->RunQuery("SELECT * FROM pricelists WHERE id='".$plIds[$c]."'");
   $db->Read();
-  $_PRICELISTS[] = array('id'=>$plIds[$c], 'markuprate'=>$db->record['markuprate'], 'vatrate'=>$db->record['vat']);
+  $_PRICELISTS[] = array('id'=>$plIds[$c], 'markuprate'=>$db->record['markuprate'], 'discount'=>$db->record['discount'],
+	'vatrate'=>$db->record['vat']);
  }
  $db->Close();
 

@@ -68,3 +68,7 @@ function gnujiko_autoretrieve_absoluteurl()
 }
 //-------------------------------------------------------------------------------------------------------------------//
 
+$_GNUJIKO_ACCOUNT =	"";
+$_GNUJIKO_TOKEN =	"";
+$_USDRATIO = 1.3813;
+

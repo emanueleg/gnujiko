@@ -1,15 +1,17 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2014 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 24-05-2012
+ #DATE: 14-01-2014
  #PACKAGE: htmlgutility
  #DESCRIPTION: Simple menu
- #VERSION: 2.0beta
- #CHANGELOG: 24-05-2012 : Some bug fix.
+ #VERSION: 2.2beta
+ #CHANGELOG: 14-01-2014 : Risolto bug sotto-menu.
+			 09-11-2013 : Aggiunto correctX e correctY
+			 24-05-2012 : Some bug fix.
  #TODO:
  
 */
@@ -23,7 +25,7 @@ function GPopupMenu(_parent, _ul, _options)
 {
  this.parent = _parent;
  this.UL = _ul;
- this._options = _options ? _options : {showmethod : "underparent"};
+ this._options = _options ? _options : {showmethod : "underparent", correctX:0, correctY:0, absX:0, absY:0};
  this._state = "closed";
  this.oldULparentNode = _ul.parentNode;
 
@@ -96,7 +98,6 @@ GPopupMenu.prototype.show = function()
   var posX = parseFloat(this.O.style.left);
   var posY = parseFloat(this.O.style.top);
 
-
  this.O.style.zIndex = GMENU_ZINDEX;
  GMENU_ZINDEX++;
 
@@ -108,6 +109,16 @@ GPopupMenu.prototype.show = function()
  var SW = window.innerHeight ? window.innerHeight : document.body.clientHeight;
  if((posY+this.UL.offsetHeight) > SW)
   posY = SW-this.UL.offsetHeight-20;
+
+ if(this._options.correctX)
+  posX+= this._options.correctX;
+ if(this._options.correctY)
+  posY+= this._options.correctY;
+
+ if(this._options.absX)
+  posX = this._options.absX;
+ if(this._options.absY)
+  posY = this._options.absY;
 
  this.O.style.top = posY;
  this.O.style.left = posX;

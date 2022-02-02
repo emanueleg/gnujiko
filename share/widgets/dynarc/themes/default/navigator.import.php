@@ -1,16 +1,17 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2012 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2015 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 05-11-2012
+ #DATE: 02-05-2015
  #PACKAGE: dynarc-gui
  #DESCRIPTION: Default theme for dynarc.navigator - Import form
- #VERSION: 2.0beta
- #CHANGELOG: 05-11-2012 : Some bug fix.
+ #VERSION: 2.1beta
+ #CHANGELOG: 02-05-2015 : Bug fix.
+			 05-11-2012 : Some bug fix.
  #DEPENDS:
  #TODO:
  
@@ -103,6 +104,7 @@ if($_POST['action'] == "import")
 	function bodyOnLoad()
 	{
 	 var sh = new GShell();
+	 sh.OnError = function(err){alert(err);}
 	 sh.OnPreOutput = function(o,a, msgType, msgRef){
 		 switch(msgType)
 		 {

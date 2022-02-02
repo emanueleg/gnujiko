@@ -6,11 +6,11 @@
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 24-05-2013
+ #DATE: 24-12-2013
  #PACKAGE: powershell
  #DESCRIPTION: Official Gnujiko PowerShell
- #VERSION: 2.0beta
- #CHANGELOG:
+ #VERSION: 2.1beta
+ #CHANGELOG: 24-12-2013 : Bug fix vari e bypass error.
  #TODO:
  
 */
@@ -94,7 +94,7 @@ $ProgressBar = new ProgressBar();
 <div class="powershell-widget-footer">
 <table width="100%" cellspacing="0" cellpadding="0" border="0">
 <tr><td width="60" height="40"><img src="<?php echo $imgPath; ?>button-play.png" id="button-play" onclick="runCommands()"/></td>
-	<td width="450"><?php $ProgressBar->Paint(); ?></td>
+	<td width="450" id="progressbartd" title=""><?php $ProgressBar->Paint(); ?></td>
 	<td><span class="button-close" onclick="gframe_close()">CHIUDI</span></td></tr>
 </table>
 </div>
@@ -109,6 +109,8 @@ var ACTION = "";
 var COMMAND_LIST = new Array();
 var COMMAND_IDX = 0;
 
+var BYPASS_ERROR = false;
+
 function bodyOnLoad(extraParams)
 {
  ProgBar = new ProgressBar();
@@ -118,10 +120,12 @@ function bodyOnLoad(extraParams)
 	 var tb = document.getElementById('command-list-table');
 	 var tb2 = document.getElementById('log-list-table');
 	 var imgPath = ABSOLUTE_URL+"share/widgets/powershell/img/";
-	 ProgBar.setValue( Math.floor(100/COMMAND_LIST.length) * (COMMAND_IDX+1) );
+	 var perc = Math.floor((100/COMMAND_LIST.length) * (COMMAND_IDX+1));
+	 ProgBar.setValue(perc);
 	 tb.rows[COMMAND_IDX].cells[3].innerHTML = "<img src='"+imgPath+"ok.gif'/"+">";
+	 document.getElementById("progressbartd").title = COMMAND_IDX+" su "+COMMAND_LIST.length+" ("+perc+"%)";
 
-	 var sysDate = new Date();	 
+	 var sysDate = new Date(); 
 	 var r = tb2.insertRow(-1);
 	 r.insertCell(-1).innerHTML = "<img src='"+imgPath+"message.png'/"+">"; r.cells[0].style.width='32px'; r.cells[0].style.textAlign='center';
 	 r.insertCell(-1).innerHTML = COMMAND_IDX+1; r.cells[1].className = "cmd-number";
@@ -156,6 +160,26 @@ function bodyOnLoad(extraParams)
 	 r.insertCell(-1).innerHTML = COMMAND_IDX+1; r.cells[1].className = "cmd-number";
 	 r.insertCell(-1).innerHTML = msg;
 	 r.insertCell(-1).innerHTML = sysDate.printf("H:i:s:u"); r.cells[3].className = "logtime";
+	 if(!BYPASS_ERROR)
+	 {
+	  if(!confirm("Errore: "+msg+"\n Proseguo oltre?"))
+	   return;
+	  BYPASS_ERROR = true;
+	 }
+
+	 if(COMMAND_LIST.length > (COMMAND_IDX+1))
+	 {
+	  COMMAND_IDX++;
+	  if(ACTION == "RUNNING")
+	   execCommand(COMMAND_IDX);
+	 }
+	 else
+	 {
+	  ProgBar.setValue(100);
+	  document.getElementById('button-play').src = ABSOLUTE_URL+"share/widgets/powershell/img/button-play.png";
+	  ACTION = "FINISH";
+	  alert("Operazione completata! Puoi chiudere questa finestra.");
+	 }
 	}
 
  if(extraParams)

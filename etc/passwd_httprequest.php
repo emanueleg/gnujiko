@@ -1,16 +1,16 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2010 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 07-01-2010
+ #DATE: 24-10-2016
  #PACKAGE: gnujiko-accounts
  #DESCRIPTION: Http request for passwd command
- #VERSION: 2.0beta
- #CHANGELOG:
+ #VERSION: 2.1beta
+ #CHANGELOG: 24-10-2016 : Sostituita funzione mysql escape string con funzione db->EscapeString() per integrazione con mysqli.
  #TODO:
  
 */
@@ -42,11 +42,11 @@ return;
 function _checkUser($sessid, $usrname)
 {
  $sessInfo = sessionInfo($sessid);
- $username = mysql_escape_string(trim($usrname));
+ $db = new AlpaDatabase();
+ $username = $db->EscapeString(trim($usrname));
  if(($sessInfo['uname'] != $username) && ($sessInfo['uname'] != "root"))
   return "<request type='checkuser' result='false' msg='You must be root' error='PERMISSION_DENIED'/>";
 
- $db = new AlpaDatabase();
  $db->RunQuery("SELECT * FROM gnujiko_users WHERE username='$username' LIMIT 1");
  if(!$db->Read())
  {
@@ -66,14 +66,15 @@ function _checkUser($sessid, $usrname)
 function _validateOldPasswd($sessid, $usrname, $passwd)
 {
  $sessInfo = sessionInfo($sessid);
- $username = mysql_escape_string(trim($usrname));
+
+ $db = new AlpaDatabase();
+ $username = $db->EscapeString(trim($usrname));
  if(($sessInfo['uname'] != $username) && ($sessInfo['uname'] != "root"))
   return "<request type='validateoldpasswd' result='false' msg='You must be root' error='PERMISSION_DENIED'/>";
 
- $username = mysql_escape_string(trim($usrname));
- $password = mysql_escape_string(trim($passwd));
+ $username = $db->EscapeString(trim($usrname));
+ $password = $db->EscapeString(trim($passwd));
 
- $db = new AlpaDatabase();
  $db->RunQuery("SELECT * FROM gnujiko_users WHERE username='$username'");
  if(!$db->Read())
  {
@@ -92,14 +93,15 @@ function _validateOldPasswd($sessid, $usrname, $passwd)
 function _changePasswd($sessid, $usrname, $passwd)
 {
  $sessInfo = sessionInfo($sessid);
- $username = mysql_escape_string(trim($usrname));
+ 
+ $db = new AlpaDatabase();
+ $username = $db->EscapeString(trim($usrname));
  if(($sessInfo['uname'] != $username) && ($sessInfo['uname'] != "root"))
   return "<request type='changepasswd' result='false' msg='You must be root' error='PERMISSION_DENIED'/>";
 
- $username = mysql_escape_string(trim($usrname));
- $password = mysql_escape_string(trim($passwd));
+ $username = $db->EscapeString(trim($usrname));
+ $password = $db->EscapeString(trim($passwd));
 
- $db = new AlpaDatabase();
  $db->RunQuery("SELECT * FROM gnujiko_users WHERE username='$username'");
  if(!$db->Read())
  {

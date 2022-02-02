@@ -1,16 +1,33 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2017 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 19-09-2013
+ #DATE: 02-04-2017
  #PACKAGE: gmart
  #DESCRIPTION: Edit product form.
- #VERSION: 2.11beta
- #CHANGELOG: 19-09-2013 : Bug fix nei listini prezzi.
+ #VERSION: 2.27beta
+ #CHANGELOG: 02-04-2017 : Bug fix function: updateVariantOB. varianti - fasce prezzo x qta.
+			 17-12-2016 : Listini prezzi, campo sconto.
+			 24-11-2016 : Aggiunto campi SKU e SPID.
+			 17-03-2016 : Bug fix titolo lungo.
+			 24-01-2016 : Aggiunto tab Altro, con cronologia acquisti e vendite.
+			 16-01-2016 : maxlength su campi marca e modello.
+			 26-09-2015 : Aggiunto campo nascondi dal magazzino.
+			 07-01-2015 : Bug fix su cartella immagini prodotti.
+			 19-12-2014 : Aggiunta anteprima immagine con lightbox.
+			 03-11-2014 : Bug fix su salvataggio tinte.
+			 02-10-2014 : Possibilità di ricercare in tutta la rubrica (x integrazione con soci) sulla lista fornitori.
+			 12-07-2014 : Possibilità di selezionare la categoria.
+			 08-04-2014 : Bug fix sui valori predefiniti.
+			 20-02-2014 : Aggiunta la scorta minima
+			 31-01-2014 : Rimosso temporaneamente il barcode perchè su alcuni sbordava fuori.
+			 31-01-2014 : Aggiunto barcode.
+			 23-10-2013 : Aggiunto cod. e nome confezionamento e divisione materiale
+			 19-09-2013 : Bug fix nei listini prezzi.
 			 22-07-2013 : Aggiunto alert in caso di codici duplicati.
 			 11-07-2013 : Aggiunto item_location per la collocazione degli articoli.
 			 07-05-2013 : Aggiunto peso.
@@ -24,18 +41,28 @@
 			 06-12-2012 : Bug fix vari.
  #DEPENDS: guploader, pricelists, gmutable
  #TODO: Da rimettere la voce "articoli venduti".
+
+ CHANGELOG: aggiungere tra le dipendenze il pacchetto htmlgutility
  
 */
 
-global $_BASE_PATH, $_ABSOLUTE_URL, $_SHELL_CMD_PATH, $_USERS_HOMES, $_DECIMALS, $_PRICELISTS, $_FREQ_VAT_TYPE, $_FREQ_VAT_PERC;
+global $_BASE_PATH, $_ABSOLUTE_URL, $_SHELL_CMD_PATH, $_USERS_HOMES, $_DECIMALS, $_PRICELISTS, $_FREQ_VAT_TYPE, $_FREQ_VAT_PERC, $_COMMERCIALDOCS_CONFIG;
 $_BASE_PATH = "../../../";
 
 define("VALID-GNUJIKO",1);
 
 include_once($_BASE_PATH."include/gshell.php");
 include_once($_BASE_PATH."include/company-profile.php");
+include_once($_BASE_PATH."etc/commercialdocs/config.php");
+/* CHANGELOG: 05-11-2014 */
+include_once($_BASE_PATH."var/objects/htmlgutility/optionbox.php");
+include_once($_BASE_PATH."var/objects/htmlgutility/lightbox.php");
+/* EOF - CHANGELOG */
+include_once($_BASE_PATH."var/objects/gcal/index.php");
 
 $id = $_REQUEST['id'];
+$_ERROR_CODE = "";
+$_SPID_TYPES = array('ASIN','EAN','GCID','GTIN','UPC');
 
 /* GET DEFAULT PRICING AND FREQ.VAT USED FROM COMPANY PROFILE */
 $_DECIMALS = $_COMPANY_PROFILE['accounting']['decimals_pricing'];
@@ -143,9 +170,16 @@ if(!$archiveInfo['params']['pricelistcolumns'])
 
 
 /* GET PRODUCT INFO */
-$ret = GShell("dynarc item-info -ap `".$_AP."` -id `".$id."` -extget `gmart,thumbnails,coding,storeinfo,idoc,pricing,custompricing,vendorprices,variants`"
+/* CHANGELOG: 07-11-2014 - aggiunto pricesbyqty tra le estensioni */
+$ret = GShell("dynarc item-info -ap `".$_AP."` -id `".$id."` -extget `gmart,thumbnails,coding,storeinfo,idoc,pricing,custompricing,vendorprices,variants,pricesbyqty,varcodes`"
 	.($get ? " -get `".ltrim($get,",")."`" : ""),$_REQUEST['sessid'],$_REQUEST['shellid']);
-$itemInfo = $ret['outarr'];
+if(!$ret['error'])
+ $itemInfo = $ret['outarr'];
+else
+ $_ERROR_CODE = $ret['error'];
+
+$_USE_DEFAULT_VALUES = !$itemInfo['mtime'] ? true : false;
+/* EOF - CHANGELOG */
 
 if($itemInfo['cat_id'])
 {
@@ -181,6 +215,39 @@ for($c=0; $c < count($_PRICELISTS); $c++)
   $_PRICELISTS[$c]['enabled'] = true;
 }
 
+/* GET CUSTOMER AND VENDOR DOCTYPES */
+$_VENDOR_DOCTYPES = array();
+$_CUSTOMER_DOCTYPES = array();
+
+$ret = GShell("dynarc cat-list -ap commercialdocs",$_REQUEST['sessid'],$_REQUEST['shellid']);
+if(!$ret['error'])
+{
+ for($c=0; $c < count($ret['outarr']); $c++)
+ {
+  $data = $ret['outarr'][$c];
+  switch($data['tag'])
+  {
+   case 'VENDORORDERS' : case 'PURCHASEINVOICES' : case 'DDTIN' : {
+	 switch($data['tag'])
+	 {
+	  case 'DDTIN' : case 'PURCHASEINVOICES' : $data['crondef'] = true; break;
+	  default : $data['crondef'] = false; break;
+	 }
+	 $_VENDOR_DOCTYPES[] = array('name'=>$data['name'], 'tag'=>$data['tag'], 'crondef'=>$data['crondef']);
+	} break;
+
+   case 'INVOICES' : case 'PREEMPTIVES' : case 'ORDERS' : case 'DDT' : case 'AGENTINVOICES' : case 'INTERVREPORTS' : case 'CREDITSNOTE' : case 'DEBITSNOTE' : case 'PAYMENTNOTICE' : case 'RECEIPTS' : case 'MEMBERINVOICES' : {
+	 switch($data['tag'])
+	 {
+	  case 'DDT' : case 'INVOICES' : case 'RECEIPTS' : $data['crondef'] = true; break;
+	  default : $data['crondef'] = false; break;
+	 }
+	 $_CUSTOMER_DOCTYPES[] = array('name'=>$data['name'], 'tag'=>$data['tag'], 'crondef'=>$data['crondef']);
+	} break;
+  }
+
+ }
+}
 
 function fullescape($in)
 {
@@ -211,22 +278,41 @@ function fullescape($in)
 <link rel="stylesheet" href="<?php echo $_ABSOLUTE_URL; ?>share/widgets/gmart/variant.css" type="text/css" />
 <?php
 include_once($_BASE_PATH."include/js/gshell.php");
+include_once($_BASE_PATH."var/objects/editsearch/index.php");
 include_once($_BASE_PATH."var/objects/gmutable/index.php");
 include_once($_BASE_PATH."var/objects/htmlgutility/menu.php");
 include_once($_BASE_PATH."var/objects/guploader/index.php");
+
+$_ABBR_ART_TITLE = html_entity_decode($itemInfo['name']);
+if(strlen($_ABBR_ART_TITLE) > 60) $_ABBR_ART_TITLE = substr($_ABBR_ART_TITLE, 0, 60)."...";
+
 ?>
 </head><body>
 <div class="edit-product-form">
  <!-- HEADER -->
  <table width='100%' cellspacing='0' cellpadding='0' border='0'>
- <tr><td width='600' height='25'><div class='header'>Articolo: <span class='itemcode'><?php echo $itemInfo['code_str']; ?></span> <span class='title'><?php echo $itemInfo['name']; ?></span></div></td>
-	<td align='center'><div class='header-right'><?php echo $catInfo['name']; ?></div></td>
+ <tr><td width='600' height='25'><div class='header'>Articolo: <span class='itemcode'><?php echo $itemInfo['code_str']; ?></span> <span class='title'><?php echo $_ABBR_ART_TITLE; ?></span><?php if($_USE_DEFAULT_VALUES) echo " *"; ?></div></td>
+	<td align='left' valign='middle'>
+	 <div class='header-right'>
+	  <select id='catid' style="width:200px;float:left;vertical-align:top;margin-left:30px">
+	   <option value='0'></option>
+	  <?php 
+	   $ret = GShell("dynarc cat-list -ap '".$_AP."'".($catInfo && $catInfo['parent_id'] ? " -parent '".$catInfo['parent_id']."'" : ""),$_REQUEST['sessid'], $_REQUEST['shellid']);
+	   $list = $ret['outarr'];
+	   for($c=0; $c < count($list); $c++)
+	    echo "<option value='".$list[$c]['id']."'".($itemInfo['cat_id'] == $list[$c]['id'] ? " selected='selected'>" : ">")
+			.$list[$c]['name']."</option>";
+	  ?>
+	  </select>
+	  <img src="<?php echo $_ABSOLUTE_URL; ?>share/icons/16x16/magnifier.gif" style="cursor:pointer;margin-top:3px;" title="Sfoglia categorie" onclick="browseCategory()"/>
+	 </div>
+	</td>
  </tr>
  </table>
  <!-- EOF HEADER -->
 
- <table width='780' cellspacing='0' cellpadding='0' border='0' style="margin-top:20px;border-bottom: 1px solid #dadada;">
- <tr><td valign='top' width='600' style="padding-right:10px;">
+ <table width='880' cellspacing='0' cellpadding='0' border='0' style="margin-top:20px;border-bottom: 1px solid #dadada;">
+ <tr><td valign='top' width='700' style="padding-right:10px;">
 	<!-- CONTENTS -->
 	<ul class='maintab' style="margin-left:8px;">
 	 <li class='selected'><span class='title' onclick="showPage('details',this)">DETTAGLI</span></li>
@@ -236,6 +322,7 @@ include_once($_BASE_PATH."var/objects/guploader/index.php");
 	 <li><span class='title' onclick="showPage('pricelists',this)">LISTINI PREZZI</span></li>
      <li><span class='title' onclick="showPage('custompricing',this)">PREZZI IMPOSTI</span></li>
 	 <li><span class='title' onclick="showPage('variant',this)">VARIANTI</span></li>
+	 <li><span class='title' onclick="showPage('other',this)">ALTRO</span></li>
 	</ul>
 
 	<!-- DETAILS PAGE -->
@@ -246,15 +333,16 @@ include_once($_BASE_PATH."var/objects/guploader/index.php");
 			<?php
 			for($c=0; $c < count($itemInfo['thumbnails']); $c++)
 			{
-			 echo "<li onclick='selectThumb(this)' id='".fullescape($itemInfo['thumbnails'][$c])."'";
-			 $x = strpos($itemInfo['thumbnails'][$c], ".", strlen($itemInfo['thumbnails'][$c])-5);
+			 $fileName = $itemInfo['thumbnails'][$c];
+			 echo "<li onclick='selectThumb(this)' id='".fullescape($fileName)."'";
+			 $x = strpos($fileName, ".", strlen($fileName)-5);
 			 if($x > 0)
 			 {
-			  $ext = substr($itemInfo['thumbnails'][$c], $x+1);
-			  $thumb = substr($itemInfo['thumbnails'][$c], 0, $x)."-thumb.".$ext;
+			  $ext = substr($fileName, $x+1);
+			  $thumb = substr($fileName, 0, $x)."-thumb.".$ext;
 			 }
 			 else
-			  $thumb = $itemInfo['thumbnails'][$c]."-thumb";
+			  $thumb = $fileName."-thumb";
  			 if($thumb && file_exists($_BASE_PATH.$thumb))
 			  echo " icon='".fullescape($thumb)."'";
 			 echo ($c==0 ? " class='selected'>" : ">").($c+1)."</li>";
@@ -263,27 +351,55 @@ include_once($_BASE_PATH."var/objects/guploader/index.php");
 		    $thumb = "share/widgets/gmart/img/photo.png";
 			if($itemInfo['thumbnails'][0])
 			{
-			 $x = strpos($itemInfo['thumbnails'][0], ".", strlen($itemInfo['thumbnails'][0])-5);
+			 $fileName = $itemInfo['thumbnails'][0];
+			 $x = strpos($fileName, ".", strlen($fileName)-5);
 			 if($x > 0)
 			 {
-			  $ext = substr($itemInfo['thumbnails'][0], $x+1);
-			  $thumb = substr($itemInfo['thumbnails'][0], 0, $x)."-thumb.".$ext;
+			  $ext = substr($fileName, $x+1);
+			  $thumb = substr($fileName, 0, $x)."-thumb.".$ext;
 			 }
 			 else
-			  $thumb = $itemInfo['thumbnails'][0]."-thumb";
+			  $thumb = $fileName."-thumb";
  			 if(!file_exists($_BASE_PATH.$thumb))
-			  $thumb = $itemInfo['thumbnails'][0];
+			  $thumb = $fileName;
 			}
 
 			?>
 		   </ul>
-		   <div class='thumb-preview' id='thumb-preview' style="background-image: url(<?php echo $_ABSOLUTE_URL.$thumb; ?>);">
-			<img src="<?php echo $_ABSOLUTE_URL; ?>share/widgets/gmart/img/icon_delete.gif" class="delete-button" onclick="deleteSelectedThumb()"/>
+		   <div class='thumb-preview' id='thumb-preview' filename="<?php echo $fileName; ?>" style="background-image: url(<?php echo $_ABSOLUTE_URL.$thumb; ?>);" onclick="showImagePreview(this)">
+			<img src="<?php echo $_ABSOLUTE_URL; ?>share/widgets/gmart/img/icon_delete.gif" class="delete-button" onclick="deleteSelectedThumb(event)"/>
 		   </div>
 
 		   <ul class='basicbuttons' style="clear:both;float:left;margin-top:5px;margin-left:22px;">
   			<li><span onclick="uploadImage()"><img src="<?php echo $_ABSOLUTE_URL; ?>share/widgets/gmart/img/add.gif" border='0'/>Carica immagine</span></li>
  		   </ul>
+
+		  <!-- <div class='barcode'>
+		  <?php
+		  if(file_exists($_BASE_PATH."share/gd/barcode.php"))
+		  {
+		   echo "<img id='barcode-img' src='".$_ABSOLUTE_URL."share/gd/barcode.php?barcode=".$itemInfo['barcode']."'"
+			.(!$itemInfo['barcode'] ? " style='visibility:hidden'" : "")."/>";
+		  }
+		  ?>
+		  </div> -->
+
+		  <div style="clear:both;height:20px;border-bottom:1px solid #dadada"></div>
+		  <div style="clear:both;padding-top:10px">
+		   <table width='100%' cellspacing='2' cellpadding='0' border='0'>
+		   <tr><td width='70' valign='middle'><span class='smallh3'>SKU: </span></td>
+			   <td><input type='text' class='edit' style='width:110px' maxlength='40' id='sku' value="<?php echo $itemInfo['sku']; ?>"/></td></tr>
+
+		   <tr><td><select style='width:70px' id='spid_type'>
+				<?php
+				 for($c=0; $c < count($_SPID_TYPES); $c++)
+				  echo "<option value='".$_SPID_TYPES[$c]."'"
+					.(($itemInfo['spid_type'] == $_SPID_TYPES[$c]) ? " selected='selected'>" : ">").$_SPID_TYPES[$c]."</option>";
+				?>
+		   		</select></td>
+			   <td><input type='text' class='edit' style='width:110px' maxlength='40' id='spid_code' value="<?php echo $itemInfo['spid_code']; ?>"/></td></tr>
+		   </table>
+		  </div>
 
 		  </td>
 		  <td valign='top' style="border-left:1px solid #dadada;padding-left:10px;">
@@ -292,14 +408,14 @@ include_once($_BASE_PATH."var/objects/guploader/index.php");
 			 <tr><td class='field'>CODICE:</td>
 				 <td class='value'><input type='text' id='item_code' style='width:130px;' value="<?php echo $itemInfo['code_str']; ?>" onchange="codeCheck(this)"/></td></tr>
 			 <tr><td class='field'>MARCA:</td>
-				 <td class='value'><input type='text' id='item_brand' style='width:150px;' value="<?php echo $itemInfo['brand']; ?>"/></td></tr>
+				 <td class='value'><input type='text' id='item_brand' style='width:150px;' refid="<?php echo $itemInfo['brand_id']; ?>" value="<?php echo $itemInfo['brand']; ?>" maxlength='32'/></td></tr>
 			 <tr><td class='field'>MODELLO:</td>
-				 <td class='value'><input type='text' id='item_model' style='width:250px;' value="<?php echo $itemInfo['model']; ?>"/></td></tr>
+				 <td class='value'><input type='text' id='item_model' style='width:250px;' value='<?php echo $itemInfo['model']; ?>' maxlength='64'/></td></tr>
 			 <tr><td class="field small">PREZZO DI BASE:</td>
 				 <td class='value' style='font-size:10px;'><input type='text' id='item_baseprice' style='width:70px;' value="<?php echo number_format($itemInfo['baseprice'],$_DECIMALS,',','.'); ?>" onchange="_basepriceChange(this)"/> &euro; 
 					<span class="field small" style="margin-left:60px">Unit&agrave; di Misura: <input type='text' id='item_units' style='width:30px;' value="<?php echo $itemInfo['units'] ? $itemInfo['units'] : 'PZ'; ?>"/></td></tr>
 			 <tr><td class="field small">I.V.A:</td>
-				 <td class='value' style='font-size:10px;'><input type='text' id='item_vat' style='width:50px;' value="<?php echo $itemInfo['vat'] ? $itemInfo['vat'] : $_FREQ_VAT_PERC; ?>" onchange="_vatChange(this)"/> %
+				 <td class='value' style='font-size:10px;'><input type='text' id='item_vat' style='width:50px;' value="<?php echo $itemInfo['vat'] ? $itemInfo['vat'] : ($_USE_DEFAULT_VALUES ? $_FREQ_VAT_PERC : 0); ?>" onchange="_vatChange(this)"/> %
 					<span class="field small" style="margin-left:60px">Peso: <input type='text' id='item_weight' style='width:40px' value="<?php echo $itemInfo['weight']; ?>"/> <select id='item_weight_units' style='width:50px'>
 						   <?php
 							if(!$itemInfo['weightunits'])
@@ -318,18 +434,33 @@ include_once($_BASE_PATH."var/objects/guploader/index.php");
 						   ?>
 						  </select></td></tr>
 			 <tr><td class="field small">BARCODE:</td>
-				 <td class='value'><input type='text' id='item_barcode' style='width:80px;' value="<?php echo $itemInfo['barcode']; ?>"/></td></tr>
+				 <td class='value'><input type='text' id='item_barcode' style='width:150px;' value="<?php echo $itemInfo['barcode']; ?>" onchange="barcodeUpdate(this)"/></td></tr>
 			 <tr><td class="field small lightblue">COD.ART. PROD.</td>
 				 <td class='value'><input type='text' id='item_manufcode' style='width:150px;' value="<?php echo $itemInfo['manufacturer_code']; ?>"/></td></tr>
 			 <tr><td class="field small lightblue">COLLOCAZ. ART.</td>
 				 <td class='value'><input type='text' id='item_location' style='width:150px;' value="<?php echo $itemInfo['item_location']; ?>"/></td></tr>
+			 <tr><td class="field small lightblue">CONFEZIONAMENTO</td>
+				 <td class='value'><span class="field small">cod.</span> <input type='text' id='gebinde_code' style='width:50px;' value="<?php echo $itemInfo['gebinde_code']; ?>"/> <span class="field small">descr:</span> <input type='text' id='gebinde' style='width:100px;' value="<?php echo $itemInfo['gebinde']; ?>"/></td></tr>
+			 <tr><td class="field small lightblue">DIVISIONE MAT.</td>
+				 <td class='value'><select id='division' style='width:150px'><option value=''>&nbsp;</option>
+				 <?php
+				 if(isset($_COMMERCIALDOCS_CONFIG['DIVISION']))
+				 {
+				  reset($_COMMERCIALDOCS_CONFIG['DIVISION']);
+				  while(list($k,$v) = each($_COMMERCIALDOCS_CONFIG['DIVISION']))
+				  {
+				   echo "<option value='".$k."'".($k == $itemInfo['division'] ? " selected='selected'>" : ">").$v."</option>";
+				  }
+				 }
+				 ?></select></td></tr>
 			</table>
 			<!-- EOF INFO -->
+
+			<span class='smallh3'>BREVE DESCRIZIONE</span><br/>
+			<textarea class="item-description" id="item_description"><?php echo $itemInfo['desc']; ?></textarea>
+
 		  </td></tr>
 	 </table>
-	 <br/>
-	 <span class='smallh3'>BREVE DESCRIZIONE</span><br/>
-	 <textarea class="item-description" id="item_description"><?php echo $itemInfo['desc']; ?></textarea>
 
 	</div>
 	<!-- EOF DETAILS PAGE -->
@@ -357,7 +488,7 @@ include_once($_BASE_PATH."var/objects/guploader/index.php");
 	<!-- ATTACHMENTS PAGE -->
 	<div class='tabpage' id="attachments-page" style="display:none;">
 	 	<div class='attachments-toolbar'>
-		 <table border='0' cellspacing='0' cellpadding='0' width='580' height='40'>
+		 <table border='0' cellspacing='0' cellpadding='0' width='680' height='40'>
 		  <tr><td width='120' style='padding-left:10px'><span class='smallblue'>Carica un file dal PC</span></td>
 			 <td><div id='gupldspace'></div></td>
 			 <td width='40' class='attachments-tb-buttons'><a href='#' onclick='selectFromServer("<?php echo $_USERS_HOMES.$_SESSION['HOMEDIR']."/"; ?>")'><img src="<?php echo $_ABSOLUTE_URL; ?>share/widgets/gmart/img/load-from-server.png" border="0" title="Carica dal server"/></a></td>
@@ -396,11 +527,11 @@ include_once($_BASE_PATH."var/objects/guploader/index.php");
 	<!-- VENDORS PAGE -->
 	<div class='tabpage' id="vendors-page" style="display:none;">
 	 <h3 class="orangebar">FORNITORI</h3>
-	 <div class="gmutable" style="width:586px;height:300px;margin-left:10px;background:#ffffff;border:0px;">
+	 <div class="gmutable" style="width:686px;height:300px;margin-left:10px;background:#ffffff;border:0px;">
 	 <table id="vendors-table" class="pricelists" width="100%" cellspacing="2" cellpadding="2" border="0">
 	 <tr><th width='20'><input type="checkbox" onchange="VENDORSTB.selectAll(this.checked)"/></th>
 		 <th width='60' id='code' editable='true' style="text-align:left;">COD.ART</th>
-		 <th width='190' id='vendor' editable='true'>FORNITORE</th>
+		 <th id='vendor' editable='true'>FORNITORE</th>
 		 <th width='70' id='shipcosts' editable='true' format='currency'>SP. SPEDIZ.</th>
 		 <th width='80' id='price' editable='true' format='currency' decimals="<?php echo $_DECIMALS; ?>">PREZZO</th>
 		 <th width='40' id='vatrate' editable='true' format='percentage'>% IVA</th>
@@ -440,7 +571,7 @@ include_once($_BASE_PATH."var/objects/guploader/index.php");
 	 <h3 class="orangebar">LISTINI PREZZI DI RIVENDITA 
 	  <img src="<?php echo $_ABSOLUTE_URL; ?>share/widgets/gmart/img/edit_small.png" style="float:right;margin-right:5px;margin-top:2px;cursor:pointer" title="Personalizza" onclick="customizePricelists()"/>
 	 </h3>
-	 <div class="gmutable" style="width:586px;height:300px;margin-left:10px;background:#ffffff;border:0px;">
+	 <div class="gmutable" style="width:686px;height:300px;margin-left:10px;background:#ffffff;border:0px;">
 	 <table id="pricelists-table" class="pricelists" width="100%" cellspacing="2" cellpadding="2" border="0">
 	 <tr><th width='20'>INC.</th>
 		 <th id='pricelistname' style="text-align:left;">LISTINO</th>
@@ -456,11 +587,6 @@ include_once($_BASE_PATH."var/objects/guploader/index.php");
 			.(!$selected ? " style='display:none'" : "").">".$col['title']."</th>";
 		 }
 		 ?>
-		 <!--<th width='80' id='baseprice' editable='true' format='currency' decimals="<?php echo $_DECIMALS; ?>">PREZZO BASE</th>
-		 <th width='70' id='markuprate' editable='true' format='percentage'>% RICARICO</th>
-		 <th width='80' id='finalprice'>PREZZO FINALE</th>
-		 <th width='40' id='vat' editable='true' format='percentage'>% IVA</th>
-		 <th width='80' id='finalpricevatincluded'>PREZZO + IVA</th> -->
 	  </tr>
 
 	 <?php
@@ -470,18 +596,18 @@ include_once($_BASE_PATH."var/objects/guploader/index.php");
 	 for($c=0; $c < count($list); $c++)
 	 {
 	  // get costs //
-	  $vendorprice = $itemInfo["pricelist_".$list[$c]['id']."_vendorprice"] ? $itemInfo["pricelist_".$list[$c]['id']."_vendorprice"] : 0;
-	  $cm = $itemInfo["pricelist_".$list[$c]['id']."_cm"] ? $itemInfo["pricelist_".$list[$c]['id']."_cm"] : 0;
+	  $vendorprice = isset($itemInfo["pricelist_".$list[$c]['id']."_vendorprice"]) ? $itemInfo["pricelist_".$list[$c]['id']."_vendorprice"] : 0;
+	  $cm = isset($itemInfo["pricelist_".$list[$c]['id']."_cm"]) ? $itemInfo["pricelist_".$list[$c]['id']."_cm"] : 0;
 	  $costs = $vendorprice ? ($vendorprice - (($vendorprice/100)*$cm)) : 0;
 
-	  $vat = $itemInfo["pricelist_".$list[$c]['id']."_vat"] ? $itemInfo["pricelist_".$list[$c]['id']."_vat"] : $list[$c]['vat'];
+	  $vat = $itemInfo["pricelist_".$list[$c]['id']."_vat"] ? $itemInfo["pricelist_".$list[$c]['id']."_vat"] : ($_USE_DEFAULT_VALUES ? $list[$c]['vat'] : 0);
 
 	  $costsVatIncluded = $costs ? ($costs + (($costs/100)*$vat)) : 0;
 
-	  $baseprice = $itemInfo["pricelist_".$list[$c]['id']."_baseprice"] ? $itemInfo["pricelist_".$list[$c]['id']."_baseprice"] : $itemInfo['baseprice'];
-	  $markuprate = $itemInfo["pricelist_".$list[$c]['id']."_mrate"] ? $itemInfo["pricelist_".$list[$c]['id']."_mrate"] : $list[$c]['markuprate'];
+	  $baseprice = $itemInfo["pricelist_".$list[$c]['id']."_baseprice"] ? $itemInfo["pricelist_".$list[$c]['id']."_baseprice"] : ($_USE_DEFAULT_VALUES ? $itemInfo['baseprice'] : 0);
+	  $markuprate = $itemInfo["pricelist_".$list[$c]['id']."_mrate"] ? $itemInfo["pricelist_".$list[$c]['id']."_mrate"] : ($_USE_DEFAULT_VALUES ? $list[$c]['markuprate'] : 0);
 
-	  $discount = $itemInfo["pricelist_".$list[$c]['id']."_discount"] ? $itemInfo["pricelist_".$list[$c]['id']."_discount"] : 0;
+	  $discount = $itemInfo["pricelist_".$list[$c]['id']."_discount"] ? $itemInfo["pricelist_".$list[$c]['id']."_discount"] : ($_USE_DEFAULT_VALUES ? $list[$c]['discount'] : 0);
 
 	  $finalPrice = $baseprice ? $baseprice + (($baseprice/100)*$markuprate) : 0;
 	  $finalPrice = $finalPrice ? $finalPrice - (($finalPrice/100)*$discount) : 0;
@@ -520,7 +646,7 @@ include_once($_BASE_PATH."var/objects/guploader/index.php");
 	<!-- CUSTOM PRICING PAGE -->
 	<div class='tabpage' id="custompricing-page" style="display:none;">
 	 <h3 class="orangebar">PREZZI IMPOSTI PER CLIENTE</h3>
-	 <div class="gmutable" style="width:586px;height:300px;margin-left:10px;background:#ffffff;border:0px;">
+	 <div class="gmutable" style="width:686px;height:300px;margin-left:10px;background:#ffffff;border:0px;">
 	 <table id="custompricing-table" class="pricelists" width="100%" cellspacing="2" cellpadding="2" border="0">
 	 <tr><th width='20'><input type="checkbox" onchange="CPTB.selectAll(this.checked)"/></th>
 		 <th id='subject' editable='true' style="text-align:left;">CLIENTE</th>
@@ -580,6 +706,10 @@ include_once($_BASE_PATH."var/objects/guploader/index.php");
 			 <li onclick="showVariantPage('sizes',this)">Taglie</li>
 			 <li onclick="showVariantPage('dim',this)">Misure</li>
 			 <li onclick="showVariantPage('other',this)">Altro...</li>
+			 <!-- CHANGELOG: 05-11-2014 -->
+			 <li onclick="showVariantPage('codesandprices',this)" style="margin-top:160px;position:relative"><img src="img/variant-barcode.png" width='24' style='position:absolute;left:3px;top:-5px'/><small style='margin-left:16px;font-size:12px;'><b>Codici e Prezzi</b></small></li>
+			 <li onclick="showVariantPage('pricesbyqty',this)" style="margin-top:10px;position:relative"><img src="img/balance.png" width='24' style='position:absolute;left:3px;top:-5px'/><small style='margin-left:16px;font-size:12px;'><b>Fasce prezzo x qt&agrave;</b></small></li>
+			 <!-- EOF - CHANGELOG -->
 			</ul>
 
 		  </td><td valign="top">
@@ -814,11 +944,217 @@ include_once($_BASE_PATH."var/objects/guploader/index.php");
 			</div>
 			<!-- EOF - OTHER - PAGE -->
 
+			<!-- CHANGELOG: 05-11-2014 -->
+
+			<!-- CODES AND PRICES - PAGE -->
+			<div id="variant-codesandprices-page" style="display:none">
+			 <div class="variant-page-header">
+			  <table width="100%" cellspacing="0" cellpadding="0" border="0">
+			  <tr><td class="title"><i>Elenco dei codici e dei prezzi per variante</i></td>	
+				  <td width='32'>&nbsp;</td></tr>
+ 			  </table>
+			 </div>
+
+			 <div style="width:515px;height:320px;overflow:auto;padding-left:10px">
+			 <table id="variant-codesandprices-list" width='1055' class="basiclist" cellspacing="0" cellpadding="0" border="0">
+			 <tr><th width='130'>VARIANTE</th>
+				 <th width='110'>CODICE</th>
+				 <th width='110'>BARCODE</th>
+				 <th width='55'>RICARICO</th>
+				 <th width='110' style='text-align:left;padding-left:5px'>PREZZO FINALE</th>
+				 <th width='90'>SKU</th>
+				 <th width='90'>ASIN</th>
+				 <th width='90'>EAN</th>
+				 <th width='90'>GCID</th>
+				 <th width='90'>GTIN</th>
+				 <th width='90'>UPC</th>
+			 </tr>
+			 <?php
+			  for($c=0; $c < count($itemInfo['varcodes']); $c++)
+			  {
+			   $el = $itemInfo['varcodes'][$c];
+
+			   echo "<tr id='".$el['id']."' type='".$el['type']."'><td><input type='text' class='edit' style='width:120px' value=\"".$el['name']."\" readonly='true'/></td>";
+			   echo "<td><input type='text' class='edit' style='width:100px' value='".$el['code']."'/></td>";
+			   echo "<td><input type='text' class='edit' style='width:100px' value='".$el['barcode']."'/></td>";
+			   echo "<td><input type='text' class='edit' style='width:30px' value='".$el['mrate']."'/> %</td>";
+			   echo "<td><input type='text' class='edit' style='width:70px;text-align:right' onchange='this.value=formatCurrency(parseCurrency(this.value))' value='".number_format($el['finalprice'],2,',','.')."'/> &euro;</td>";
+			   echo "<td><input type='text' class='edit' style='width:80px' value='".$el['sku']."' maxlength='40'/></td>";
+			   echo "<td><input type='text' class='edit' style='width:80px' value='".$el['asin']."' maxlength='10'/></td>";
+			   echo "<td><input type='text' class='edit' style='width:80px' value='".$el['ean']."' maxlength='13'/></td>";
+			   echo "<td><input type='text' class='edit' style='width:80px' value='".$el['gcid']."' maxlength='40'/></td>";
+			   echo "<td><input type='text' class='edit' style='width:80px' value='".$el['gtin']."' maxlength='14'/></td>";
+			   echo "<td><input type='text' class='edit' style='width:80px' value='".$el['upc']."' maxlength='10'/></td>";
+			   echo "</tr>";
+			  }
+			 ?>
+			 </table>
+			 </div>
+
+			</div>
+			<!-- EOF - CODES AND PRICES - PAGE -->
+
+			<!-- PRICES BY QTY - PAGE -->
+			<div id="variant-pricesbyqty-page" style="display:none">
+			 <div class="variant-page-header">
+			  <table width="100%" cellspacing="0" cellpadding="0" border="0">
+			  <tr><td class="title"><i>Fasce di prezzo per quantit&agrave;</i></td>	
+				  <td width='32'><a href='#' title="Aggiungi" onclick="addVariantPriceForQty()"><img src="<?php echo $_ABSOLUTE_URL; ?>share/widgets/gmart/img/add-btn-green.png" border="0"/></a></td></tr>
+ 			  </table>
+			 </div>
+
+			 <div style="height:320px;overflow:auto;padding-left:10px">
+			 <table id="variant-pricesbyqty-list" class="basiclist" width="100%" cellspacing="0" cellpadding="0" border="0">
+			 <tr><th>COLORE / TINTA</th>
+				 <th width='100'>TAGLIA / MISURA</th>
+				 <th width='150'>QUANTITA&lsquo;</th>
+				 <th width='55'>SCONTO</th>
+				 <th width='90'>PREZZO FINALE</th>
+				 <th width='20'>&nbsp;</th>
+			 </tr>
+			 <?php
+			  for($c=0; $c < count($itemInfo['pricesbyqty']); $c++)
+			  {
+			   $el = $itemInfo['pricesbyqty'][$c];
+			   $dataValues = "";
+			   for($i=0; $i < count($el['colors']); $i++)
+				$dataValues.= ",[".$el['colors'][$i]."]";
+			   if($dataValues)	$dataValues = substr($dataValues,1);
+
+			   echo "<tr id='".$el['id']."'><td><div class='optionbox' style='width:90px' datavalues=\"".$dataValues."\"></div></td>";
+
+			   $dataValues = "";
+			   for($i=0; $i < count($el['sizes']); $i++)
+				$dataValues.= ",[".$el['sizes'][$i]."]";
+			   if($dataValues)	$dataValues = substr($dataValues,1);
+
+			   echo "<td><div class='optionbox' style='width:90px' datavalues=\"".$dataValues."\"></div></td>";
+			   echo "<td align='center'>da: <input type='text' class='edit' style='width:40px;text-align:center' value='".$el['qtyfrom']."'/> a: <input type='text' class='edit' style='width:40px;text-align:center' value='".$el['qtyto']."'/></td>";
+			   echo "<td align='center'><input type='text' class='edit' style='width:30px;text-align:center' value='".$el['discperc']."'/> %</td>";
+			   echo "<td><input type='text' class='edit' style='width:70px;text-align:right' value='".number_format($el['finalprice'],2,',','.')."'/> &euro;</td>";
+			   echo "<td><img src='".$_ABSOLUTE_URL."share/widgets/gmart/img/icon_delete.gif' style='cursor:pointer' title='Rimuovi' onclick='deletePricesByQty(this)'/></td>";
+			   echo "</tr>";
+			  }
+			  if($c < 10)
+			  for($i=$c; $i < 10; $i++)
+			  {
+			   echo "<tr><td><div class='optionbox' style='width:90px'></div></td>";
+			   echo "<td><div class='optionbox' style='width:90px'></div></td>";
+			   echo "<td align='center'>da: <input type='text' class='edit' style='width:40px;text-align:center'/> a: <input type='text' class='edit' style='width:40px;text-align:center'/></td>";
+			   echo "<td align='center'><input type='text' class='edit' style='width:30px;text-align:center'/> %</td>";
+			   echo "<td><input type='text' class='edit' style='width:70px;text-align:right'/> &euro;</td>";
+			   echo "<td><img src='".$_ABSOLUTE_URL."share/widgets/gmart/img/icon_delete.gif' style='cursor:pointer' title='Rimuovi' onclick='deletePricesByQty(this)'/></td>";
+			   echo "</tr>";
+			  }
+			 ?>
+			 </table>
+			 </div>
+
+			</div>
+			<!-- EOF - PRICES BY QTY - PAGE -->
+
+			<!-- EOF CHANGELOG: 05-11-2014 -->
 
 		  </td></tr>
 	  </table>
 	 </div>
 	</div>
+	<!-- EOF - VARIANT PAGE -->
+
+	<!-- OTHER PAGE -->
+	<div class='tabpage' id="other-page" style="display:none;">
+	 <ul class='bluenuv' id='other-bluenuv' style='float:left;'>
+	  <li class='selected' id='other-purchcron-tab' onclick='otherShow(this)' connect='other-purchcron-page'><span>Cronologia acquisti</span></li>
+	  <li id='other-salecron-tab' onclick='otherShow(this)' connect='other-salecron-page'><span>Cronologia vendite</span></li>
+	 </ul>
+
+	 <!-- CRONOLOGIA ACQUISTI -->
+	 <div class='otherpage' id='other-purchcron-page'>
+	  <h3 class='orangebar'>CRONOLOGIA ACQUISTI</h3>
+	  <div style='margin-left:10px;padding:5px'>
+	   <span class='smalltext'>Filtra per fornitore:</span> 
+		<select id='purchcron-vendor-select' style='width:200px' onchange="updatePurchaseCron()">
+		 <option value='0'>tutti i fornitori</option>
+		 <?php
+		  for($c=0; $c < count($itemInfo['vendorprices']); $c++)
+		   echo "<option value='".$itemInfo['vendorprices'][$c]['vendor_id']."'>".$itemInfo['vendorprices'][$c]['vendor_name']."</option>";
+		 ?>
+		</select>
+	   <span class='smalltext' style='margin-left:50px'>dal: </span>
+		<input type='text' class="gcal" id='purchcron-datefrom' onchange='updatePurchaseCron()'/>
+	   <span class='smalltext'>al: </span>
+		<input type='text' class="gcal" id='purchcron-dateto' onchange='updatePurchaseCron()'/>
+	  </div>
+	  <div style="width:686px;height:240px;overflow:auto;border:1px solid #dadada;margin-left:10px;margin-top:5px">
+	  <table class="pricelists" id='purchcron-table' style="width:100%" cellspacing="2" cellpadding="2" border="0">
+	   <tr>
+		<th width='80'>Data</th>
+		<th>Fornitore</th>
+		<th width='220'>Documento di riferimento</th>
+		<th width='80'>Pr. Acquisto</th>
+	   </tr>
+	  
+	  </table>
+	  <div id='purchcron-nextpage-button' class='cron-nextpage-button-outer' style='display:none'>
+		<span class='cron-nextpage-button' onclick='updatePurchaseCron(this)'>Mostra altri risultati</span>
+	  </div>
+	  <img src="<?php echo $_ABSOLUTE_URL; ?>share/widgets/gmart/img/loading.gif" class="cronloading-icon" style="top:210px;left:276px" id="purchcron-loading-icon"/>
+	  </div>
+	  <div style='margin-left:10px;' id='purchcron-docselect'>
+	   <span class='smalltext'>Cerca in: </span>
+		<?php
+		 for($c=0; $c < count($_VENDOR_DOCTYPES); $c++)
+		  echo "&nbsp;&nbsp;<span class='smalltext'><input type='checkbox' data-tag='".$_VENDOR_DOCTYPES[$c]['tag']."'"
+			.($_VENDOR_DOCTYPES[$c]['crondef'] ? " checked='true'" : "")
+			." onchange='updatePurchaseCron()'/>".$_VENDOR_DOCTYPES[$c]['name']."</span>";
+		?>
+	  </div>
+	 </div>
+	 <!-- EOF - CRONOLOGIA ACQUISTI -->
+
+	 <!-- CRONOLOGIA VENDITE -->
+	 <div class='otherpage' id='other-salecron-page' style='display:none'>
+	  <h3 class='orangebar'>CRONOLOGIA VENDITE</h3>
+	  <div style='margin-left:10px;padding:5px'>
+	   <span class='smalltext'>Filtra per cliente:</span> 
+		<input type='text' class='edit' id='salecron-customer-select' placeholder="digita il nome del cliente" style='width:300px'/>
+	   <span class='smalltext' style='margin-left:50px'>dal: </span>
+		<input type='text' class="gcal" id='salecron-datefrom' onchange='updateSaleCron()'/>
+	   <span class='smalltext'>al: </span>
+		<input type='text' class="gcal" id='salecron-dateto' onchange='updateSaleCron()'/>
+	  </div>
+	  <div style="width:686px;height:200px;overflow:auto;border:1px solid #dadada;margin-left:10px;margin-top:5px">
+	  <table class="pricelists" id='salecron-table' style="width:100%" cellspacing="2" cellpadding="2" border="0">
+	   <tr>
+		<th width='80'>Data</th>
+		<th>Cliente</th>
+		<th width='220'>Documento di riferimento</th>
+		<th width='80'>Pr. Vendita</th>
+	   </tr>
+	  
+	  </table>
+	  <div id='salecron-nextpage-button' class='cron-nextpage-button-outer' style='display:none'>
+		<span class='cron-nextpage-button' onclick='updateSaleCron(this)'>Mostra altri risultati</span>
+	  </div>
+	  <img src="<?php echo $_ABSOLUTE_URL; ?>share/widgets/gmart/img/loading.gif" class="cronloading-icon" style="top:206px;left:289px;width:170px;height:170px" id="salecron-loading-icon"/>
+	  </div>
+	  <div style='margin-left:10px;margin-top:4px'><span class='smalltext'>Cerca in: </span></div>
+	  <div id='salecron-docselect' style='margin-left:10px;height:50px;width:688px;overflow:auto'>
+		<?php
+		 for($c=0; $c < count($_CUSTOMER_DOCTYPES); $c++)
+		  echo "<span class='smalltext' style='white-space:nowrap'><input type='checkbox' data-tag='".$_CUSTOMER_DOCTYPES[$c]['tag']."'"
+			.($_CUSTOMER_DOCTYPES[$c]['crondef'] ? " checked='true'" : "")
+			." onchange='updateSaleCron()'/>".$_CUSTOMER_DOCTYPES[$c]['name']."</span>&nbsp;&nbsp;";
+		?>
+	  </div>
+	 </div>
+	 <!-- EOF - CRONOLOGIA VENDITE -->
+
+	</div>
+	<!-- EOF OTHER PAGE -->
+
+
+
 	<!-- EOF CONTENTS -->
 	</td><td valign='top' style="border-left:1px solid #dadada;padding-left:10px;">
 	<!-- RIGHT SPACE -->
@@ -851,12 +1187,15 @@ include_once($_BASE_PATH."var/objects/guploader/index.php");
 	<?php
 	if($itemInfo['mtime'])
 	 echo "<span class='gray11'>Ultima modifica: </span><span class='black11'>".date('d/m/Y',$itemInfo['mtime'])."</span><br/>";
+	/* CHANGELOG: 20-11-2014 */
+	$mod = new GMOD($itemInfo['modinfo']['mod'],$itemInfo['modinfo']['uid'],$itemInfo['modinfo']['gid']);
+	echo "<br/><span class='gray11'>Permessi: </span><span class='black11' id='permstring'>".$mod->toString()."</span>";
+	echo "&nbsp;&nbsp;<a href='#' style='font-family:arial,sans-serif;font-size:10px' onclick='changePerms()'>modifica</a><br/>";
+	/* EOF - CHANGELOG */
 	?>
 	<br/>
 	<!-- <span class='gray11'>Articoli venduti: </span><span class='black11'><?php echo $itemInfo['sold']; ?></span><br/> -->
 
-	<br/>
-	<br/>
 
 	<h3 class='rightsec-blue'><span class='title'>MAGAZZINO</span></h3>
 	<?php
@@ -865,6 +1204,7 @@ include_once($_BASE_PATH."var/objects/guploader/index.php");
 	if($dis < 0)
 	 $inc+= $dis;
 	?>
+    <div style='margin-bottom:3px'><input type='checkbox' class='checkbox' id='hideinstore' <?php if(!$itemInfo['hide_in_store']) echo "checked='true'"; ?>/><span class='gray11'>Mostra in magazzino</span></div>
 	<span class='gray11'>Disponibili: </span>
 		<?php
 		if($dis <= 0)
@@ -881,6 +1221,8 @@ include_once($_BASE_PATH."var/objects/guploader/index.php");
 	<span class='gray11'>Giacenza fisica: </span><span class='black11'><b><?php echo $itemInfo['storeqty']; ?></b></span><br/>
 	<span class='gray11'>Prenotati: </span><span class='black11'><b><?php echo $itemInfo['booked']; ?></b></span><br/>
 	<span class='gray11'>Ordinati al fornit.: </span><span class='black11'><b><?php echo $itemInfo['incoming']; ?></b></span><br/>
+	<br/>
+	<span class='gray11'>Scorta minima: </span><input type='text' class='edit' style='width:50px' value="<?php echo $itemInfo['minstock']; ?>" id='minstock'/><br/>
 
 	<!-- EOF RIGHT SPACE -->
 	</td></tr>
@@ -898,6 +1240,7 @@ include_once($_BASE_PATH."var/objects/guploader/index.php");
 </div>
 
 <script>
+var ERROR_CODE = "<?php echo $_ERROR_CODE; ?>";
 var AP = "<?php echo $_AP ? $_AP : 'gmart'; ?>";
 var ACTIVE_TAB_PAGE = "details";
 var ACTIVE_VARIANT_TAB_PAGE = "colors";
@@ -915,10 +1258,22 @@ var NEW_VENDORPRICES = new Array();
 var UPDATED_VENDORPRICES = new Array();
 var DELETED_VENDORPRICES = new Array();
 
+/* CHANGELOG: 08-11-2014 */
+var DELETED_PRICESBYQTY = new Array();
+var DELETED_VARCODES = new Array();
+/* EOF - CHANGELOG */
+
 var NEW_CP = new Array();
 var UPDATED_CP = new Array();
 var DELETED_CP = new Array();
 var attUpld = null;
+
+var LightBox = new GLightBox();
+
+var purchcronLoaded = false;
+var salecronLoaded = false;
+
+var GCalObj = new GCal();
 
 <?php
 for($c=0; $c < count($itemInfo['idocs']); $c++)
@@ -927,6 +1282,16 @@ for($c=0; $c < count($itemInfo['idocs']); $c++)
 
 function bodyOnLoad()
 {
+ if(ERROR_CODE)
+ {
+  switch(ERROR_CODE)
+  {
+   case 'ITEM_DOES_NOT_EXISTS' : alert("Spiacente!, articolo inesistente, probabilmente è stato eliminato dal catalogo."); break;
+   case 'PERMISSION_DENIED' : alert("Permesso negato!, spiacente ma non disponi dei privilegi necessari per poter visualizzare questo articolo."); break;
+  }
+  return gframe_close(ERROR_CODE);
+ }
+
  PRICELISTSTB = new GMUTable(document.getElementById('pricelists-table'), {autoresize:false, autoaddrows:false});
  PRICELISTSTB.OnCellEdit = function(r,cell,value){
 	 _pricelistsUpdateTotals(r);
@@ -973,7 +1338,7 @@ function bodyOnLoad()
 	  NEW_VENDORPRICES.splice(NEW_VENDORPRICES.indexOf(r),1);
 	}
 
- VENDORSTB.FieldByName['vendor'].enableSearch("dynarc item-find -ap rubrica -ct vendors -field name `","` -limit 10 --order-by 'name ASC'","id","name","items",true);
+ VENDORSTB.FieldByName['vendor'].enableSearch("dynarc item-find -ap rubrica -field name `","` -limit 10 --order-by 'name ASC'","id","name","items",true);
 
  /* CUSTOM PRICING TABLE */
  CPTB = new GMUTable(document.getElementById('custompricing-table'), {autoresize:false, autoaddrows:false});
@@ -1040,6 +1405,73 @@ function bodyOnLoad()
 	 sh.sendCommand("dynattachments add -ap `"+AP+"` -refid `<?php echo $itemInfo['id']; ?>` -name '"+file['name']+"' -url '"+file['fullname']+"'");
 	}
 
+ /* BRAND */
+ EditSearch.init(document.getElementById('item_brand'), "dynarc item-find -ap brands -ct gmart -field name `","` -limit 20 --order-by 'name ASC'","id","name","items",true);
+ document.getElementById('item_brand').onchange = function(){
+	 if(this.value && this.data)
+	  this.setAttribute('refid',this.data['id']);
+	 else
+	  this.setAttribute('refid',0);
+	}
+
+ /* CHANGELOG: 05-11-2014 */
+ var PBQTB = document.getElementById('variant-pricesbyqty-list');
+ for(var c=1; c < PBQTB.rows.length; c++)
+ {
+  var r = PBQTB.rows[c];
+  var ed1 = r.cells[0].getElementsByTagName('DIV')[0];			var ob1 = new OptionBox(ed1);
+  var ed2 = r.cells[1].getElementsByTagName('DIV')[0];			var ob2 = new OptionBox(ed2);
+  
+  r.cells[2].getElementsByTagName('INPUT')[0].onchange = function(){this.parentNode.parentNode.changed = true;}
+  r.cells[2].getElementsByTagName('INPUT')[1].onchange = function(){this.parentNode.parentNode.changed = true;}
+  r.cells[3].getElementsByTagName('INPUT')[0].onchange = function(){
+	 this.parentNode.parentNode.changed = true;
+	 this.parentNode.parentNode.cells[4].getElementsByTagName('INPUT')[0].value = "";
+	}
+  r.cells[4].getElementsByTagName('INPUT')[0].onchange = function(){
+	 this.parentNode.parentNode.changed = true; 
+	 this.value = formatCurrency(parseCurrency(this.value));
+	 this.parentNode.parentNode.cells[3].getElementsByTagName('INPUT')[0].value = "";
+	}
+  
+ }
+
+ var VARCODESTB = document.getElementById('variant-codesandprices-list');
+ for(var c=1; c < VARCODESTB.rows.length; c++)
+ {
+  var r = VARCODESTB.rows[c];
+  r.cells[1].getElementsByTagName('INPUT')[0].onchange = function(){this.parentNode.parentNode.changed = true;}
+  r.cells[2].getElementsByTagName('INPUT')[0].onchange = function(){this.parentNode.parentNode.changed = true;}
+  r.cells[3].getElementsByTagName('INPUT')[0].onchange = function(){
+	 this.parentNode.parentNode.changed = true;
+	 this.parentNode.parentNode.cells[4].getElementsByTagName('INPUT')[0].value = "";
+	}
+  r.cells[4].getElementsByTagName('INPUT')[0].onchange = function(){
+	 this.parentNode.parentNode.changed = true; 
+	 this.value = formatCurrency(parseCurrency(this.value));
+	 this.parentNode.parentNode.cells[3].getElementsByTagName('INPUT')[0].value = "";
+	}
+  r.cells[5].getElementsByTagName('INPUT')[0].onchange = function(){this.parentNode.parentNode.changed = true;}
+  r.cells[6].getElementsByTagName('INPUT')[0].onchange = function(){this.parentNode.parentNode.changed = true;}
+  r.cells[7].getElementsByTagName('INPUT')[0].onchange = function(){this.parentNode.parentNode.changed = true;}
+  r.cells[8].getElementsByTagName('INPUT')[0].onchange = function(){this.parentNode.parentNode.changed = true;}
+  r.cells[9].getElementsByTagName('INPUT')[0].onchange = function(){this.parentNode.parentNode.changed = true;}
+  r.cells[10].getElementsByTagName('INPUT')[0].onchange = function(){this.parentNode.parentNode.changed = true;}
+ }
+
+ /* EOF - CHANGELOG */
+
+ 
+ EditSearch.init(document.getElementById('salecron-customer-select'), "fastfind contacts -fields code_str,name `","` -limit 10","id","name","results",true);
+ document.getElementById('salecron-customer-select').onchange = function(){
+	 if(!this.value) this.data = null;
+	  updateSaleCron();
+	}
+
+ document.getElementById('salecron-datefrom').onclick = function(){showGCal(this);}
+ document.getElementById('salecron-dateto').onclick = function(){showGCal(this);}
+ document.getElementById('purchcron-datefrom').onclick = function(){showGCal(this);}
+ document.getElementById('purchcron-dateto').onclick = function(){showGCal(this);}
 }
 
 function submit()
@@ -1064,22 +1496,38 @@ function submit()
 
 function saveAndClose()
 {
+ var catId = document.getElementById("catid").value;
  var code = document.getElementById('item_code').value;
- var brand = document.getElementById('item_brand').value;
- var model = document.getElementById('item_model').value;
+ var brand = document.getElementById('item_brand').value.E_QUOT();
+ var brandId = document.getElementById('item_brand').getAttribute('refid');
+ var model = document.getElementById('item_model').value.E_QUOT();
  var barcode = document.getElementById('item_barcode').value;
  var manufcode = document.getElementById('item_manufcode').value;
  var location = document.getElementById('item_location').value;
+ var gebindeCode = document.getElementById('gebinde_code').value;
+ var gebinde = document.getElementById('gebinde').value;
+ var division = document.getElementById('division').value;
  var desc = document.getElementById('item_description').value;
  var baseprice = parseCurrency(document.getElementById('item_baseprice').value);
  var vat = document.getElementById('item_vat').value;
  var units = document.getElementById('item_units').value;
  var weight = document.getElementById('item_weight').value;
  var weightUnits = document.getElementById('item_weight_units').value;
+ var minstock = document.getElementById('minstock').value;
+ var hideinstore = (document.getElementById('hideinstore').checked == true) ? '0' : '1';
+ var sku = document.getElementById('sku').value;
+ var spidType = document.getElementById('spid_type').value;
+ var spidCode = document.getElementById('spid_code').value;
+
+ // verifica lunghezza campi su marca e modello
+ if(brand.length > 32)
+  return alert("Attenzione!, il campo 'marca' è troppo lungo perchè probabilmente contiene delle virgolette,accenti o caratteri speciali.");
+ if(model.length > 64)
+  return alert("Attenzione!, il campo 'modello' è troppo lungo perchè probabilmente contiene delle virgolette,accenti o caratteri speciali.");
 
  /* Save pricelists */
  var pricelists = "";
- var set = "";
+ var set = ",minimum_stock='"+minstock+"'";
  for(var c=1; c < PRICELISTSTB.O.rows.length; c++)
  {
   var r = PRICELISTSTB.O.rows[c];
@@ -1093,7 +1541,8 @@ function saveAndClose()
 
  var sh = new GShell();
  sh.OnFinish = function(o,a){gframe_close(o,a);}
- sh.sendCommand("dynarc edit-item -ap `"+AP+"` -id `<?php echo $itemInfo['id']; ?>` -name `"+brand+" "+model+"` -code-str `"+code+"` -extset `gmart.brand='''"+brand+"''',model='''"+model+"''',barcode='"+barcode+"',mancode='"+manufcode+"',location='''"+location+"''',units='"+units+"',weight='"+weight+"',weightunits='"+weightUnits+"',pricing.baseprice='"+baseprice+"',vat='"+vat+"',pricelists='"+pricelists+"'` -desc `"+desc+"`"+(set ? " -set `"+set.substr(1)+"`" : ""));
+ sh.OnError = function(err){alert(err);}
+ sh.sendCommand("dynarc edit-item -ap `"+AP+"` -id `<?php echo $itemInfo['id']; ?>` -cat '"+catId+"' -name `"+brand+" "+model+"` -code-str `"+code+"` -extset `gmart.brand='''"+brand+"''',brandid='"+brandId+"',model='''"+model+"''',barcode='"+barcode+"',mancode='"+manufcode+"',location='''"+location+"''',units='"+units+"',weight='"+weight+"',weightunits='"+weightUnits+"',gebinde='''"+gebinde+"''',gebinde_code='"+gebindeCode+"',division='"+division+"',hideinstore='"+hideinstore+"',sku='"+sku+"',spidtype='"+spidType+"',spidcode='"+spidCode+"',pricing.baseprice='"+baseprice+"',vat='"+vat+"',pricelists='"+pricelists+"'` -desc `"+desc+"`"+(set ? " -set `"+set.substr(1)+"`" : ""));
 
  /* SAVE VENDOR PRICES */
  for(var c=0; c < DELETED_VENDORPRICES.length; c++)
@@ -1162,6 +1611,48 @@ function showPage(page,obj)
   loadIDOC(IDOCS[0]);
   extendedLayerLoaded=true;
  }
+ else if((page == "other") && !purchcronLoaded)
+ {
+  updatePurchaseCron();
+  purchcronLoaded = true;
+ }
+}
+
+function browseCategory()
+{
+ var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
+ sh.OnOutput = function(o,catId){
+	 if(!catId) return;
+	 var sh2 = new GShell();
+	 sh2.OnError = function(err){alert(err);}
+	 sh2.OnOutput = function(o,a){refreshCatList(a['parent_id'], a['id']);}
+	 sh2.sendCommand("dynarc cat-info -ap '"+AP+"' -id '"+catId+"'");
+	}
+ sh.sendCommand("gframe -f dynarc.categorySelect -params `ap="+AP+"`");
+}
+
+function refreshCatList(parentId, selectedId)
+{
+ var sel = document.getElementById("catid");
+ while(sel.options.length > 1)
+ {
+  sel.removeChild(sel.options[1]);
+ }
+ var sh = new GShell();
+ sh.OnError = function(err){alert(err);}
+ sh.OnOutput = function(o,a){
+	 if(!a) return;
+	 for(var c=0; c < a.length; c++)
+	 {
+	  var opt = document.createElement('OPTION');
+	  opt.value = a[c]['id'];
+	  opt.innerHTML = a[c]['name'];
+	  sel.appendChild(opt);
+	 }
+	 sel.value = selectedId;
+	}
+ sh.sendCommand("dynarc cat-list -ap '"+AP+"' -parent '"+(parentId ? parentId : "0")+"'");
 }
 
 /* THUMBNAILS */
@@ -1176,7 +1667,7 @@ function uploadImage()
 	 var d = new Date();
 	 var tbIDX = d.getTime();
 
-	 var dstPath = "image/gmart/";
+	 var dstPath = "image/"+AP+"/";
 
 	 var sh2 = new GShell();
 	 sh2.OnFinish = function(){
@@ -1190,13 +1681,15 @@ function uploadImage()
 		 {
 		  var li = document.createElement('LI');
 		  li.innerHTML = baseNum+c;
-		  li.fileName = USER_HOME+dstPath+"product-<?php echo $itemInfo['id']; ?>-"+(tbIDX+c)+"-thumb."+a['files'][c]['extension'];
+		  li.fileName = USER_HOME+dstPath+"product-<?php echo $itemInfo['id']; ?>-"+(tbIDX+c)+"."+a['files'][c]['extension'];
+		  li.thumbName = USER_HOME+dstPath+"product-<?php echo $itemInfo['id']; ?>-"+(tbIDX+c)+"-thumb."+a['files'][c]['extension'];
 		  li.onclick = function(){selectThumb(this);}
 		  tbUL.appendChild(li);
 		  if(c == (a['files'].length-1))
 		  {
 		   li.className = "selected";
-		   document.getElementById('thumb-preview').style.backgroundImage = "url(<?php echo $_ABSOLUTE_URL; ?>"+li.fileName+")";
+		   document.getElementById('thumb-preview').style.backgroundImage = "url(<?php echo $_ABSOLUTE_URL; ?>"+li.thumbName+")";
+		   document.getElementById('thumb-preview').setAttribute('filename',li.fileName);
 		  }
 		 }
 		 gframe_opacity(100);
@@ -1239,9 +1732,13 @@ function selectThumb(li)
   if(list[c] == li)
   {
    var fileName = li.fileName ? li.fileName : decodeFID(li.id);
-   if(li.getAttribute('icon'))
-	fileName = decodeFID(li.getAttribute('icon'));
-   document.getElementById('thumb-preview').style.backgroundImage = "url(<?php echo $_ABSOLUTE_URL; ?>"+fileName+")";
+   var thumbName = li.thumbName ? li.thumbName : fileName;
+
+   /*if(li.getAttribute('icon') && !li.fileName)
+	fileName = decodeFID(li.getAttribute('icon'));*/
+
+   document.getElementById('thumb-preview').style.backgroundImage = "url(<?php echo $_ABSOLUTE_URL; ?>"+thumbName+")";
+   document.getElementById('thumb-preview').setAttribute('filename',fileName);
   }
   else
    list[c].className = "";
@@ -1249,8 +1746,12 @@ function selectThumb(li)
  li.className = "selected";
 }
 
-function deleteSelectedThumb()
+function deleteSelectedThumb(ev)
 {
+ var event = ev ? ev : window.event;
+ if(event.stopPropagation) event.stopPropagation();
+ else event.cancelBubble = true;
+
  var tbUL = document.getElementById('thumb-buttons');
  var list = tbUL.getElementsByTagName('LI');
  for(var c=0; c < list.length; c++)
@@ -1259,7 +1760,7 @@ function deleteSelectedThumb()
   {
    var idx = c;
    if(!confirm("Sei sicuro di voler rimuovere questa immagine?"))
-	return;
+	return ;
    var sh = new GShell();
    sh.OnOutput = function(){
 	 var list = tbUL.getElementsByTagName('LI');
@@ -1271,7 +1772,10 @@ function deleteSelectedThumb()
 	 else if(list[0])
 	  selectThumb(list[0]);
 	 else
+	 {
 	  document.getElementById('thumb-preview').style.backgroundImage = "url(<?php echo $_ABSOLUTE_URL; ?>share/widgets/gmart/img/photo.png)";
+	  document.getElementById('thumb-preview').setAttribute('filename','');
+	 }
 	}
    sh.sendCommand("dynarc edit-item -ap `"+AP+"` -id `<?php echo $itemInfo['id']; ?>` -extunset `thumbnails."+c+"`");
    break;
@@ -1580,7 +2084,179 @@ function showVariantPage(page,obj)
  document.getElementById("variant-"+ACTIVE_VARIANT_TAB_PAGE+"-page").style.display = "none";
  document.getElementById("variant-"+page+"-page").style.display = "";
  ACTIVE_VARIANT_TAB_PAGE = page;
+
+ /* CHANGELOG: 06-11-2014 */
+ if(page == "pricesbyqty")
+  updateVariantOB();
+ else if(page == "codesandprices")
+  updateVariantCodes();
+ /* EOF - CHANGELOG */
 }
+
+/* CHANGELOG: 08-11-2014 */
+function updateVariantOB(r)
+{
+ // aggiorna la lista delle varianti sui menu a tendina
+ var PBQTB = document.getElementById('variant-pricesbyqty-list');
+ if(r)
+ {
+  var ed1 = r.cells[0].getElementsByTagName('DIV')[0];
+  var ed2 = r.cells[1].getElementsByTagName('DIV')[0];
+  ed1.oldvalue = ed1.obH.getValue();
+  ed2.oldvalue = ed2.obH.getValue();
+  var opts = new Array();
+  // Colors
+  var list = getVariantColors();
+  for(var i=0; i < list.length; i++)
+   opts.push(list[i].name);
+
+  if(opts.length)
+   opts.push(0); // separator
+
+  // Tint
+  var list = getVariantTint();
+  for(var i=0; i < list.length; i++)
+   opts.push(list[i].name);
+
+  ed1.obH.setOptions(opts,true);
+
+  // --- TAGLIE E MISURE --- //
+  var opts = new Array();
+  // Taglie
+  var list = getVariantSize();
+  for(var i=0; i < list.length; i++)
+   opts.push(list[i].name);
+
+  if(opts.length)
+   opts.push(0); // separator
+
+  // Misure
+  var list = getVariantDim();
+  for(var i=0; i < list.length; i++)
+   opts.push(list[i].name);
+
+  if(opts.length)
+   opts.push(0); // separator
+
+  // Altro
+  var list = getVariantOther();
+  for(var i=0; i < list.length; i++)
+   opts.push(list[i].name);
+
+  ed2.obH.setOptions(opts,true);
+
+  if(opts.length && (ed1.obH.getValue() == "") && (ed2.obH.getValue() == ""))
+  {
+   /* Elimina la riga */
+   if(r.cells[2].getElementsByTagName('INPUT')[0].value || r.cells[2].getElementsByTagName('INPUT')[1].value)
+   {
+    if(r.id)
+     DELETED_PRICESBYQTY.push(r.id);
+    PBQTB.deleteRow(r.rowIndex)
+   }
+  }
+  else if((ed1.oldvalue != ed1.obH.getValue()) || (ed2.oldvalue != ed2.obH.getValue()))
+   r.changed = true;
+ }
+ else
+ {
+  for(var c=1; c < PBQTB.rows.length; c++)
+   updateVariantOB(PBQTB.rows[c]);
+ }
+}
+
+function updateVariantCodes()
+{
+ var opts = new Array();
+ // Colors
+ var list = getVariantColors();
+ for(var i=0; i < list.length; i++)
+  opts.push({name:list[i].name, type:'color'});
+ // Tint
+ var list = getVariantTint();
+ for(var i=0; i < list.length; i++)
+  opts.push({name:list[i].name, type:'tint'});
+ // Taglie
+ var list = getVariantSize();
+ for(var i=0; i < list.length; i++)
+  opts.push({name:list[i].name, type:'size'});
+ // Misure
+ var list = getVariantDim();
+ for(var i=0; i < list.length; i++)
+  opts.push({name:list[i].name, type:'dim'});
+ // Altro
+ var list = getVariantOther();
+ for(var i=0; i < list.length; i++)
+  opts.push({name:list[i].name, type:'other'});
+
+ var optnames = new Array();
+ var VARCODESTB = document.getElementById('variant-codesandprices-list');
+ for(var c=0; c < opts.length; c++)
+ {
+  var opt = opts[c];
+  optnames.push(opt.name);
+  var exists = false;
+  for(var i=1; i < VARCODESTB.rows.length; i++)
+  {
+   var r = VARCODESTB.rows[i];
+   if(r.cells[0].getElementsByTagName('INPUT')[0].value == opt.name)
+   {
+	exists = true;
+	break;
+   }
+  }
+  if(!exists)
+  {
+   var r = VARCODESTB.insertRow(-1);
+   r.setAttribute('type',opt.type);
+   r.insertCell(-1).innerHTML = "<input type='text' class='edit' style='width:140px' value=\""+opt.name+"\" readonly='true'/"+">";
+   r.insertCell(-1).innerHTML = "<input type='text' class='edit' style='width:100px'/"+">";
+   r.insertCell(-1).innerHTML = "<input type='text' class='edit' style='width:100px'/"+">";
+   r.insertCell(-1).innerHTML = "<input type='text' class='edit' style='width:30px'/"+"> %";
+   r.insertCell(-1).innerHTML = "<input type='text' class='edit' style='width:70px;text-align:right'/"+"> &euro;";
+   r.insertCell(-1).innerHTML = "<input type='text' class='edit' style='width:80px'/"+" maxlength='40'>";
+   r.insertCell(-1).innerHTML = "<input type='text' class='edit' style='width:80px'/"+" maxlength='10'>";
+   r.insertCell(-1).innerHTML = "<input type='text' class='edit' style='width:80px'/"+" maxlength='13'>";
+   r.insertCell(-1).innerHTML = "<input type='text' class='edit' style='width:80px'/"+" maxlength='40'>";
+   r.insertCell(-1).innerHTML = "<input type='text' class='edit' style='width:80px'/"+" maxlength='14'>";
+   r.insertCell(-1).innerHTML = "<input type='text' class='edit' style='width:80px'/"+" maxlength='10'>";
+
+   r.cells[1].getElementsByTagName('INPUT')[0].onchange = function(){this.parentNode.parentNode.changed = true;}
+   r.cells[2].getElementsByTagName('INPUT')[0].onchange = function(){this.parentNode.parentNode.changed = true;}
+   r.cells[3].getElementsByTagName('INPUT')[0].onchange = function(){
+	 this.parentNode.parentNode.changed = true;
+	 this.parentNode.parentNode.cells[4].getElementsByTagName('INPUT')[0].value = "";
+	}
+   r.cells[4].getElementsByTagName('INPUT')[0].onchange = function(){
+	 this.parentNode.parentNode.changed = true; 
+	 this.value = formatCurrency(parseCurrency(this.value));
+	 this.parentNode.parentNode.cells[3].getElementsByTagName('INPUT')[0].value = "";
+	}
+   r.cells[5].getElementsByTagName('INPUT')[0].onchange = function(){this.parentNode.parentNode.changed = true;}
+   r.cells[6].getElementsByTagName('INPUT')[0].onchange = function(){this.parentNode.parentNode.changed = true;}
+   r.cells[7].getElementsByTagName('INPUT')[0].onchange = function(){this.parentNode.parentNode.changed = true;}
+   r.cells[8].getElementsByTagName('INPUT')[0].onchange = function(){this.parentNode.parentNode.changed = true;}
+   r.cells[9].getElementsByTagName('INPUT')[0].onchange = function(){this.parentNode.parentNode.changed = true;}
+   r.cells[10].getElementsByTagName('INPUT')[0].onchange = function(){this.parentNode.parentNode.changed = true;}
+
+  }
+ }
+
+ // Elimina tutte le righe delle varianti eliminate //
+ for(var i=1; i < VARCODESTB.rows.length; i++)
+ {
+  var r = VARCODESTB.rows[i];
+  var val = r.cells[0].getElementsByTagName('INPUT')[0].value;
+  if(optnames.indexOf(val) < 0)
+  {
+   if(r.id)
+    DELETED_VARCODES.push(r.id);
+   VARCODESTB.deleteRow(r.rowIndex);
+  }
+ }
+}
+
+/* EOF - CHANGELOG */
 
 /* VARIANT - COLORS */
 function addVariantColor(obj)
@@ -1593,6 +2269,10 @@ function addVariantColor(obj)
  html+= "<div class='colortitle' onclick='renameVariantColor(this)' title='Clicca per rinominare'>"+obj.title+"</div>";
  div.innerHTML = html;
  container.appendChild(div);
+ /* CHANGELOG: 17-11-2014 */
+ updateVariantOB();
+ updateVariantCodes();
+ /* EOF - CHANGELOG */
 }
 
 function renameVariantColor(obj)
@@ -1603,6 +2283,10 @@ function renameVariantColor(obj)
  if(!title)
   return;
  titO.innerHTML = title;
+ /* CHANGELOG: 17-11-2014 */
+ updateVariantOB();
+ updateVariantCodes();
+ /* EOF - CHANGELOG */
 }
 
 function deleteVariantColor(obj)
@@ -1611,6 +2295,10 @@ function deleteVariantColor(obj)
   return;
  var div = obj.parentNode;
  div.parentNode.removeChild(div);
+ /* CHANGELOG: 17-11-2014 */
+ updateVariantOB();
+ updateVariantCodes();
+ /* EOF - CHANGELOG */
 }
 
 /* VARIANT - TINT */
@@ -1631,6 +2319,11 @@ function addVariantTint()
  r.cells[1].onclick = function(){renameVariantTint(this);}
  r.cells[2].style.width = "60px";
  r.cells[2].style.textAlign = "center";
+
+ /* CHANGELOG: 17-11-2014 */
+ updateVariantOB();
+ updateVariantCodes();
+ /* EOF - CHANGELOG */
 }
 
 function renameVariantTint(td)
@@ -1639,6 +2332,10 @@ function renameVariantTint(td)
  if(!title)
   return;
  td.innerHTML = title;
+ /* CHANGELOG: 17-11-2014 */
+ updateVariantOB();
+ updateVariantCodes();
+ /* EOF - CHANGELOG */
 }
 
 function deleteVariantTint(img)
@@ -1648,6 +2345,10 @@ function deleteVariantTint(img)
  var r = img.parentNode.parentNode;
  var tb = document.getElementById('variant-tint-container');
  tb.deleteRow(r.rowIndex);
+ /* CHANGELOG: 17-11-2014 */
+ updateVariantOB();
+ updateVariantCodes();
+ /* EOF - CHANGELOG */
 }
 
 function changeTintImg(div)
@@ -1719,6 +2420,10 @@ function addVariantSize()
  div.innerHTML = html;
  
  document.getElementById('variant-sizes-container').appendChild(div);
+ /* CHANGELOG: 17-11-2014 */
+ updateVariantOB();
+ updateVariantCodes();
+ /* EOF - CHANGELOG */
 }
 
 function renameVariantSize(div)
@@ -1727,6 +2432,10 @@ function renameVariantSize(div)
  if(!title)
   return;
  div.innerHTML = title;
+ /* CHANGELOG: 17-11-2014 */
+ updateVariantOB();
+ updateVariantCodes();
+ /* EOF - CHANGELOG */
 }
 
 function deleteVariantSize(a)
@@ -1735,6 +2444,10 @@ function deleteVariantSize(a)
   return;
  var div = a.parentNode;
  div.parentNode.removeChild(div);
+ /* CHANGELOG: 17-11-2014 */
+ updateVariantOB();
+ updateVariantCodes();
+ /* EOF - CHANGELOG */
 }
 
 function saveVariantSizeType(title)
@@ -1865,6 +2578,10 @@ function addVariantDim()
  div.innerHTML = html;
  
  document.getElementById('variant-dim-container').appendChild(div);
+ /* CHANGELOG: 17-11-2014 */
+ updateVariantOB();
+ updateVariantCodes();
+ /* EOF - CHANGELOG */
 }
 
 function renameVariantDim(div)
@@ -1873,6 +2590,10 @@ function renameVariantDim(div)
  if(!title)
   return;
  div.innerHTML = title;
+ /* CHANGELOG: 17-11-2014 */
+ updateVariantOB();
+ updateVariantCodes();
+ /* EOF - CHANGELOG */
 }
 
 function deleteVariantDim(a)
@@ -1881,6 +2602,10 @@ function deleteVariantDim(a)
   return;
  var div = a.parentNode;
  div.parentNode.removeChild(div);
+ /* CHANGELOG: 17-11-2014 */
+ updateVariantOB();
+ updateVariantCodes();
+ /* EOF - CHANGELOG */
 }
 
 function saveVariantDimType(title)
@@ -1989,6 +2714,11 @@ function addVariantOther()
  div.innerHTML = html;
  
  document.getElementById('variant-other-container').appendChild(div);
+
+ /* CHANGELOG: 17-11-2014 */
+ updateVariantOB();
+ updateVariantCodes();
+ /* EOF - CHANGELOG */
 }
 
 function renameVariantOther(div)
@@ -1997,6 +2727,10 @@ function renameVariantOther(div)
  if(!title)
   return;
  div.innerHTML = title;
+ /* CHANGELOG: 17-11-2014 */
+ updateVariantOB();
+ updateVariantCodes();
+ /* EOF - CHANGELOG */
 }
 
 function deleteVariantOther(a)
@@ -2005,6 +2739,10 @@ function deleteVariantOther(a)
   return;
  var div = a.parentNode;
  div.parentNode.removeChild(div);
+ /* CHANGELOG: 17-11-2014 */
+ updateVariantOB();
+ updateVariantCodes();
+ /* EOF - CHANGELOG */
 }
 
 
@@ -2019,8 +2757,104 @@ function saveVariants(sh)
  var xmlDim = saveDim();
  var xmlOther = saveOther();
 
- sh.sendCommand("dynarc edit-item -ap `"+AP+"` -id `<?php echo $itemInfo['id']; ?>` -extset `variants.colors=<![CDATA[ "+xmlCol+" ]]>,tint=<![CDATA[ "+xmlTint+" ]]>,sizid='"+sizId+"',siz=<![CDATA[ "+xmlSiz+" ]]>,dimid='"+dimId+"',dim=<![CDATA[ "+xmlDim+" ]]>,other=<![CDATA[ "+xmlOther+" ]]>`");
+ sh.sendCommand("dynarc edit-item -ap `"+AP+"` -id `<?php echo $itemInfo['id']; ?>` -extset `variants.colors='<![CDATA["+xmlCol+"]]>',tint='<![CDATA["+xmlTint+"]]>',sizid='"+sizId+"',siz='<![CDATA["+xmlSiz+"]]>',dimid='"+dimId+"',dim='<![CDATA["+xmlDim+"]]>',other='<![CDATA["+xmlOther+"]]>'`");
+
+ /* CHANGELOG: 07-11-2014 */
+ // salvataggio codici varianti e delle fasce prezzo per quantità
+ saveVarCodes(sh);
+ savePricesByQty(sh);
+ /* EOF - CHANGELOG */
 }
+
+/* CHANGELOG: 06-11-2014 */
+function saveVarCodes(sh)
+{
+ var VARCODESTB = document.getElementById('variant-codesandprices-list');
+
+ for(var c=0; c < DELETED_VARCODES.length; c++)
+  sh.sendCommand("dynarc edit-item -ap `"+AP+"` -id `<?php echo $itemInfo['id']; ?>` -extunset `varcodes.id='"+DELETED_VARCODES[c]+"'`");
+
+ for(var c=1; c < VARCODESTB.rows.length; c++)
+ {
+  var r = VARCODESTB.rows[c];
+  if(!r.changed)
+   continue;
+  var variantType = r.getAttribute('type');
+  var variantName = r.cells[0].getElementsByTagName('INPUT')[0].value;
+  var code = r.cells[1].getElementsByTagName('INPUT')[0].value;
+  var barcode = r.cells[2].getElementsByTagName('INPUT')[0].value;
+  var mrate = r.cells[3].getElementsByTagName('INPUT')[0].value ? parseFloat(r.cells[3].getElementsByTagName('INPUT')[0].value) : 0;
+  var finalPrice = r.cells[4].getElementsByTagName('INPUT')[0].value ? parseCurrency(r.cells[4].getElementsByTagName('INPUT')[0].value) : 0;
+  var sku = r.cells[5].getElementsByTagName('INPUT')[0].value;
+  var codeASIN = r.cells[6].getElementsByTagName('INPUT')[0].value;
+  var codeEAN = r.cells[7].getElementsByTagName('INPUT')[0].value;
+  var codeGCID = r.cells[8].getElementsByTagName('INPUT')[0].value;
+  var codeGTIN = r.cells[9].getElementsByTagName('INPUT')[0].value;
+  var codeUPC = r.cells[10].getElementsByTagName('INPUT')[0].value;
+
+  // se la riga è vuota la elimina
+  if(r.id && !code && !barcode && !mrate && !finalPrice)
+   sh.sendCommand("dynarc edit-item -ap `"+AP+"` -id `<?php echo $itemInfo['id']; ?>` -extunset `varcodes.id='"+r.id+"'`");
+  else
+   sh.sendCommand("dynarc edit-item -ap `"+AP+"` -id `<?php echo $itemInfo['id']; ?>` -extset `varcodes."
+	+(r.id ? "id="+r.id+"," : "")+"variant='''"+variantName+"''',type='"+variantType+"',code='"+code+"',barcode='"+barcode+"',mrate='"+mrate+"',finalprice='"+finalPrice+"',sku='"+sku+"',asin='"+codeASIN+"',ean='"+codeEAN+"',gcid='"+codeGCID+"',gtin='"+codeGTIN+"',upc='"+codeUPC+"'`");
+ }
+}
+
+function savePricesByQty(sh)
+{
+ var PBQTB = document.getElementById('variant-pricesbyqty-list');
+
+ for(var c=0; c < DELETED_PRICESBYQTY.length; c++)
+  sh.sendCommand("dynarc edit-item -ap `"+AP+"` -id `<?php echo $itemInfo['id']; ?>` -extunset `pricesbyqty.id='"+DELETED_PRICESBYQTY[c]+"'`");
+
+ for(var c=1; c < PBQTB.rows.length; c++)
+ {
+  var r = PBQTB.rows[c];
+  if(!r.changed)
+   continue;
+  var ed1 = r.cells[0].getElementsByTagName('DIV')[0];
+  var ed2 = r.cells[1].getElementsByTagName('DIV')[0];
+  var qtyFrom = r.cells[2].getElementsByTagName('INPUT')[0].value ? r.cells[2].getElementsByTagName('INPUT')[0].value : 0;
+  var qtyTo = r.cells[2].getElementsByTagName('INPUT')[1].value ? r.cells[2].getElementsByTagName('INPUT')[1].value : 0;
+  var discPerc = parseFloat(r.cells[3].getElementsByTagName('INPUT')[0].value ? r.cells[3].getElementsByTagName('INPUT')[0].value : 0);
+  var finalPrice = parseCurrency(r.cells[4].getElementsByTagName('INPUT')[0].value);
+
+  var colors = "";
+  var sizes = "";
+
+  var list = ed1.obH.getValue(true);
+  for(var i=0; i < list.length; i++)
+   colors+= ",["+list[i].value+"]";
+  if(colors != "") colors = colors.substr(1);
+
+  var list = ed2.obH.getValue(true);
+  for(var i=0; i < list.length; i++)
+   sizes+= ",["+list[i].value+"]";
+  if(sizes != "") sizes = sizes.substr(1);
+
+  sh.sendCommand("dynarc edit-item -ap `"+AP+"` -id `<?php echo $itemInfo['id']; ?>` -extset `pricesbyqty."
+	+(r.id ? "id="+r.id+"," : "")+"colors='''"+colors+"''',sizes='''"+sizes+"''',qtyfrom='"+qtyFrom+"',qtyto='"+qtyTo+"',discperc='"+discPerc+"',finalprice='"+finalPrice+"'`");
+ } 
+}
+
+function getVariantColors()
+{
+ var ret = new Array();
+ var div = document.getElementById('variant-colors-container');
+ var fc = div.getElementsByTagName('DIV')[0];
+ if(fc)
+ {
+  ret.push({name:fc.getElementsByTagName('DIV')[1].innerHTML, hexvalue:fc.getElementsByTagName('DIV')[0].style.backgroundColor});
+  while(fc = fc.nextSibling)
+  {
+   if(fc && (fc.tagName == "DIV"))
+	ret.push({name:fc.getElementsByTagName('DIV')[1].innerHTML, hexvalue:fc.getElementsByTagName('DIV')[0].style.backgroundColor});
+  }
+ }
+ return ret;
+}
+/* EOF - CHANGELOG */
 
 function saveColors()
 {
@@ -2040,6 +2874,30 @@ function saveColors()
  return xml;
 }
 
+/* CHANGELOG: 07-11-2014 */
+function getVariantTint()
+{
+ var ret = new Array();
+ var tb = document.getElementById('variant-tint-container');
+ for(var c=0; c < tb.rows.length; c++)
+ {
+  var r = tb.rows[c];
+  var div = r.cells[0].getElementsByTagName('DIV')[0].getElementsByTagName('DIV')[0];
+  var fileName = div.style.backgroundImage;
+  if(fileName == 'url("img/photo.png")')
+   fileName = "";
+  else if(fileName.indexOf("url(") > -1)
+  {
+   fileName = fileName.replace('url("', '');
+   fileName = fileName.replace('")', '');
+   fileName = fileName.replace(ABSOLUTE_URL, "");
+  }
+  ret.push({name:r.cells[1].innerHTML, thumb:fileName});
+ }
+ return ret; 
+}
+/* EOF - CHANGELOG */
+
 function saveTint()
 {
  var xml = "<xml>";
@@ -2049,13 +2907,40 @@ function saveTint()
   var r = tb.rows[c];
   var div = r.cells[0].getElementsByTagName('DIV')[0].getElementsByTagName('DIV')[0];
   var fileName = div.style.backgroundImage;
-  fileName = fileName.replace('url("<?php echo $_ABSOLUTE_URL; ?>','');
-  fileName = fileName.substr(0,fileName.length-2);
+  if(fileName == 'url("img/photo.png")')
+   fileName = "";
+  else if(fileName.indexOf("url(") > -1)
+  {
+   fileName = fileName.replace('url("', '');
+   fileName = fileName.replace('")', '');
+   fileName = fileName.replace(ABSOLUTE_URL, "");
+  }
   xml+= "<tint name=\""+r.cells[1].innerHTML.replace("&","&amp;")+"\" thumb=\""+fileName+"\"/"+">";
  }
  xml+= "</xml>";
+
  return xml;
 }
+
+/* CHANGELOG: 07-11-2014 */
+function getVariantSize()
+{
+ var ret = new Array();
+ var div = document.getElementById('variant-sizes-container');
+ var fc = div.getElementsByTagName('DIV')[0];
+ if(fc)
+ {
+  if(fc.getElementsByTagName('DIV')[1].getElementsByTagName('INPUT')[0].checked == true)
+   ret.push({name:fc.getElementsByTagName('DIV')[0].innerHTML});
+  while(fc = fc.nextSibling)
+  {
+   if(fc && (fc.tagName == "DIV") && (fc.getElementsByTagName('DIV')[1].getElementsByTagName('INPUT')[0].checked == true))
+    ret.push({name:fc.getElementsByTagName('DIV')[0].innerHTML});
+  }
+ }
+ return ret;
+}
+/* EOF - CHANGELOG */
 
 function saveSizes()
 {
@@ -2076,6 +2961,25 @@ function saveSizes()
  return xml;
 }
 
+/* CHANGELOG: 07-11-2014 */
+function getVariantDim()
+{
+ var ret = new Array();
+ var div = document.getElementById('variant-dim-container');
+ var fc = div.getElementsByTagName('DIV')[0];
+ if(fc)
+ {
+  ret.push({name:fc.getElementsByTagName('DIV')[0].innerHTML});
+  while(fc = fc.nextSibling)
+  {
+   if(fc && (fc.tagName == "DIV"))
+    ret.push({name:fc.getElementsByTagName('DIV')[0].innerHTML});
+  }
+ }
+ return ret;
+}
+/* EOF - CHANGELOG */
+
 function saveDim()
 {
  var xml = "<xml>";
@@ -2094,6 +2998,25 @@ function saveDim()
  return xml;
 }
 
+/* CHANGELOG: 07-11-2014 */
+function getVariantOther()
+{
+ var ret = new Array();
+ var div = document.getElementById('variant-other-container');
+ var fc = div.getElementsByTagName('DIV')[0];
+ if(fc)
+ {
+  ret.push({name:fc.getElementsByTagName('DIV')[0].innerHTML});
+  while(fc = fc.nextSibling)
+  {
+   if(fc && (fc.tagName == "DIV"))
+    ret.push({name:fc.getElementsByTagName('DIV')[0].innerHTML});
+  }
+ }
+ return ret;
+}
+/* EOF - CHANGELOG */
+
 function saveOther()
 {
  var xml = "<xml>";
@@ -2111,6 +3034,59 @@ function saveOther()
  xml+= "</xml>";
  return xml;
 }
+
+/* CHANGELOG: 08-11-2014 */
+function addVariantPriceForQty()
+{
+ var PBQTB = document.getElementById('variant-pricesbyqty-list');
+ var r = PBQTB.insertRow(-1);
+ r.insertCell(-1).innerHTML = "<div class='optionbox' style='width:90px'></div>";
+ r.insertCell(-1).innerHTML = "<div class='optionbox' style='width:90px'></div>";
+ r.insertCell(-1).innerHTML = "da: <input type='text' class='edit' style='width:40px;text-align:center'/"+"> a: <input type='text' class='edit' style='width:40px;text-align:center'/"+">";
+ r.cells[2].style.textAlign="center";
+ r.insertCell(-1).innerHTML = "<input type='text' class='edit' style='width:30px;text-align:center'/"+"> %";
+ r.cells[3].style.textAlign="center";
+ r.insertCell(-1).innerHTML = "<input type='text' class='edit' style='width:70px;text-align:right'/"+"> &euro;";
+ r.insertCell(-1).innerHTML = "<img src='"+ABSOLUTE_URL+"share/widgets/gmart/img/icon_delete.gif' style='cursor:pointer' title='Rimuovi' onclick='deletePricesByQty(this)'/"+">";
+
+ var ed1 = r.cells[0].getElementsByTagName('DIV')[0];			var ob1 = new OptionBox(ed1);
+ var ed2 = r.cells[1].getElementsByTagName('DIV')[0];			var ob2 = new OptionBox(ed2);
+  
+ r.cells[2].getElementsByTagName('INPUT')[0].onchange = function(){this.parentNode.parentNode.changed = true;}
+ r.cells[2].getElementsByTagName('INPUT')[1].onchange = function(){this.parentNode.parentNode.changed = true;}
+ r.cells[3].getElementsByTagName('INPUT')[0].onchange = function(){
+	 this.parentNode.parentNode.changed = true;
+	 this.parentNode.parentNode.cells[4].getElementsByTagName('INPUT')[0].value = "";
+	}
+ r.cells[4].getElementsByTagName('INPUT')[0].onchange = function(){
+	 this.parentNode.parentNode.changed = true; 
+	 this.value = formatCurrency(parseCurrency(this.value));
+	 this.parentNode.parentNode.cells[3].getElementsByTagName('INPUT')[0].value = "";
+	}
+ updateVariantOB(r);
+}
+
+function deletePricesByQty(img)
+{
+ // verifica se la riga è vuota //
+ var PBQTB = document.getElementById('variant-pricesbyqty-list');
+ var r = img.parentNode.parentNode;
+
+ if(r.cells[2].getElementsByTagName('INPUT')[0].value ||
+	r.cells[2].getElementsByTagName('INPUT')[1].value ||
+	r.cells[3].getElementsByTagName('INPUT')[0].value ||
+	r.cells[4].getElementsByTagName('INPUT')[0].value ||
+	r.id)
+ {
+  if(!confirm("Sei sicuro di voler rimuovere questa riga?"))
+   return;
+ }
+ if(r.id)
+  DELETED_PRICESBYQTY.push(r.id);
+ PBQTB.deleteRow(r.rowIndex);
+}
+/* EOF - CHANGELOG */
+
 
 /* ATTACHMENTS */
 
@@ -2250,6 +3226,277 @@ function codeCheck(ed)
 	 }
 	}
  sh.sendCommand("dynarc search -at gmart -field code_str `"+ed.value+"`");
+}
+
+function barcodeUpdate(ed)
+{
+ var img = document.getElementById('barcode-img');
+ if(!img)
+  return;
+
+ if(ed.value)
+ {
+  img.src = ABSOLUTE_URL+"share/gd/barcode.php?barcode="+ed.value;
+  img.style.visibility = "visible";
+ }
+ else
+ {
+  img.style.visibility = "hidden";
+ }
+}
+
+/* CHANGELOG: 20-11-2014 */
+function changePerms()
+{
+ var sh = new GShell();
+ sh.OnOutput = function(o,a){
+	 if(!a) return;
+	 if(a['modinfo'] && a['modinfo']['modstr'])
+	  document.getElementById('permstring').innerHTML = a['modinfo']['modstr'];
+	}
+ sh.sendSudoCommand("gframe -f dynarc.itemPermissions -params `ap="+AP+"&id=<?php echo $itemInfo['id']; ?>`");
+}
+/* EOF - CHANGELOG */
+
+function showImagePreview(div)
+{
+ var fileName = div.getAttribute('filename');
+ if(!fileName) return;
+ LightBox.show(fileName);
+}
+
+function otherShow(li)
+{
+ var ul = document.getElementById("other-bluenuv");
+ var list = ul.getElementsByTagName('LI');
+ for(var c=0; c < list.length; c++)
+ {
+  if(list[c] == li)
+  {
+   list[c].className = "selected";
+   document.getElementById(list[c].getAttribute('connect')).style.display = "";
+  }
+  else
+  {
+   list[c].className = "";
+   document.getElementById(list[c].getAttribute('connect')).style.display = "none";
+  }
+ }
+
+ if((li.id == "other-salecron-tab") && !salecronLoaded)
+ {
+  updateSaleCron();
+  salecronLoaded = true;
+ }
+
+}
+
+function updatePurchaseCron(btn)
+{
+ var tb = document.getElementById('purchcron-table');
+ var vendorId = document.getElementById('purchcron-vendor-select').value;
+ var ID = "<?php echo $itemInfo['id']; ?>";
+ var dateFrom = null;
+ var dateTo = null;
+
+ var LIMIT = 100;
+
+ if(document.getElementById('purchcron-datefrom').value)
+ {
+  var date = new Date();
+  date.setFromISO(strdatetime_to_iso(document.getElementById('purchcron-datefrom').value));
+  dateFrom = date.printf('Y-m-d');
+ }
+
+ if(document.getElementById('purchcron-dateto').value)
+ {
+  var date = new Date();
+  date.setFromISO(strdatetime_to_iso(document.getElementById('purchcron-dateto').value));
+  dateTo = date.printf('Y-m-d');
+ }
+
+ var catTags = "";
+ var div = document.getElementById('purchcron-docselect');
+ var cblist = div.getElementsByTagName('INPUT');
+ for(var c=0; c < cblist.length; c++)
+ {
+  if(cblist[c].checked == true)
+   catTags+= ","+cblist[c].getAttribute('data-tag');
+ }
+
+ if(!btn)
+ {
+  while(tb.rows.length > 1)
+   tb.deleteRow(1);
+ }
+
+ if(!catTags || (catTags == ""))
+  return alert("Devi selezionare almeno una tipologia di documento");
+
+ var sh = new GShell();
+ sh.OnError = function(err){
+	 //hide loading icon and nextpagebtn
+	 document.getElementById('purchcron-loading-icon').style.display = "none";
+	 document.getElementById('purchcron-nextpage-button').style.display = "none";
+	 alert(err);
+	}
+ sh.OnOutput = function(o,a){
+	 //hide loading icon and nextpagebtn
+	 document.getElementById('purchcron-loading-icon').style.display = "none";
+	 document.getElementById('purchcron-nextpage-button').style.display = "none";
+	 if(!a || !a['items']) return;
+	 var count = parseFloat(a['count']);
+	 var date = new Date();
+	 var row = 0;
+	 for(var c=0; c < a['items'].length; c++)
+	 {
+	  var data = a['items'][c];
+	  date.setFromISO(data['ctime']);
+	  var r = tb.insertRow(-1);
+	  r.className = row ? "row3" : "row2";
+	  r.insertCell(-1).innerHTML = date.printf('d/m/Y');
+	  r.insertCell(-1).innerHTML = data['subject_name'] ? data['subject_name'] : "&nbsp;";
+	  r.insertCell(-1).innerHTML = "<span class='smalllinkblue' onclick='openDocument("+data['id']+")'>"+data['name']+"</span>";
+	  var cell = r.insertCell(-1);
+	  cell.innerHTML = formatCurrency(parseFloat(data['vendor_price']), DECIMALS)+" &euro;";
+	  cell.style.textAlign = "right";
+	  row = row ? 0 : 1;
+	 }
+	 if(count > (tb.rows.length-1))
+	  document.getElementById('purchcron-nextpage-button').style.display = "block";
+	}
+
+ var cmd = "commercialdocs get-last-vendorprice -ap '"+AP+"' -id '"+ID+"' -cat-tags '"+catTags.substr(1)+"'";
+ if(vendorId && (vendorId != '0')) cmd+= " -vendor '"+vendorId+"'";
+ if(dateFrom)	cmd+= " -from '"+dateFrom+"'";
+ if(dateTo)		cmd+= " -to '"+dateTo+"'";
+
+ if(btn)
+  cmd+= " -limit '"+(tb.rows.length-1)+","+LIMIT+"'";
+ else
+  cmd+= " -limit '"+LIMIT+"'";
+
+ sh.sendCommand(cmd);
+
+ //show loading icon
+ document.getElementById('purchcron-loading-icon').style.display = "block";
+}
+
+function updateSaleCron(btn)
+{
+ var tb = document.getElementById('salecron-table');
+ var ID = "<?php echo $itemInfo['id']; ?>";
+ var subjectId = document.getElementById('salecron-customer-select').data ? document.getElementById('salecron-customer-select').data['id'] : 0;
+
+ var dateFrom = null;
+ var dateTo = null;
+ var LIMIT = 100;
+
+ if(document.getElementById('salecron-datefrom').value)
+ {
+  var date = new Date();
+  date.setFromISO(strdatetime_to_iso(document.getElementById('salecron-datefrom').value));
+  dateFrom = date.printf('Y-m-d');
+ }
+
+ if(document.getElementById('salecron-dateto').value)
+ {
+  var date = new Date();
+  date.setFromISO(strdatetime_to_iso(document.getElementById('salecron-dateto').value));
+  dateTo = date.printf('Y-m-d');
+ }
+
+ var catTags = "";
+ var div = document.getElementById('salecron-docselect');
+ var cblist = div.getElementsByTagName('INPUT');
+ for(var c=0; c < cblist.length; c++)
+ {
+  if(cblist[c].checked == true)
+   catTags+= ","+cblist[c].getAttribute('data-tag');
+ }
+
+ if(!btn)
+ {
+  while(tb.rows.length > 1)
+   tb.deleteRow(1);
+ }
+
+ if(!catTags || (catTags == ""))
+  return alert("Devi selezionare almeno una tipologia di documento");
+
+
+ var sh = new GShell();
+ sh.OnError = function(err){
+	 //hide loading icon and nextpagebtn
+	 document.getElementById('salecron-loading-icon').style.display = "none";
+	 document.getElementById('salecron-nextpage-button').style.display = "none";
+	 alert(err);
+	}
+ sh.OnOutput = function(o,a){
+	 //hide loading icon and nextpagebtn
+	 document.getElementById('salecron-loading-icon').style.display = "none";
+	 document.getElementById('salecron-nextpage-button').style.display = "none";
+	 if(!a || !a['items']) return;
+	 var count = parseFloat(a['count']);
+	 var date = new Date();
+	 var row = 0;
+	 for(var c=0; c < a['items'].length; c++)
+	 {
+	  var data = a['items'][c];
+	  date.setFromISO(data['ctime']);
+	  var r = tb.insertRow(-1);
+	  r.className = row ? "row3" : "row2";
+	  r.insertCell(-1).innerHTML = date.printf('d/m/Y');
+	  r.insertCell(-1).innerHTML = data['subject_name'] ? data['subject_name'] : "&nbsp;";
+	  r.insertCell(-1).innerHTML = "<span class='smalllinkblue' onclick='openDocument("+data['id']+")'>"+data['name']+"</span>";
+	  var cell = r.insertCell(-1);
+	  cell.innerHTML = formatCurrency(parseFloat(data['price']), DECIMALS)+" &euro;";
+	  cell.style.textAlign = "right";
+	  row = row ? 0 : 1;
+	 }
+	 if(count > (tb.rows.length-1))
+	  document.getElementById('salecron-nextpage-button').style.display = "block";
+	}
+
+ var cmd = "commercialdocs get-last-saleprice -ap '"+AP+"' -id '"+ID+"' -cat-tags '"+catTags.substr(1)+"'";
+ if(subjectId) 	cmd+= " -subjid '"+subjectId+"'";
+ if(dateFrom)	cmd+= " -from '"+dateFrom+"'";
+ if(dateTo)		cmd+= " -to '"+dateTo+"'";
+
+ if(btn)
+  cmd+= " -limit '"+(tb.rows.length-1)+","+LIMIT+"'";
+ else
+  cmd+= " -limit '"+LIMIT+"'";
+
+ sh.sendCommand(cmd);
+
+ //show loading icon
+ document.getElementById('salecron-loading-icon').style.display = "block";
+}
+
+function openDocument(docId)
+{
+ window.open(ABSOLUTE_URL+"GCommercialDocs/docinfo.php?id="+docId, "_blank");
+}
+
+function showGCal(ed)
+{
+ var date = new Date();
+ if(ed.value)
+  date.setFromISO(strdatetime_to_iso(ed.value));
+
+ GCalObj.Show(ed, date);
+ GCalObj.OnChange = function(newdate){
+	 ed.value = newdate.printf("d/m/Y");
+	 ed.isodate = newdate.printf("Y-m-d");
+	 ed.isodatetime = newdate.printf("Y-m-d H:i");
+	 if(ed.onchange)
+	  ed.onchange();
+	}
+
+ ed.onblur = function(){GCalObj.Hide();}
+ ed.onkeydown = function(){GCalObj.Hide(true);}
+ 
 }
 </script>
 </body></html>

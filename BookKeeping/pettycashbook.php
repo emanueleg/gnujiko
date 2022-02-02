@@ -1,16 +1,21 @@
 <?php
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  HackTVT Project
- copyright(C) 2013 Alpatech mediaware - www.alpatech.it
+ copyright(C) 2016 Alpatech mediaware - www.alpatech.it
  license GNU/GPL - http://www.gnu.org/copyleft/gpl.html
  Gnujiko 10.1 is free software released under GNU/GPL license
  developed by D. L. Alessandro (alessandro@alpatech.it)
  
- #DATE: 10-10-2013
+ #DATE: 21-10-2016
  #PACKAGE: bookkeeping
  #DESCRIPTION: Official Gnujiko Petty Cash Book.
- #VERSION: 2.2beta
- #CHANGELOG: 10-10-2013 : Possibilità di filtrare anche per risorsa.
+ #VERSION: 2.7beta
+ #CHANGELOG: 21-10-2016 : Bug fix sui totali quando si filtra per risorsa.
+			 19-08-2016 : Bug fix sui totali.
+			 25-06-2016 : Possibilita di ordinare i risultati per data e soggetto.
+			 30-01-2015 : Aggiunta funzione esporta in excel.
+			 11-04-2014 : Bug fix vari.
+			 10-10-2013 : Possibilità di filtrare anche per risorsa.
 			 12-08-2013 : Aggiunto i totali da inviare al modello di stampa tramite parametro parser.
  #TODO:
  
@@ -18,6 +23,9 @@
 
 include_once($_BASE_PATH."var/objects/htmlgutility/menu.php");
 include_once($_BASE_PATH."var/objects/editsearch/index.php");
+
+$_ORDERBY_FIELD = $_REQUEST['orderby'] ? $_REQUEST['orderby'] : "ctime";
+$_ORDERBY_METHOD = $_REQUEST['ordermethod'] ? $_REQUEST['ordermethod'] : "DESC";
 
 ?>
 <link rel="stylesheet" href="<?php echo $_ABSOLUTE_URL; ?>BookKeeping/pettycashbook.css" type="text/css" />
@@ -31,6 +39,7 @@ include_once($_BASE_PATH."var/objects/editsearch/index.php");
 	   <li class='separator'>&nbsp;</li>
 	   <li onclick='deleteSelected()'><img src="<?php echo $_ABSOLUTE_URL; ?>BookKeeping/img/delete.gif" width='12'/>Elimina selezionati</li>
 	   <li class='separator'>&nbsp;</li>
+	   <li onclick='ExportToExcel()'><img src="<?php echo $_ABSOLUTE_URL; ?>share/icons/16x16/excel.png" width='12'/>Esporta su file Excel</li>
 	   <li onclick='printPreview()'><img src="<?php echo $_ABSOLUTE_URL; ?>BookKeeping/img/print.png" width='12'/>Stampa</li>
 	  </ul>
 	</td>
@@ -82,8 +91,8 @@ include_once($_BASE_PATH."var/objects/editsearch/index.php");
 <div style='margin-left:8px;'>
 <table width='100%' class='itemlist' cellspacing='0' cellpadding='0' border='0'>
 <tr><th width='32'><input type='checkbox' onchange="selectAllRows(this)" id="tbselectall"/></th>
-	<th width='80'>DATA</th>
-	<th width='120' style='text-align:left'>SOGGETTO</th>
+	<th width='80' onclick='orderbyChange("ctime")' style='cursor:pointer'>DATA</th>
+	<th width='120' onclick='orderbyChange("subject_name")' style='text-align:left;cursor:pointer'>SOGGETTO</th>
 	<th style='text-align:left'>DESCRIZIONE</th>
 	<th width='70'>ENTRATE</th>
 	<th width='70'>USCITE</th>
@@ -98,6 +107,7 @@ include_once($_BASE_PATH."var/objects/editsearch/index.php");
 	<?php
 	$rpp = $_REQUEST['limit'] ? $_REQUEST['limit'] : 20;
 	$from = $_REQUEST['pg'] ? ($rpp*($_REQUEST['pg']-1)) : 0;
+	$orderBy = $_ORDERBY_FIELD." ".$_ORDERBY_METHOD;
 
 	$qry = "pettycashbook list";
     switch($_REQUEST['filter'])
@@ -120,6 +130,8 @@ include_once($_BASE_PATH."var/objects/editsearch/index.php");
 	 $qry.= " -cat `".$_REQUEST['catid']."`";
 	else if($_REQUEST['description'])
 	 $qry.= " -description `".$_REQUEST['description']."`";
+
+	$qry.= " --order-by '".$orderBy."'";
 	
 	$ret = GShell($qry." -limit ".($from ? $from : "0").",".$rpp." --get-totals"); // Nella prima query ricaviamo i totali //
 
@@ -137,8 +149,28 @@ include_once($_BASE_PATH."var/objects/editsearch/index.php");
 	 echo "<td width='80' class='date'><a href='#' onclick='editRecord(".$itm['id'].")'>".date('d/m/Y',$itm['ctime'])."</a></td>";
 	 echo "<td width='120'><span class='subject'>".($itm['subject_name'] ? $itm['subject_name'] : "&nbsp;")."</span></td>";
 	 echo "<td><small>".($itm['name'] ? $itm['name'] : "&nbsp;")."</small></td>";
-	 echo "<td width='70' class='incomes'>".($itm['incomes'] ? number_format($itm['incomes'],2,',','.') : "&nbsp;")."</td>";
-	 echo "<td width='70' class='expenses'>".($itm['expenses'] ? number_format($itm['expenses'],2,',','.') : "&nbsp;")."</td>";
+	 echo "<td width='70' class='incomes'>";
+	 if($_REQUEST['resid'])
+	 {
+	  if($itm['res_in']['id'] == $_REQUEST['resid'])
+	   echo $itm['incomes'] ? number_format($itm['incomes'],2,',','.') : "&nbsp;";
+	  else
+	   echo "&nbsp;";
+	 }
+	 else
+	  echo $itm['incomes'] ? number_format($itm['incomes'],2,',','.') : "&nbsp;";
+	 echo "</td>";
+	 echo "<td width='70' class='expenses'>";
+	 if($_REQUEST['resid'])
+	 {
+	  if($itm['res_out']['id'] == $_REQUEST['resid'])
+	   echo $itm['expenses'] ? number_format($itm['expenses'],2,',','.') : "&nbsp;";
+	  else
+	   echo "&nbsp;";
+	 }
+	 else
+	  echo $itm['expenses'] ? number_format($itm['expenses'],2,',','.') : "&nbsp;";
+	 echo "</td>";
 	 echo "<td width='210' class='smalllink'>"
 		.($itm['doc_info'] ? "<a href='".$_ABSOLUTE_URL."GCommercialDocs/docinfo.php?id=".$itm['doc_info']['id']."' target='GCD-".$itm['doc_info']['id']."'>".$itm['doc_info']['name']."</a>" : ($itm['doc_ref'] ? $itm['doc_ref'] : "&nbsp;"))."</td></tr>";
 	}
@@ -147,8 +179,10 @@ include_once($_BASE_PATH."var/objects/editsearch/index.php");
 	</table>
 
 	<?php
-	$totIncomes = ($_REQUEST['filter'] == "transfers") ? $ret['outarr']['tot_transfers'] : $ret['outarr']['tot_incomes'];
-	$totExpenses = ($_REQUEST['filter'] == "transfers") ? $ret['outarr']['tot_transfers'] : $ret['outarr']['tot_expenses'];
+	//$totIncomes = ($_REQUEST['filter'] == "transfers") ? $ret['outarr']['tot_transfers'] : $ret['outarr']['tot_incomes'];
+	//$totExpenses = ($_REQUEST['filter'] == "transfers") ? $ret['outarr']['tot_transfers'] : $ret['outarr']['tot_expenses'];
+	$totIncomes = $ret['outarr']['tot_incomes'];
+	$totExpenses = $ret['outarr']['tot_expenses'];
 	?>
 
 	<table width='100%' cellspacing='0' cellpadding='0' border='0' class='totals'>
@@ -197,6 +231,22 @@ var CURRENT_PAGE = <?php echo $_REQUEST['pg'] ? $_REQUEST['pg'] : "1"; ?>;
 var PAGES_COUNT = 1;
 var SELECTED_CATALOG = "";
 var CAT_ID = <?php echo $_REQUEST['catid'] ? $_REQUEST['catid'] : "0"; ?>;
+var RES_ID = <?php echo $_REQUEST['resid'] ? $_REQUEST['resid'] : "0"; ?>;
+
+var ORDERBY_FIELD = "<?php echo $_ORDERBY_FIELD; ?>";
+var ORDERBY_METHOD = "<?php echo $_ORDERBY_METHOD; ?>";
+
+function orderbyChange(field)
+{
+ if(field == ORDERBY_FIELD)
+  ORDERBY_METHOD = (ORDERBY_METHOD == 'ASC') ? 'DESC' : 'ASC';
+ else
+ {
+  ORDERBY_FIELD = field;
+  ORDERBY_METHOD = "ASC";
+ }
+ updateQry();
+}
 
 function desktopOnLoad()
 {
@@ -254,8 +304,22 @@ function nextPage()
 	   r.insertCell(-1).innerHTML = "<a href='#' onclick='editRecord("+itm['id']+")'>"+date.printf("d/m/Y")+"</a>";
 	   r.insertCell(-1).innerHTML = "<span class='subject'>"+(itm['subject_name'] ? itm['subject_name'] : "&nbsp;")+"</span>";
 	   r.insertCell(-1).innerHTML = "<small>"+itm['name']+"</small>";
-	   r.insertCell(-1).innerHTML = parseFloat(itm['incomes']) ? formatCurrency(itm['incomes'],2) : "&nbsp;";
-	   r.insertCell(-1).innerHTML = parseFloat(itm['expenses']) ? formatCurrency(itm['expenses'],2) : "&nbsp;";
+	   if(RES_ID)
+	   {
+	    if(itm['res_in'] && (RES_ID == itm['res_in']['id']))
+		 r.insertCell(-1).innerHTML = parseFloat(itm['incomes']) ? formatCurrency(itm['incomes'],2) : "&nbsp;";
+		else
+		 r.insertCell(-1).innerHTML = "&nbsp;";
+	    if(itm['res_out'] && (RES_ID == itm['res_out']['id']))
+		 r.insertCell(-1).innerHTML = parseFloat(itm['expenses']) ? formatCurrency(itm['expenses'],2) : "&nbsp;";
+		else
+		 r.insertCell(-1).innerHTML = "&nbsp;";
+	   }
+	   else
+	   {
+	    r.insertCell(-1).innerHTML = parseFloat(itm['incomes']) ? formatCurrency(itm['incomes'],2) : "&nbsp;";
+	    r.insertCell(-1).innerHTML = parseFloat(itm['expenses']) ? formatCurrency(itm['expenses'],2) : "&nbsp;";
+	   }
 	   r.insertCell(-1).innerHTML = (itm['doc_info'] ? "<a href='"+ABSOLUTE_URL+"GCommercialDocs/docinfo.php?id="+itm['doc_info']['id']+"' target='GCD-"+itm['doc_info']['id']+"'>"+itm['doc_info']['name']+"</a>" : (itm['doc_ref'] ? itm['doc_ref'] : "&nbsp;"));
 
 	   r.cells[0].style.width = "32px"; r.cells[0].style.textAlign='center';
@@ -400,6 +464,8 @@ function updateQry()
  if(to.value)
   href+= "&to="+strdatetime_to_iso(to.value);
 
+ href+= "&orderby="+ORDERBY_FIELD+"&ordermethod="+ORDERBY_METHOD;
+
  document.location.href=href;
 
 }
@@ -471,7 +537,7 @@ function editRecord(id)
 function printPreview()
 {
  var sh = new GShell();
- sh.sendCommand("gframe -f print.preview -params `modelap=printmodels&modelct=pettycashbook&parser=pettycashbook&qry="+encodeURI("<?php echo str_replace('`','\'',$qry); ?>")+"&totincomes=<?php echo $totIncomes; ?>&totexpenses=<?php echo $totExpenses; ?>&catid="+CAT_ID+"&from="+document.getElementById('from').value+"&to="+document.getElementById('to').value+"` -title `Stampa prima nota`");
+ sh.sendCommand("gframe -f print.preview -params `modelap=printmodels&modelct=pettycashbook&parser=pettycashbook&qry="+encodeURI("<?php echo str_replace('`','\'',$qry); ?>")+"&totincomes=<?php echo $totIncomes; ?>&totexpenses=<?php echo $totExpenses; ?>&catid="+CAT_ID+"&resid="+RES_ID+"&from="+document.getElementById('from').value+"&to="+document.getElementById('to').value+"` -title `Stampa prima nota`");
 }
 
 function deleteSelected()
@@ -486,8 +552,30 @@ function deleteSelected()
   q+= " -id "+SELECTED_ROWS[c].id;
 
  var sh = new GShell();
- sh.OnOutput = function(){document.location.reload();}
+ sh.showProcessMessage("Eliminazione in corso", "Attendere prego, è in corso l'eliminazione dei movimenti selezionati");
+ sh.OnError = function(err){this.processMessage.error(err);}
+ sh.OnOutput = function(){
+	 this.hideProcessMessage();
+	 document.location.reload();
+	}
  sh.sendCommand("pettycashbook delete"+q);
+}
+
+function ExportToExcel()
+{
+ var qry = "<?php echo $qry; ?>";
+ var cmd = "pettycashbook export-to-excel -file 'primanota'"+qry.substr(18);
+
+ var sh = new GShell();
+ sh.showProcessMessage("Esportazione in Excel", "Attendere prego, è in corso l'esportazione della prima nota su file Excel.");
+ sh.OnError = function(err){this.processMessage.error(err);}
+ sh.OnOutput = function(o,a){
+	 this.hideProcessMessage();
+	 if(!a) return;
+	 var fileName = a['filename'];
+	 document.location.href = ABSOLUTE_URL+"getfile.php?file="+fileName;
+	}
+ sh.sendCommand(cmd);
 }
 </script>
 <?php
