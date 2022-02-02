@@ -1,0 +1,39 @@
+ul.popupmenu {
+	background: #ffffff;
+	border: 1px solid #cccccf;
+	margin: 0px;
+	padding: 1px;
+	z-index: 65535;
+}
+
+ul.popupmenu li {
+	padding: 2px;
+	list-style: none;
+}
+
+ul.popupmenu li span {
+	font-family: Arial;
+	font-size: 12px;
+	color: #000000;
+	cursor: default;
+	-moz-user-select: none;
+	-khtml-user-select: none;
+}
+
+ul.popupmenu li:hover {
+	background: #eeeeee;
+}
+
+ul.popupmenu li.disabled:hover, ul.popupmenu li.separator:hover {
+	background: #ffffff;
+}
+
+ul.popupmenu li.disabled span {
+	color: #777777;
+}
+
+ul.popupmenu li.separator {
+	height: 3px;
+	border-bottom: 1px solid #cccccf;
+	margin-bottom: 3px;
+}

@@ -1,0 +1,40 @@
+div.preview-widget {
+	background: url(img/widget-background.png) top left no-repeat;
+	width: 696px;
+	height: 604px;
+	padding: 4px;
+}
+
+div.preview-widget td.preview-title {
+	font-family: Trebuchet,Arial;
+	font-size: 14px;
+	color: #000000;
+	font-weight: bold;
+	padding-left: 4px;
+	padding-top: 4px;
+	cursor: pointer;
+}
+
+div.preview-widget span.button {
+	background: url(img/button-left.png) top left no-repeat;
+	height: 22px;
+	padding: 0px;
+	padding-left: 10px;
+	display: block;
+	float: left;
+	margin-right: 6px;
+}
+
+div.preview-widget span.button a {
+	background: url(img/button.png) top right no-repeat;
+	height: 22px;
+	padding: 0px;
+	padding-right: 10px;
+	font-family: Arial;
+	font-size: 14px;
+	font-weight: bold;
+	color: #ffffff;
+	text-decoration: none;
+	display: block;
+	line-height: 22px;
+}

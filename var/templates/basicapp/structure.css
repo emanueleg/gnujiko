@@ -1,0 +1,176 @@
+div.basicapp-header {
+	background: url(img/header.png) top left repeat-x;
+	height: 56px;
+}
+
+td.basicapp-contents-tdtop {
+	background: #ffffff url(img/topleft-pageborder.png) top left no-repeat;
+	height: 20px;
+}
+
+td.basicapp-contents-td {
+	padding-left: 10px;
+	background: #ffffff url(img/left-pageborder.png) top left repeat-y;
+}
+
+
+/* BUTTONS */
+ul.basicbuttons {
+	margin: 0px;
+	padding: 0px;
+	height: 32px;
+	list-style: none;
+}
+
+ul.basicbuttons li {
+	float: left;
+	background: url(img/button_l.png) top left no-repeat;
+	height: 31px;
+	margin-right: 10px;
+}
+
+ul.basicbuttons li a {
+	background: url(img/button.png) top right no-repeat;
+	margin-left: 10px;
+	height: 31px;
+	display: block;
+	font-family: Arial;
+	font-size: 12px;
+	color: #585858;
+	font-weight: bold;
+	line-height: 30px;
+	padding-right: 10px;
+	text-decoration: none;
+}
+
+ul.basicbuttons li a img {
+	float: left;
+	vertical-align: top;
+	
+}
+
+/* TREEVIEW */
+ul.basictree-blue {
+	list-style: none;
+	margin: 0px;
+	padding: 0px;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+}
+
+ul.basictree-blue li {
+	background: url(img/treeview-blue-l.png) top left no-repeat;
+	margin-bottom: 2px;
+	white-space: nowrap;
+	overflow: hidden;
+}
+
+ul.basictree-blue li span.item {
+	background: url(img/treeview-blue.png) top right no-repeat;
+	margin-left: 22px;
+	height: 21px;
+	display: block;
+	font-family: Arial;
+	font-size: 13px;
+	font-weight: bold;
+	color: #ffffff;
+	line-height: 21px;
+	cursor: pointer;
+}
+
+ul.basictree-blue li.expanded {
+	background: url(img/treeview-blue-open-l.png) top left no-repeat;
+	margin-bottom: 2px;
+}
+
+ul.basictree-blue li.expanded span.active {
+	background: url(img/treeview-blue-open.png) top right no-repeat;
+	margin-left: 22px;
+	height: 21px;
+	display: block;
+	font-family: Arial;
+	font-size: 13px;
+	font-weight: bold;
+	color: #ffffff;
+	line-height: 21px;
+	cursor: pointer;
+}
+
+ul.basictree-blue li.expanded ul.basictree-blue {
+	margin-left: 10px;
+	margin-top: 2px;
+}
+
+/* CONTENTS */
+ul.pathway {
+	list-style: none;
+	margin: 0px;
+	padding: 0px;
+	height: 22px;
+}
+
+ul.pathway li {
+	float: left;
+	height: 22px;
+	background: url(img/pwrarr.png) center right no-repeat;
+	margin-right: 10px;
+	padding-right: 15px;
+	font-family: Arial;
+	font-size: 16px;
+	color: #0169c9;
+	line-height: 22px;
+	cursor: pointer;
+}
+
+ul.pathway li.last {
+	background-image: none;
+}
+
+h3.title {
+	font-family: Arial;
+	font-size: 16px;
+	color: #0169c9;
+	margin-top:0px;
+}
+
+
+/* BASIC MENU */
+ul.basicmenu {
+	list-style: none;
+	height: 22px;
+	margin: 0px;
+	padding: 0px;
+}
+
+ul.basicmenu li {
+	float: left;
+	margin-right: 2px;
+	height: 22px;
+}
+
+ul.basicmenu li span {
+	display: block;
+	height: 22px;
+	margin-left: 10px;
+	padding-right: 20px;
+	cursor: pointer;
+	font-family: Arial;
+	font-size: 13px;
+	font-weight: bold;
+	color: #ffffff;
+	line-height: 20px;
+}
+
+ul.basicmenu li span img {
+	float: left;
+	vertical-align: center;
+}
+ul.basicmenu li.gray {background: url(img/basicmenu-gray-l.png) top left no-repeat;}
+ul.basicmenu li.lightgray {background: url(img/basicmenu-lightgray-l.png) top left no-repeat;}
+ul.basicmenu li.blue {background: url(img/basicmenu-blue-l.png) top left no-repeat;}
+
+ul.basicmenu li.gray span {background: url(img/basicmenu-gray.png) top right no-repeat;}
+ul.basicmenu li.lightgray span {background: url(img/basicmenu-lightgray.png) top right no-repeat;}
+ul.basicmenu li.blue span {background: url(img/basicmenu-blue.png) top right no-repeat;}
+
+

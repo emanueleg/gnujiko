@@ -1,0 +1,75 @@
+body {
+	font-size: 62.5%;
+	font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
+	background: #ffffff;
+}
+
+div.doctitle {
+	font-size: 20px;
+	font-weight: bold;
+	color: #333333;
+}
+
+div.doclinks {
+	font-size: 12px;
+}
+
+div.doclinks a {
+	font-size: 12px;
+	color: #013397;
+}
+
+div.section {
+	padding: 20px;
+	clear: both;
+}
+
+div.section div.title {
+	font-size: 16px;
+	color: #013397;
+	font-weight: bold;
+	border-bottom: 1px solid #013397;
+}
+
+table.item {
+	width: 350px;
+	height: 90px;
+	float: left;
+	margin-right: 20px;
+	margin-top: 10px;
+	margin-bottom: 10px;
+}
+
+table.item td p {
+	margin: 2px;
+}
+
+table.item a.item-title {
+	font-size: 14px;
+	font-weight: bold;
+	color: #000000;
+	text-decoration: none;
+}
+
+table.item span.item-desc {
+	font-size: 12px;
+	color: #666666;
+}
+
+table.item span.infotext {
+	font-size: 12px;
+	color: #013397;
+}
+
+table.item span.warningtext {
+	font-size: 12px;
+	color: #f44800;
+}
+
+table.item span.infovalue {
+	font-size: 10px;
+	font-weight: bold;
+	color: #000000;
+	text-transform: uppercase;
+}
+

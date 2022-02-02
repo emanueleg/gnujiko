@@ -1,0 +1,45 @@
+div.GSERPPageNav {
+	height: 22px;
+}
+
+div.GSERPPageNav a, div.GSERPPageNav span {
+    display: block;
+    float: left;
+    padding: 0.2em 0.5em;
+    margin-right: 0.1em;
+	border: 1px solid #9AAFE5;
+    background: #fff;
+	cursor: pointer;
+	-moz-user-select: none;
+	font-size: 10px;
+	font-family: Arial;
+	color: #105CB6;
+}
+
+div.GSERPPageNav span.current {
+    border: 1px solid #2E6AB1;
+    font-weight: bold;
+    background: #2E6AB1;
+    color: #fff;
+	cursor: default;
+	-moz-user-select: none;
+}
+
+div.GSERPPageNav a {
+    border: 1px solid #9AAFE5;
+    text-decoration: none;
+}
+
+div.GSERPPageNav a:hover {
+    border-color: #2E6AB1;
+}
+
+div.GSERPPageNav a.nextprev {
+    font-weight: bold;
+}
+
+div.GSERPPageNav span.nextprev {
+	border: 1px solid #ddd;
+	color: #999;
+}
+

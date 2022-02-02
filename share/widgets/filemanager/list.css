@@ -1,0 +1,27 @@
+div#results {
+	border-bottom: 1px solid #589442;
+	font-family: Arial;
+	font-size: 12px;
+	padding-top: 7px;
+	padding-bottom: 7px;
+}
+
+div#results td{
+	font-family: Arial;
+	font-size: 12px;
+}
+
+span#pagenum {
+	color: #015a01;
+	font-weight: bold;
+}
+
+span#pagetot {
+	color: #333333;
+	font-weight: bold;
+}
+
+div.resultcontainer {
+	height: 320px;
+	overflow: auto;
+}

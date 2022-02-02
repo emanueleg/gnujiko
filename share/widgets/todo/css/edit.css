@@ -1,0 +1,15 @@
+table.todoedit-topbar {
+	border-bottom: 1px solid #dadada;
+}
+
+table.todoedit-topbar td {
+	font-family: arial,sans-serif;
+	font-size: 12px;
+	color: #333333;
+	padding-top: 5px;
+	padding-bottom: 5px;
+}
+
+table.todoedit-topbar td small {
+	font-size: 10px;
+}

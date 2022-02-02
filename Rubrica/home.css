@@ -1,0 +1,29 @@
+div.rubrica-home-container {
+	background: url(img/background.png) center center no-repeat;
+	height: 100%;
+}
+
+table.rubrica-home-table td {
+	text-align: center;
+	vertical-align: middle;
+	padding: 20px;
+}
+
+span.rubrica-folder-title {
+	background: url(img/blue-button-left.png) top left no-repeat;
+	height: 21px;
+	padding-bottom: 10px;
+}
+
+span.rubrica-folder-title a {
+	background: url(img/blue-button.png) top right no-repeat;
+	margin-left: 12px;
+	padding-right: 12px;
+	height: 21px;
+	font-family: Arial;
+	font-size: 16px;
+	color: #ffffff;
+	text-decoration: none;
+	padding-bottom: 10px;
+}
+

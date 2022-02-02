@@ -1,0 +1,18 @@
+input.editable-text-editor {
+	border: 1px solid #aaccee;
+	background: #ffffc8;
+	font-family: Arial;
+	font-size: 12px;
+	position: fixed;
+	z-index: 7000;
+}
+
+textarea.editable-text-editor {
+	border: 1px solid #aaccee;
+	background: #ffffc8;
+	font-family: Arial;
+	font-size: 12px;
+	position: fixed;
+	z-index: 7000;
+}
+

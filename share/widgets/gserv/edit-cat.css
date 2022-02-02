@@ -1,0 +1,291 @@
+table.edit-category-form {
+}
+
+table.edit-category-form td.header-left {
+	height: 56px;
+	background: url(img/editcat-widget.png) top left no-repeat;
+	font-family: Arial;
+	font-size: 18px;
+	font-weight: bold;
+	color: #ffffff;
+	line-height: 56px;
+}
+
+table.edit-category-form td.header-top {
+	height: 56px;
+	background: url(img/editcat-widget.png) top center no-repeat;
+}
+
+table.edit-category-form td.header-right {
+	height: 56px;
+	background: url(img/editcat-widget.png) top right no-repeat;
+	width: 50px;
+}
+
+table.edit-category-form td.footer-left {
+	height: 50px;
+	background: url(img/editcat-widget.png) bottom left no-repeat;
+}
+
+table.edit-category-form td.footer-right {
+	height: 50px;
+	background: url(img/editcat-widget.png) bottom right no-repeat;
+}
+
+table.edit-category-form td.contents {
+	background: url(img/editcat-widget-cntsbg-l.png) top left repeat-y;
+}
+
+table.edit-category-form td div.contents {
+	background: #ffffff;
+	margin-left: 10px;
+	background: url(img/editcat-widget-cntsbg-r.png) top right repeat-y;
+	height: 100%;
+}
+
+
+img.close-btn {cursor: pointer; margin-left:6px;}
+
+div.title {
+	height: 34px;
+	width: 270px;
+	background: url(img/title-bg-r.png) top right no-repeat;
+	padding-right: 18px;
+}
+
+div.title span {
+	display: block;
+	width: 260px;
+	height: 34px;
+	background: url(img/title-bg.png) top left no-repeat;
+	white-space: nowrap;
+	overflow: hidden;
+	font-family: Arial;
+	font-size: 16px;
+	font-weight: bold;
+	color: #013397;
+	cursor: pointer;
+	line-height: 34px;
+	padding-left: 10px;
+}
+
+
+
+
+
+
+
+
+div.thumb-preview {
+	width: 128px;
+	height: 128px;
+	border: 1px solid #789cce;
+	float: left;
+	margin-left: 2px;
+	background-size: 128px;
+	background-repeat: no-repeat;
+	background-position: center 4px;
+}
+
+/* BUTTONS */
+ul.basicbuttons {
+	margin: 0px;
+	padding: 0px;
+	height: 32px;
+	list-style: none;
+}
+
+ul.basicbuttons li {
+	float: left;
+	background: url(img/button_l.png) top left no-repeat;
+	height: 31px;
+	margin-right: 10px;
+}
+
+ul.basicbuttons li span {
+	background: url(img/button.png) top right no-repeat;
+	margin-left: 10px;
+	height: 31px;
+	display: block;
+	font-family: Arial;
+	font-size: 12px;
+	color: #585858;
+	font-weight: bold;
+	line-height: 30px;
+	padding-right: 10px;
+	cursor: pointer;
+}
+
+ul.basicbuttons li span img {
+	float: left;
+	vertical-align: top;
+	
+}
+
+
+
+/* NAV */
+ul.nav {
+	margin: 0px;
+	padding: 10px;
+	list-style: none;
+	height: 21px;
+}
+
+ul.nav li {
+	float: left;
+	height: 21px;
+	cursor: pointer;
+	margin-right: 10px;
+	background: url(img/nav-btn-orange-r.png) top right no-repeat;
+}
+
+ul.nav li.selected {
+	background: url(img/nav-btn-blue-r.png) top right no-repeat;
+}
+
+ul.nav li span {
+	height: 21px;
+	display: block;
+	font-family: Arial;
+	font-size: 12px;
+	font-weight: bold;
+	color:#ffffff;
+	padding-left: 5px;
+	margin-right: 5px;
+	line-height: 21px;
+	float: left;
+	background: url(img/nav-btn-orange.png) top left no-repeat;
+}
+
+ul.nav li.selected span {
+	background: url(img/nav-btn-blue.png) top left no-repeat;
+}
+
+
+
+div.page {
+	border: 1px solid #0169c9;
+	height: 86%;
+	margin-left: 10px;
+	margin-right: 20px;
+	padding: 10px;
+}
+
+div.page h3.lightblue {
+	font-family: Arial;
+	font-size: 14px;
+	color: #0169c9;
+	margin: 0px;
+}
+
+table.thumbtable td {
+	font-family: Arial;
+	font-size: 12px;
+	color: #000000;
+}
+
+
+/* EDIT INPUT */
+span.editinput {
+	height: 38px;
+	width: 270px;
+	display: block;
+	background: url(img/edit-bg-r.png) top right no-repeat;
+}
+
+span.editinput span.editinput-inner {
+	height: 38px;
+	display: block;
+	background: url(img/edit-bg.png) top left no-repeat;
+	margin-right: 18px;
+	padding-left: 12px;
+	padding-top: 8px;
+}
+
+span.editinput-inner input {
+	height: 22px;
+	border: 0px;
+}
+
+span.editinput-inner input:focus {
+	outline: none;
+}
+
+
+/* PROP TABLE */
+table.prop-table td {
+	font-family: Arial;
+	font-size: 10px;
+	color: #000000;
+}
+
+div.catinfo {
+	font-family: Arial;
+	font-size: 10px;
+	color: #000000;
+	clear: both;
+}
+
+table.prop-table td span.tit {
+	font-family: Arial;
+	font-size: 16px;
+	font-weight: bold;
+	color: #013397;
+	float: left;
+	line-height: 38px;
+}
+
+table.prop-table td span.editinput {
+	float: left;
+}
+
+table.prop-table td select {
+	margin-top: 8px;
+}
+
+table.permissiontable td {
+	font-family: Arial;
+	font-size: 12px;
+	color: #333333;
+}
+
+table.permissiontable td .black {color:#000000;}
+
+img.add-idoc-btn {
+	cursor: pointer;
+}
+
+span.link-orange {
+	font-family: Arial;
+	font-size: 12px;
+	color: #f44800;
+	font-weight: bold;
+}
+
+table.idoc-list td {
+	border-bottom: 1px solid #cccccf;
+	font-family: Arial;
+	font-size: 10px;
+	color: #000000;
+}
+
+table.idoc-list td span.tit {
+	font-family: Arial;
+	font-size: 16px;
+	font-weight: bold;
+	color: #013397;
+}
+
+div.idoc-thumb {
+	width: 100px;
+	height: 80px;
+	border: 1px solid #0197fd;
+	overflow: hidden;
+	padding: 2px;
+}
+
+div.idoc-thumb img {
+	width: 100px;
+}
+

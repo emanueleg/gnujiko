@@ -1,0 +1,165 @@
+body {
+	background: #ffffff;
+}
+
+table.itemlist {
+	clear: both;
+}
+
+table.itemlist th {
+	height: 22px;
+	background: #0169c9;
+	font-family: Arial;
+	font-size: 10px;
+	color: #ffffff;
+	text-align: left;
+	line-height: 22px;
+	padding-right: 4px;
+}
+
+table.itemlist th.sortasc {background: #0169c9 url(img/sortasc.png) center right no-repeat;}
+table.itemlist th.sortdesc {background: #0169c9 url(img/sortasc.png) center right no-repeat;}
+
+table.itemlist td {
+	font-family: Arial;
+	font-size: 10px;
+	color: #000000;
+	height: 50px;
+	border-bottom: 1px dashed #cccccf;
+	padding-right: 4px;
+	position: relative;
+}
+
+table.itemlist tr.selected td {background:#ffffbc;}
+table.itemlist tr.selected:hover td {background:#ffffbc;}
+
+table.itemlist tr:hover td {background:#f7f7f7;}
+
+table.itemlist td div.title {
+	font-family: Arial;
+	font-size: 11px;
+	font-weight: bold;
+	color: #013397;
+	height: 14px;
+	overflow: hidden;
+}
+
+table.itemlist td div.title span {
+	font-family: Arial;
+	font-size: 11px;
+	font-weight: bold;
+	color: #013397;
+	cursor: pointer;	
+}
+
+table.itemlist td div.title span.visited {color:#ba00ff;}
+
+table.itemlist td div.info {
+	font-family: Arial;
+	font-size: 10px;
+	color: #000000;
+}
+
+table.itemlist td div.description {
+	height: 32px;
+	font-family: Arial;
+	font-size: 10px;
+	color: #000000;
+	overflow: hidden;
+}
+
+table.itemlist td span.green-block {
+	font-family: Arial;
+	font-size: 13px;
+	font-weight: bold;
+	color: #ffffff;
+	height: 21px;
+	background: #009100;
+	line-height: 21px;
+	padding-left: 4px;
+	padding-right: 4px;
+}
+
+table.itemlist td span.black {
+	font-family: Arial;
+	font-size: 11px;
+	color: #2d2d2d;
+}
+
+table.itemlist td span.red {
+	font-family: Arial;
+	font-size: 11px;
+	color: #980101;
+}
+
+table.itemlist td input.checkbox {
+	position: absolute;
+	left: 16px;
+	margin-top: 8px;
+	visibility: hidden;
+}
+
+table.itemlist td:hover input.checkbox {visibility: visible;}
+
+div.loading {
+	margin-top: 10px;
+	margin-bottom: 10px;
+	height: 235px;
+	background: url(img/loading.gif) center center no-repeat;
+}
+
+div.pagecontainer {
+	margin-top:40px;
+	margin-bottom:40px;
+}
+
+span.pagespan-title {
+	font-family: Arial;
+	font-size: 24px;
+	color: #000000;
+	float: left;
+}
+
+span.pagespan-results {
+	font-family: Arial;
+	font-size: 14px;
+	color: #000000;
+	float: right;
+}
+
+div.otherresultsbtn-div {
+	margin-bottom: 30px;
+	margin-top: 30px;
+}
+
+span.otherresultsbtn {
+	width: 320px;
+	height: 32px;
+	font-family: Arial;
+	font-size: 18px;
+	font-weight: bold;
+	color: #666666;
+	text-align: center;
+	line-height: 32px;
+	border: 1px solid #dadada;
+	background: #fafafa;
+	display: block;
+	cursor: pointer;
+}
+
+div.footerresults {
+	border-top: 1px solid #0169c9;
+	border-bottom: 1px solid #0169c9;
+	height: 40px;
+	line-height: 40px;
+	font-family: Arial;
+	font-size: 14px;
+	color: #333333;
+}
+
+div.footerresults span.green {
+	font-family: Arial;
+	font-size: 14px;
+	color: #015a01;
+}
+

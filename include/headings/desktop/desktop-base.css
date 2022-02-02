@@ -1,0 +1,343 @@
+table.desktop-base td.header-left {
+	background: url(img/header-left.png) top left no-repeat;
+	width: 270px;
+	height: 95px;
+}
+
+table.desktop-base td.header-title {
+	background: url(img/header-title.png) top right no-repeat;
+	height: 28px;
+	font: 12px "Trebuchet MS", sans-serif;
+	color: #333333;
+	line-height: 1.8em;
+	font-weight: bold;
+}
+
+table.desktop-base td.header-right {
+	background: url(img/header-right.png) top right no-repeat;
+	height: 28px;
+	color: #ffffff;
+	font-family: Arial;
+	font-size: 12px;
+}
+
+table.desktop-base td.header-right a {
+	font-family: Arial;
+	font-size: 10px;
+	color: #ffffff;
+	font-weight: bold;
+}
+
+/* HEADER BUTTONS */
+table.desktop-base td.header-buttons {
+	background: url(img/header-right.png) right -28px no-repeat;
+	height: 67px;
+}
+
+div#gnujikodesktop-appscontainer {
+	height: 62px;
+	overflow: hidden;
+}
+
+span#gnujikodesktop-hdrbtnnext {
+	float: right;
+	font-family: Trebuchet, Arial;
+	font-size: 24px;
+	color: #3364c3;
+	cursor: pointer;
+	line-height: 60px;
+	margin-right: 20px;
+}
+
+table.headbuttons {
+	height: 62px;
+}
+
+table.headbuttons td {
+	background: transparent;
+	text-align: center;
+}
+
+table.headbuttons td.active {
+	background: url(img/headbar-selbtn-bg.png) center top no-repeat;
+}
+
+table.headbuttons div.headbutton {
+	height: 23px;
+	background: url(img/headbar-btn-left.png) top left no-repeat;
+	margin: 0px;
+	padding: 0px;
+	margin-left: 7px;
+	margin-right: 7px;
+	white-space: nowrap;
+}
+
+table.headbuttons div.headbutton a {
+	display: block;
+	height: 23px;
+	background: url(img/headbar-btn-right.png) top right no-repeat;
+	padding-right: 12px;
+	margin-left: 12px;
+	font-family: Arial;
+	font-size: 12px;
+	color: #ffffff;
+	font-weight: bold;
+	text-decoration: none;
+	line-height: 2em;
+}
+
+table.headbuttons div.headbutton-active {
+	height: 23px;
+	background: url(img/headbar-active-btn-left.png) top left no-repeat;
+	margin: 0px;
+	padding: 0px;
+	margin-left: 7px;
+	margin-right: 7px;
+	white-space: nowrap;
+}
+
+table.headbuttons div.headbutton-active a {
+	display: block;
+	height: 23px;
+	background: url(img/headbar-active-btn-right.png) top right no-repeat;
+	padding-right: 12px;
+	margin-left: 12px;
+	font-family: Arial;
+	font-size: 12px;
+	color: #ffffff;
+	font-weight: bold;
+	text-decoration: none;
+	line-height: 2em;
+}
+
+/* DOCKBAR */
+ul.dockbar {
+	list-style: none;
+	margin: 0px;
+	padding: 0px;
+	margin-top: 2px;
+}
+
+ul.dockbar li {
+	background: url(img/dockbar.png) top center no-repeat;
+	height: 22px;
+	width: 22px;
+	margin: 0px;
+	padding: 0px;
+	padding-top: 3px;
+	text-align: center;
+	float: left;
+}
+
+ul.dockbar li.first {
+	background: url(img/dockbar.png) top left no-repeat;
+}
+
+ul.dockbar li.last {
+	background: url(img/dockbar.png) top right no-repeat;
+}
+
+ul.dockbar li.menu {
+	vertical-align: middle;
+	background: transparent;
+	width: auto;
+	padding-left: 6px;
+	padding-right: 6px;
+}
+
+/* DESKTOP TOOLBAR */
+table.desktop-base div.desktop-toolbar {
+	background: url(img/toolbar-bg.png) bottom left repeat-x;
+	border-left: 1px solid #5a7edc;
+	border-right: 1px solid #5a7edc;
+	height: 27px;
+}
+
+/* TOOLBAR TABS */
+table.desktop-base div.desktop-toolbar ul.tabs {
+	margin: 0px;
+	padding: 0px;
+	list-style: none;
+}
+
+table.desktop-base div.desktop-toolbar ul.tabs li {
+	float: left;
+	font-family: Arial;
+	font-size: 10px;
+	color: #000000;
+	height: 26px;
+	font-weight: bold;
+	margin-left: 5px;
+	margin-right: 5px;
+}
+
+table.desktop-base div.desktop-toolbar ul.tabs li.active {
+	background: url(img/toolbar-tab-left.png) top left no-repeat;
+}
+
+table.desktop-base div.desktop-toolbar ul.tabs a {
+	margin-left: 6px;
+	height: 26px;
+	display: block;
+	font-family: Arial;
+	font-size: 10px;
+	color: #000000;
+	font-weight: bold;
+	padding-right: 6px;
+	line-height: 2.5em;
+	text-decoration: none;
+}
+
+table.desktop-base div.desktop-toolbar ul.tabs li.active a {
+	background: url(img/toolbar-tab-right.png) top right no-repeat;
+}
+
+span.desktop-toolbar-button {
+	background: #e4f3fe;
+	border: 1px solid #6699cc;
+	border-radius: 4px;
+	height: 18px;
+	font-family: "Trebuchet", Arial;
+	font-size: 12px;
+	color: #336699;
+	font-weight: bold;
+	line-height: 18px;
+	padding-right: 8px;
+	padding-left: 3px;
+	margin-right: 10px;
+	margin-top: 2px;
+	cursor: pointer;
+	float: right;
+}
+
+span.desktop-toolbar-button img {
+	float: left;
+	vertical-align: middle;
+	margin-right: 3px;
+	margin-top: 1px;
+}
+
+/* DESKTOP CONTENTS */
+table.desktop-base td.desktop-contents {
+	background: #eeeeee;
+	border-left: 1px solid #5a7edc;
+	border-right: 1px solid #5a7edc;
+}
+
+/* DESKTOP FOOTER */
+table.desktop-base td.desktop-footer {
+	padding-left: 10px;
+	background: url(img/footer-left.png) top left no-repeat;
+	height: 32px;
+}
+
+table.desktop-base td.desktop-footer div.desktop-footer-container {
+	background: url(img/footer-right.png) top right no-repeat;
+	height: 32px;
+	margin: 0px;
+	padding-top: 5px;
+}
+
+div.desktop-footer-container div.desktop-search {
+	height: 22px;
+	background: #ffffff;
+	border: 0px;
+	border-radius: 11px;
+	width: 400px;
+}
+
+div.desktop-search img {
+	margin: 6px;
+	margin-top:3px;
+	float: left;
+	vertical-align: top;
+}
+
+div.desktop-search input.desktop-edit-search {
+	background: #ffffff;
+	border: 0px;
+	height: 20px;
+	margin-top:1px;
+	width: 350px;
+}
+
+input.desktop-edit-search:focus {
+	background: #ffffff;
+	border: 0px;
+	outline: none;
+}
+
+/* MAIN MENU */
+ul.desktop-mainmenu {
+	z-index: 16777271;
+	width: 202px;
+	list-style: none;
+	position: absolute;
+	bottom: 0px;
+	padding: 0px;
+	margin: 0px;
+}
+
+ul.desktop-mainmenu li {
+	margin: 0px;
+	padding: 0px;
+	height: 30px;
+	width: 202px;
+	background: url(img/mainmenu-bg.png) center left no-repeat;
+	border: 1px solid transparent;
+}
+
+ul.desktop-mainmenu li img {
+	border: 0px;
+	width: 22px;
+	height: 22px;
+	vertical-align: middle;
+	margin-right: 3px;
+}
+
+ul.desktop-mainmenu li.separator {
+	height: 12px;
+}
+
+ul.desktop-mainmenu li.separator hr {
+	background: #cccccf;
+	border: 0px;
+	height: 1px;
+	width: 163;
+	margin: 0px;
+	margin-top: 6px;
+	margin-left: 18px;
+}
+
+ul.desktop-mainmenu li a {
+	height: 28px;
+	width: 160px;
+	margin-left: 18px;
+	margin-top: 1px;
+	display: block;
+	text-decoration: none;
+	background: #9cb2ea;
+	vertical-align: middle;
+	font-size: 12px;
+	font-family: Arial;
+	font-weight: bold;
+	color: #ffffff;
+	padding-top: 3px;
+	padding-left: 3px;
+}
+
+ul.desktop-mainmenu li a:hover {
+	background: #eec73e;
+}
+
+ul.desktop-mainmenu li.first {
+	background: url(img/mainmenu-bg.png) top left no-repeat;
+	padding-top: 18px;
+}
+
+ul.desktop-mainmenu li.last {
+	background: url(img/mainmenu-bg.png) bottom left no-repeat;
+	padding-bottom: 20px;
+}
+
+

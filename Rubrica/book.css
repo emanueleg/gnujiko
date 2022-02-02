@@ -1,0 +1,199 @@
+div.rubrica-book-container {
+	padding: 5px;
+}
+
+
+div.rubrica-tab {
+	background: url(img/folder-bg.png) top left no-repeat;
+	height: 80px;
+	/*width: 269px;*/
+	margin-left: 4px;
+	vertical-align: middle;
+	padding-left: 5px;
+	padding-top: 7px;
+}
+
+div.rubrica-tab img {
+	vertical-align: middle;
+	margin-right: 20px;
+}
+
+div.rubrica-tab a {
+	text-decoration: none;
+	font-family: Trebuchet, Arial;
+	font-size: 18px;
+	font-weight: bold;
+	color: #3364c3;
+}
+
+div.rubrica-tab-active {
+	background: url(img/folder-bg-active.png) top left no-repeat;
+	height: 80px;
+	/*width: 269px;*/
+	margin-left: 4px;
+	vertical-align: middle;
+	padding-left: 5px;
+	padding-top: 7px;
+}
+
+div.rubrica-tab-active img {
+	vertical-align: middle;
+	margin-right: 20px;
+}
+
+div.rubrica-tab-active a {
+	text-decoration: none;
+	font-family: Trebuchet, Arial;
+	font-size: 18px;
+	font-weight: bold;
+	color: #013397;
+}
+
+/* HEADER */
+div.rubrica-header {
+	background: url(img/white-rounded-hdr-left.png) top left no-repeat;
+	padding: 0px;
+	padding-left: 16px;
+}
+
+div.rubrica-header-title {
+	background: url(img/white-rounded-hdr.png) top right no-repeat;
+	padding-right: 16px;
+	padding-top: 18px;
+	font-size: 16px;
+	font-family: Trebuchet, Arial;
+	color: #09532d;
+}
+
+hr.green {
+	width: 100%;
+	height: 1px;
+	border: 0px;
+	background: #339900;
+	margin-bottom: 0px;
+}
+
+hr.greenbold {
+	width: 100%;
+	height: 2px;
+	border: 0px;
+	background: #339900;
+	margin-bottom: 0px;
+}
+
+
+/* TOOLBARS */
+div.rubrica-toolbar {
+	border-bottom: 1px solid #589442;
+	padding-top: 4px;
+	padding-bottom: 4px;
+	padding-left: 2px;
+	padding-right: 2px;
+}
+
+div#results {
+	font-family: Arial;
+	font-size: 12px;
+}
+
+div#results td{
+	font-family: Arial;
+	font-size: 12px;
+}
+
+span#pagenum {
+	color: #015a01;
+	font-weight: bold;
+}
+
+span#pagetot {
+	color: #333333;
+	font-weight: bold;
+}
+
+div#ordering {
+	color: #333333;
+	font-family: Arial;
+	font-size: 12px;
+}
+
+div#ordering a {
+	text-decoration: none;
+}
+
+input#newbtn {
+	background: #3364C3;
+	border: 0px;
+	color: #ffffff;
+	font-family: Arial;
+	font-size: 13px;
+	font-weight: bold;
+	height: 22px;
+	cursor: pointer;
+}
+
+input#copybtn {
+	background: #3364C3;
+	border: 0px;
+	color: #ffffff;
+	font-family: Arial;
+	font-size: 13px;
+	font-weight: bold;
+	height: 22px;
+	cursor: pointer;
+}
+
+input#movebtn {
+	background: #3364C3;
+	border: 0px;
+	color: #ffffff;
+	font-family: Arial;
+	font-size: 13px;
+	font-weight: bold;
+	height: 22px;
+	cursor: pointer;
+}
+
+input#deletebtn {
+	background: #f31903;
+	border: 0px;
+	color: #ffffff;
+	font-family: Arial;
+	font-size: 13px;
+	font-weight: bold;
+	height: 22px;
+	cursor: pointer;
+}
+
+input#search {
+	background: #ffffff;
+	border: 1px solid #339900;
+	height: 22px;
+	font-size: 14px;
+	color: #333333;
+	width: 240px;
+}
+
+input#searchbtn {
+	background: #339900;
+	border: 0px;
+	color: #ffffff;
+	font-family: Arial;
+	font-size: 14px;
+	height: 22px;
+	cursor: pointer;
+}
+
+/* FOOTER */
+div.rubrica-footer {
+	background: url(img/white-rounded-foot-left.png) bottom left no-repeat;
+	padding: 0px;
+	padding-left: 16px;
+}
+
+div.rubrica-footer-contents {
+	background: url(img/white-rounded-foot.png) bottom right no-repeat;
+	padding-right: 16px;
+	height: 20px;
+}
+

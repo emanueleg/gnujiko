@@ -1,0 +1,71 @@
+div.widget {
+	background: url(img/widget_bg_480.png) top left no-repeat;
+	width: 480px;
+}
+
+div.widget-footer {
+	background: url(img/widget_bg_480.png) bottom left no-repeat;
+	width: 480px;
+	padding: 10px;
+	font-family: Arial;
+	font-size: 12px;
+	color: #000000;
+}
+
+div.widget table.header td {
+	padding:5px;
+	padding-bottom: 0px;
+}
+
+div.widget table.header td {
+	font-family: Arial;
+	font-size: 12px;
+	color: #000000;
+}
+
+div.widget table.header td#title {
+	font-size: 18px;
+	font-weight: bold;
+	color: #333333;
+}
+
+div.widget div.contents {
+	width: 474px;
+	height: 300px;
+	background: #ffffff;
+	margin-left: 3px;
+	margin-top: 10px;
+	overflow: auto;
+}
+
+div.widget div.contents div#contents-html {
+	font-family: Arial;
+	font-size: 12px;
+}
+
+ul.list {
+	font-family: Arial;
+	font-size: 14px;
+	padding-left: 12px;
+	margin-bottom: 12px;
+}
+
+ul.list li {
+	margin-left: 22px;
+	font-size: 12px;
+}
+
+table#packagelist td {
+	font-family: Arial;
+	font-size: 12px;
+	border-bottom: 1px solid #d0e3f6;
+	padding: 3px;
+}
+
+table#packagelist td.pkgname {
+	font-family: Arial;
+	font-size: 13px;
+	color: #666666;
+	padding-left: 10px;
+}
+

@@ -1,0 +1,79 @@
+table.gextendedtable th {
+	font-size: 10px;
+	color: #000000;
+	height: 16px;
+	text-align: left;
+	border-top: 1px solid #cccccc;
+	border-bottom: 1px solid #cccccc;
+	background: #ffffff;
+}
+
+table.gextendedtable th.sortasc {
+	font-size: 10px;
+	color: #ffffff;
+	height: 16px;
+	text-align: left;
+	border-top: 1px solid #cccccc;
+	border-bottom: 1px solid #cccccc;
+	background: #6699cc url(img/sortascdesc.png) top right no-repeat;
+}
+
+table.gextendedtable th.sortdesc {
+	font-size: 10px;
+	color: #ffffff;
+	height: 16px;
+	text-align: left;
+	border-top: 1px solid #cccccc;
+	border-bottom: 1px solid #cccccc;
+	background: #6699cc url(img/sortascdesc.png) bottom right no-repeat;
+}
+
+
+table.gextendedtable td {
+	font-size: 12px;
+	height: 20px;
+	border-bottom: 1px solid #cccccc;
+}
+
+table.gextendedtable tr.selected td {
+	background: #ffffcc;
+}
+
+table.gextendedtable tr.categoryselected td {
+	font-weight: bold;
+	background: #ffffcc;
+}
+
+table.gextendedtable td input.edit {
+	border: 1px dashed #fedb62;
+	font-size: 12px;
+	background: #ffff13;
+	margin: 0px;
+	position: absolute;
+}
+
+table.gextendedtable td select.edit {
+	margin: 0px;
+	position: absolute;
+}
+
+table.gextendedtable td textarea.edit {
+	border: 1px dashed #fedb62;
+	font-size: 12px;
+	background: #ffff13;
+	margin: 0px;
+	position: absolute;
+}
+
+table.gextendedtable td img.expand-button {
+	margin-right: 2px;
+	cursor: pointer;
+	vertical-align: top;
+	text-align: left;
+}
+
+table.gextendedtable tr.category td {
+	font-weight: bold;
+	background: #ffffff;
+}
+

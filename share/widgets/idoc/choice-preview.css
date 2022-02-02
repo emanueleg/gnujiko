@@ -1,0 +1,129 @@
+table.previewform {
+	width: 550px;
+	height: 442px;
+	background: url(img/choice-preview-bg.png) top left no-repeat;
+}
+
+table.previewform td.title {
+	font-family: Arial;
+	font-size: 16px;
+	font-weight: bold;
+	color: #0169c9;
+	padding-left: 10px;
+}
+
+table.previewform td.pagelist {
+	font-family: Arial;
+	font-size: 12px;
+	font-weight: bold;
+	color: #333333;
+}
+
+/* BUTTONS */
+ul.basicbuttons {
+	margin: 0px;
+	padding: 0px;
+	height: 32px;
+	list-style: none;
+}
+
+ul.basicbuttons li {
+	float: left;
+	background: url(img/button_l.png) top left no-repeat;
+	height: 31px;
+	margin-right: 10px;
+}
+
+ul.basicbuttons li a {
+	background: url(img/button.png) top right no-repeat;
+	margin-left: 10px;
+	height: 31px;
+	display: block;
+	font-family: Arial;
+	font-size: 12px;
+	color: #585858;
+	font-weight: bold;
+	line-height: 30px;
+	padding-right: 10px;
+	text-decoration: none;
+}
+
+ul.basicbuttons li a img {
+	float: left;
+	vertical-align: top;
+}
+
+a.closebtn {
+	float: right;
+	margin-right: 10px;
+}
+
+div.sheet-background {
+	background: url(img/choice-sheet-bg.png) top left no-repeat;
+	width: 360px;
+	height: 357px;
+	margin-left: 5px;
+	overflow: hidden;
+}
+
+#sheetframe {
+	-moz-transform: scale(0.90);
+	-webkit-transform: scale(0.90);
+	-moz-transform-origin: 0 0;
+	-webkit-transform-origin: 0 0;
+	margin-left: 10px;
+	margin-top: 10px;
+	border: 0px;
+}
+
+span.link {
+	font-family: Arial;
+	font-size: 12px;
+	color: #0169c9;
+	cursor: pointer;
+	display: block;
+	height: 16px;
+	line-height: 16px;
+	margin-left: 10px;
+	margin-bottom: 10px;
+}
+
+span.link img {
+	float: left;
+	vertical-align: middle;
+	margin-right: 4px;
+}
+
+div.available-models {
+	font-family: Arial;
+	font-size: 12px;
+	font-weight: bold;
+	color: #0169c9;
+	border-bottom: 1px solid #0169c9;
+	margin-right: 12px;
+	margin-bottom: 20px;
+}
+
+div.model-list {
+	font-family: Arial;
+	font-size: 10px;
+	color: #000000;
+	height: 330px;
+	overflow: auto;
+	margin-right: 5px;
+}
+
+div.model-list input {
+	font-family: Arial;
+	font-size: 10px;
+	color: #000000;
+	margin-bottom: 20px;
+}
+
+div.model-list div.thumbnail {
+	width: 100px;
+	border: 1px solid #dadada;
+	padding: 4px;
+	margin-left: 5px;
+}
+

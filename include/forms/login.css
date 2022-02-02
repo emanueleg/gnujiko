@@ -1,0 +1,61 @@
+div#gnujiko-login-box {
+	width: 200px;
+	padding: 0px;
+}
+
+div#gnujiko-login-box span.small {
+	font-size: 10px;
+	color: #000000;
+	font-family: Arial;
+}
+
+
+div.gnujiko-login-header {
+	margin: 0px;
+	float: left;
+	background: url(img/silver-header.png) top left no-repeat;
+	width: 200px;
+	height: 23px;
+	padding: 10px;
+}
+
+div.gnujiko-login-contents {
+	clear: both;
+	text-align: left;
+	float: left;
+	margin: 0px;
+	background: url(img/silver-footer.png) bottom left no-repeat;
+	width: 200px;
+	padding: 10px;
+	padding-top: 0px;
+}
+
+input.roundedit {
+	border: 1px solid #aaccee;
+	background: #ffffff;
+	border-radius: 8px;
+	width: 182px;
+	height: 25px;
+	padding: 4px;
+}
+
+input.roundedit:focus {
+	border: 1px solid #fb8b00;
+	background: #ffffc2;
+	border-radius: 8px;
+	outline: none;
+}
+
+input.submit {
+	border: 0px;
+	background: transparent url(img/submit-btn.png) no-repeat;
+	width: 70px;
+	height: 24px;
+	text-align: center;
+	vertical-align: middle;
+	margin-left: 6px;
+	font-family: Arial;
+	font-size: 12px;
+	font-weight: bold;
+	color: #ffffff;
+}

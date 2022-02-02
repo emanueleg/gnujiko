@@ -1,0 +1,57 @@
+/* BLUE BUTTON */
+span.bluebtn {
+	height: 32px;
+	background: url(img/bluemenu-btn-r.png) top right no-repeat;
+	cursor: pointer;
+	display: block;
+	float: left;
+	margin-right: 2px;
+	margin-bottom: 10px;
+}
+
+span.bluebtn-title {
+	background: url(img/bluemenu-btn.png) top left no-repeat;
+	margin-right: 25px;
+	padding-left: 10px;
+	height: 32px;
+	display: block;
+	white-space: nowrap;
+	font-family: Arial;
+	font-size: 14px;
+	font-weight: bold;
+	color: #ffffff;
+	overflow: hidden;
+	line-height: 32px;
+}
+
+
+/* DOC INFO */
+div.doc-info {
+	padding: 10px;
+}
+
+div.customer-outer {
+	height: 32px;
+	background: url(img/clipboard-customer-bg-small.png) top left no-repeat;
+	padding-left: 10px;
+	font-family: Arial;
+	font-size: 14px;
+	font-weight: bold;
+	color: #ffffff;
+	line-height: 32px;
+	float: left;
+	width: 260px;
+	margin-left: 8px;
+}
+
+div.customer-outer input {
+	border: 1px solid #3364C3;
+	background: #ffffff;
+	width: 175px;
+}
+
+div.customer-outer img {
+	margin-top: 8px;
+	margin-left: 3px;
+}
+

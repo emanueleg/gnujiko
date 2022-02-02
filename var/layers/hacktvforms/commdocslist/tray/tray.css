@@ -1,0 +1,28 @@
+div.hacktvforms-commdocslist-tray {
+	height: 80px;
+	overflow: auto;
+	padding-top: 10px;
+}
+
+div.hacktvforms-commdocslist-tray-button {
+	width: 88px;
+	height: 70px;
+	float: left;
+	margin: 1px;
+	cursor: pointer;
+	text-align: center;
+	font-family: arial, sans-serif;
+	font-size: 10px;
+	font-weight: bold;
+	color: #000000;
+	background: #d2eeff;
+	border: 0px;
+	border-radius: 3px;
+}
+
+div.hacktvforms-commdocslist-tray-button:hover {background:#edf8ff;}
+
+div.hacktvforms-commdocslist-tray-button img {
+	margin: auto;
+	margin-top: 2px;
+}

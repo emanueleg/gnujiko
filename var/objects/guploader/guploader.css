@@ -1,0 +1,8 @@
+iframe.GUploader_iframe {
+  border: 0; 
+  height: 0; 
+  width: 0; 
+  padding: 0; 
+  position: absolute; 
+  visibility: hidden;
+} 

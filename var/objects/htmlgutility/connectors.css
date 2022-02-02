@@ -1,0 +1,151 @@
+/* DEFAULT CABLE */
+div.defaultcable-horizontal {
+	width: 1px;
+	height: 1px;
+	border-top: 1px solid #000000;
+	z-index: -10;
+}
+
+div.defaultcable-horizontal-selected {
+	width: 1px;
+	height: 1px;
+	border-top: 1px solid #00ff00;
+	z-index: -10;
+}
+
+div.defaultcable-vertical {
+	width: 1px;
+	height: 1px;
+	border-left: 1px solid #000000;
+	z-index: -10;
+}
+
+div.defaultcable-vertical-selected {
+	width: 1px;
+	height: 1px;
+	border-left: 1px solid #00ff00;
+	z-index: -10;
+}
+
+/* DASHED CABLE */
+div.dashedcable-horizontal {
+	width: 1px;
+	height: 1px;
+	border-top: 1px dashed #000000;
+	z-index: -10;
+}
+
+div.dashedcable-horizontal-selected {
+	width: 1px;
+	height: 1px;
+	border-top: 1px dashed #00ff00;
+	z-index: -10;
+}
+
+div.dashedcable-vertical {
+	width: 1px;
+	height: 1px;
+	border-left: 1px dashed #000000;
+	z-index: -10;
+}
+
+div.dashedcable-vertical-selected {
+	width: 1px;
+	height: 1px;
+	border-left: 1px dashed #00ff00;
+	z-index: -10;
+}
+
+/* DOTTED CABLE */
+div.dottedcable-horizontal {
+	width: 1px;
+	height: 1px;
+	border-top: 1px dotted #000000;
+	z-index: -10;
+}
+
+div.dottedcable-horizontal-selected {
+	width: 1px;
+	height: 1px;
+	border-top: 1px dotted #00ff00;
+	z-index: -10;
+}
+
+div.dottedcable-vertical {
+	width: 1px;
+	height: 1px;
+	border-left: 1px dotted #000000;
+	z-index: -10;
+}
+
+div.dottedcable-vertical-selected {
+	width: 1px;
+	height: 1px;
+	border-left: 1px dotted #00ff00;
+	z-index: -10;
+}
+
+div.defaultconnectorplug {
+	width: 7px;
+	height: 7px;
+	border: 1px solid #f31903;
+	background: #ffffff;
+	cursor: pointer;
+}
+
+div.defaultconnectorplug:hover {
+	background: #ffff00;
+}
+
+div.cableTerminalArrowUp {
+	width: 7px;
+	height: 10px;
+	background: url(img/black_arrows.png) -10px 0px no-repeat;
+	z-index: 2;
+}
+
+div.cableTerminalArrowDown {
+	width: 7px;
+	height: 10px;
+	background: url(img/black_arrows.png) -10px -17px no-repeat;
+	z-index: 2;
+}
+
+div.cableTerminalArrowLeft {
+	width: 10px;
+	height: 7px;
+	background: url(img/black_arrows.png) 0px -10px no-repeat;
+	z-index: 2;
+}
+
+div.cableTerminalArrowRight {
+	width: 10px;
+	height: 7px;
+	background: url(img/black_arrows.png) -17px -10px no-repeat;
+	z-index: 2;
+}
+
+div.cableTerminalRound {
+	width: 10px;
+	height: 10px;
+	background: url(img/othercableterminals.png) 0px 0px no-repeat;
+}
+
+div.cableTerminalRoundFill {
+	width: 10px;
+	height: 10px;
+	background: url(img/othercableterminals.png) 0px -10px no-repeat;
+}
+
+div.cableTerminalSquare {
+	width: 10px;
+	height: 10px;
+	background: url(img/othercableterminals.png) 0px -20px no-repeat;
+}
+
+div.cableTerminalSquareFill {
+	width: 10px;
+	height: 10px;
+	background: url(img/othercableterminals.png) 0px -30px no-repeat;
+}
+

@@ -1,0 +1,118 @@
+div.hacktvt-desktop-search-widget {
+	width: 400px;
+	background: #b1c2ee;
+	border: 1px solid #5a7edc;
+	border-radius: 3px;
+	position: absolute;
+	z-index: 20000;
+}
+
+div.hacktvsearch-section {
+ margin-bottom: 30px;
+ padding: 2px;
+}
+
+div.hacktvsearch-title {
+	height: 19px;
+	background: #e1e7f9;
+	border: 0px;
+	border-radius: 3px;
+ 	font-family: arial, sans-serif;
+	font-size: 11px;
+	color: #2e3436;
+	line-height: 19px;
+	font-weight: bold;
+	margin-bottom: 3px;
+}
+
+div.hacktvsearch-title img {
+	margin-left: 3px;
+	margin-top: 1px;
+	float: left;
+	vertical-align: top;
+	margin-right: 3px;
+}
+
+div.hacktvsearch-item {
+	background: #f1f3fc;
+	height: 19px;
+	border: 0px;
+	border-radius: 3px;
+ 	font-family: arial, sans-serif;
+	font-size: 11px;
+	color: #000000;
+	line-height: 19px;
+	white-space: nowrap;
+	overflow: hidden;
+	margin-top: 1px;
+	margin-left: 5px;
+	margin-right: 5px;
+	padding-left: 3px;
+	clear: both;
+}
+
+div.hacktvsearch-item:hover { background: #ffffbb;}
+
+div.hacktvsearch-item span {
+	float: left;
+ 	font-family: arial, sans-serif;
+	font-size: 11px;
+	color: #000000;
+	line-height: 19px;
+	cursor: pointer;
+}
+
+div.hacktvsearch-item small {
+	font-family: arial, sans-serif;
+	font-size: 10px;
+	color: #777777;
+	font-style: italic;
+}
+
+div.hacktvsearch-item span.expected {
+	font-family: arial, sans-serif;
+	font-size: 10px;
+	color: #777777;
+	font-style: italic;
+}
+
+div.hacktvsearch-item a.rightlink {
+	float: right;
+	margin-right: 3px;
+	font-family: arial,sans-serif;
+	font-size: 10px;
+	color: #204a87;
+	line-height: 19px;
+	text-decoration: none;
+}
+
+div#hacktvsearch-loading {
+	width: 235px;
+	height: 235px;
+	position: absolute;
+	background: url(img/loading.gif) top left no-repeat;
+    top: 0px;
+	left: 0px;
+	display: block;
+	visibility: hidden;
+}
+
+
+/* DEBUG */
+div.hacktvsearch-debug-widget {
+	width: 400px;
+	height: 200px;
+	overflow: auto;
+	background: #fafafa;
+	border: 1px solid #5a7edc;
+	border-radius: 3px;
+	position: absolute;
+	font-family: arial, sans-serif;
+	font-size: 12px;
+}
+
+div.hacktvsearch-debug-widget div {
+	font-family: arial,sans-serif;
+	font-size: 12px;
+}
+

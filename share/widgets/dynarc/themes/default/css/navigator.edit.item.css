@@ -1,0 +1,233 @@
+div.widget {
+	background: url(../img/widget_bg.png) top left no-repeat;
+	width: 800px;
+}
+
+div.widget-footer {
+	background: url(../img/widget_bg.png) bottom left no-repeat;
+	width: 800px;
+	padding: 10px;
+	font-family: Arial;
+	font-size: 12px;
+	color: #000000;
+}
+
+div.widget table.header td {
+	padding:5px;
+	padding-bottom: 0px;
+}
+
+div.widget table.header td {
+	font-family: Arial;
+	font-size: 12px;
+	color: #000000;
+}
+
+div.widget table.header span#code {
+	font-size: 12px;
+	font-weight: bold;
+	color: #909090;
+	font-family: monospace;
+}
+
+div.widget table.header span#title {
+	font-size: 18px;
+	font-weight: bold;
+	color: #333333;
+}
+
+div.widget div.contents {
+	width: 794px;
+	height: 500px;
+	background: #ffffff;
+	margin-left: 3px;
+}
+
+div.widget div.contents div#contents-html {
+	font-family: Arial;
+	font-size: 12px;
+}
+
+/* COMMON */
+.commoncontents td {
+ font-size: 90%;
+}
+
+.commoncontents table.header td {
+ background: #5a7edc;
+ font-size: 90%;
+}
+
+.commoncontents table.header h2 {
+ margin-left: 50px;
+ margin-top: 20px;
+ color: #ffffff;
+}
+
+.commoncontents div.footer {
+ clear: both;
+}
+
+.commoncontents div.menu {
+ margin: 10px;
+ width: 200px;
+}
+
+.commoncontents div.menu ul {
+ margin: 0px;
+ padding-left: 7px;
+}
+
+.commoncontents div.menu li {
+ list-style-type: none;
+ margin-left: 4px;
+ margin: 0px;
+ padding-left: 7px;
+}
+
+.commoncontents div.menu li a {
+ font-family: Arial;
+ font-size: 12px;
+ color: #3364c3;
+ text-decoration: none;
+}
+
+.commoncontents div.menu li a:hover {
+ text-decoration: underline;
+}
+
+.commoncontents div.menu li a.selected {
+ font-weight: bold;
+ color: #000000;
+}
+
+.commoncontents a.link {
+ color: green;
+ text-decoration: none;
+}
+
+.commoncontents a.link:hover {
+ text-decoration: underline;
+}
+
+/* CONTENTS CSS */
+.commoncontents h2 {
+	border-top: 0;
+	border-right: 0;
+	border-left: 0;
+	border-bottom: 1px solid #E2D8C0;
+	color: #3F2008;
+	font-size: x-large;
+	font-weight: bold;
+}
+
+.commoncontents h3 {
+	border-top: 0;
+	border-right: 0;
+	border-left: 0;
+	border-bottom: 1px solid #E2D8C0;
+	color: #f44800;
+	font-size: large;
+	font-weight: bold;
+}
+
+.commoncontents h4 {
+	border-top: 0;
+	border-right: 0;
+	border-left: 0;
+	border-bottom: 1px solid #E2D8C0;
+	color: #FF7011;
+	font-size: medium;
+	font-weight: bold;
+}
+
+.commoncontents h2, .commoncontents h3, .commoncontents h4 {
+	margin: 0 0 15px 0;
+	padding: 0 0 5px 0;
+}
+
+.commoncontents dl {
+	background-color:  rgb(247, 247, 247);
+	border: 5px solid #FF7011;
+	padding: 4px 4px 4px 6px;
+	font-size: 90%;
+}
+.commoncontents dl dt {
+	color: #3F2008;
+	font-weight: bold;
+	font-size: small;
+	margin-bottom: 3px;
+}
+
+.commoncontents tt {
+ font-size: 13px;
+}
+
+.commoncontents .section {
+	margin-bottom: 35px;
+	padding: 0;
+	font-size: 90%;
+}
+
+.commoncontents .panel {
+	background: #eeeeff;
+	border: 1px solid #aaaaff;
+	padding: 6px;
+	font-size: 10pt;
+	font-family: monospace;
+}
+
+.commoncontents .source {
+	margin: 1em 0px;
+	padding: 12px;
+	font-family: monospace;
+	font-size: 9pt;
+	background-color: rgb(247, 247, 247);
+	border: 1px solid #999;
+}
+
+.commoncontents .smalltext {
+	color: #666666;
+	font-size: 12px;
+	font-family: Arial;
+}
+
+.commoncontents div.graybar {
+	background: #cccccc;
+	color: #000000;
+	font-size: 13px;
+	font-family: Arial;
+	padding: 6px 12px 6px 12px;
+	margin-bottom: 10px;
+}
+
+.commoncontents span.subtitle {
+	color: #3364c3;
+	font-weight: bold;
+	font-size: 13px;
+	font-family: Verdana;
+}
+
+.commoncontents div.indent {
+	padding: 0px 0px 0px 50px;
+	margin-bottom: 25px;
+}
+
+.commoncontents table.bodyTable th {
+  color: white;
+  background-color: #bbb;
+  text-align: left;
+  font-weight: bold;
+}
+
+.commoncontents table.bodyTable th, table.bodyTable td {
+  font-size: 90%;
+}
+
+.commoncontents table.bodyTable tr.a {
+  background-color: #ddd;
+}
+
+.commoncontents table.bodyTable tr.b {
+  background-color: #eee;
+}

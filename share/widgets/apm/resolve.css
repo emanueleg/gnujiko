@@ -1,0 +1,56 @@
+div.widget {
+	background: url(img/widget_bg_480.png) top left no-repeat;
+	width: 480px;
+}
+
+div.widget-footer {
+	background: url(img/widget_bg_480.png) bottom left no-repeat;
+	width: 480px;
+	padding: 10px;
+	font-family: Arial;
+	font-size: 12px;
+	color: #000000;
+}
+
+div.widget table.header td {
+	padding:5px;
+	padding-bottom: 0px;
+}
+
+div.widget table.header td {
+	font-family: Arial;
+	font-size: 12px;
+	color: #000000;
+}
+
+div.widget table.header td#title {
+	font-size: 18px;
+	font-weight: bold;
+	color: #333333;
+}
+
+div.widget div.contents {
+	width: 474px;
+	height: 200px;
+	background: #ffffff;
+	margin-left: 3px;
+	margin-top: 10px;
+}
+
+div.widget div.contents div#contents-html {
+	font-family: Arial;
+	font-size: 12px;
+}
+
+ul.list {
+	font-family: Arial;
+	font-size: 14px;
+	padding-left: 12px;
+	margin-bottom: 12px;
+}
+
+ul.list li {
+	margin-left: 22px;
+	font-size: 12px;
+}
+

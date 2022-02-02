@@ -1,0 +1,177 @@
+body { font: 62.5% "Trebuchet MS", sans-serif;}
+table.packageproperty_table td {
+	font: 62.5% "Trebuchet MS", sans-serif;
+}
+div.widget {
+	background: url(img/widget_bg.png) top left no-repeat;
+	width: 676px;
+}
+
+div.widget-footer {
+	background: url(img/widget_bg.png) bottom left no-repeat;
+	width: 676px;
+	padding: 10px;
+	font-family: Arial;
+	font-size: 12px;
+	color: #000000;
+}
+
+div.widget table.header td {
+	padding:5px;
+	padding-bottom: 0px;
+}
+
+div.widget table.header td {
+	font-family: Arial;
+	font-size: 12px;
+	color: #000000;
+}
+
+div.widget table.header td#title {
+	font-size: 18px;
+	font-weight: bold;
+	color: #333333;
+}
+
+div.widget div.contents {
+	width: 670px;
+	height: 400px;
+	background: #ffffff;
+	margin-left: 3px;
+	margin-top: 0px;
+	overflow: auto;
+}
+
+div.widget div.contents div#contents-html {
+	font-family: Arial;
+	font-size: 12px;
+}
+
+ul.list {
+	font-family: Arial;
+	font-size: 14px;
+	padding-left: 12px;
+	margin-bottom: 12px;
+}
+
+ul.list li {
+	margin-left: 22px;
+	font-size: 12px;
+}
+
+table#packagelist th {
+	background: #eeeeee;
+	font-family: Arial;
+	font-size: 12px;
+	color: #333333;
+}
+
+table#packagelist tr.selected td {
+	background: #ffff99;
+}
+
+table#packagelist td {
+	background: #ffffff;
+	font-family: Arial;
+	font-size: 14px;
+	padding: 3px;
+	cursor: default;
+}
+
+table#packagelist td.pkgname {
+	font-family: Arial;
+	font-size: 13px;
+	color: #666666;
+	padding-left: 10px;
+}
+
+table#packagelist td.pkgver {
+	font-family: sans-serif;
+	font-size: 10px;
+	color: #333333;
+	text-align: center;
+}
+
+table.apmbtnbar {
+	height: 50px;
+	background: url(img/apm_btnbar.png) repeat-x;
+}
+
+table.apmbtnbar td {
+	background: transparent;
+	white-space: nowrap;	 
+}
+
+table.apmbtnbar td.btnicon {
+	width: 59px;
+	text-align: center;
+	cursor: pointer;
+}
+
+table.apmbtnbar td.btnicon div {
+	padding-top: 4px;
+	font-family: Arial;
+	font-size: 12px;
+	color: #000000;
+	text-align: center;
+	cursor: pointer;
+}
+
+table.apmbtnbar td.btnicon:hover {
+	background: url(img/apm_btnhover.png) top left no-repeat;
+}
+
+table.contents-table td {
+	background: #ffffff;
+}
+
+div#packagedescription {
+	font-family: Arial;
+	font-size: 12px;
+	color: #000000;
+	padding: 3px;
+	height: 74px;
+	overflow: auto;
+}
+
+div#packagedescription h4 {
+	font-family: Arial;
+	font-size: 14px;
+	color: #333333;
+	margin-bottom: 4px;
+}
+
+div.apmsections-bar {
+	background: #eeeeee;
+	font-family:Arial;
+	font-size:14px;
+	color:#333333;
+	height:21px;
+	padding-left: 4px;
+	padding-top: 3px;
+}
+
+div.infobox {
+	width: 240px;
+	height: 80px;
+	background: url(img/infobox.png) top left no-repeat;
+	padding: 12px;
+	text-align: center;
+	font-family: Trebuchet, Arial;
+	font-size: 12px;
+	color: #333333;
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	margin-left: -120px;
+	margin-top: -40px;
+}
+
+
+div.infobox span.message {
+	font-family: Trebuchet, Arial;
+	font-size: 12px;
+	color: #333333;
+	font-weight: bold;
+}
+

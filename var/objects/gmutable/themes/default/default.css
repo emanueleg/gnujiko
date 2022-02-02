@@ -1,0 +1,140 @@
+div.gmutable {
+	border-top: 1px solid #0169c9;
+	border-bottom: 1px solid #0169c9;
+	overflow: auto;
+	/*overflow-y: visible;*/
+	padding-top: 2px;
+	position: relative;
+}
+
+
+/* TABLE */
+table.gmutable th {
+	background: #0169c9;
+	height: 22px;
+	font-family: Arial;
+	font-size: 10px;
+	color: #ffffff;
+	line-height: 22px;
+	text-align: left;
+	white-space: nowrap;
+}
+
+table.gmutable tr {
+	user-select: none;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+}
+
+table.gmutable tr.move {
+	cursor: move;
+}
+
+table.gmutable td {
+	padding-top: 5px;
+	padding-bottom: 5px;
+	padding-left: 0px;
+	padding-right: 0px;
+	border-bottom: 1px solid #dadada;
+	vertical-align: middle;
+}
+
+table.gmutable tr.selected td {
+	background: #ffffbc;
+}
+
+table.gmutable td span.graybold {
+	font-family: Arial;
+	font-size: 11px;
+	color: #333333;
+	font-weight: bold;
+	width: 96%;
+	overflow: hidden;
+	white-space: nowrap;
+	height: 21px;
+	display: block;
+	line-height: 21px;
+}
+
+table.gmutable td span.bluebold {
+	font-family: Arial;
+	font-size: 11px;
+	color: #013397;
+	font-weight: bold;
+	width: 96%;
+	overflow: hidden;
+	white-space: nowrap;
+	height: 21px;
+	display: block;
+	line-height: 21px;
+}
+
+table.gmutable td span.doubleline {
+	line-height: 11px;
+	white-space: normal;
+	vertical-align: middle;
+	display: inline;
+}
+
+table.gmutable td span.eurogreen {
+	background: #009100;
+	font-family: Arial;
+	font-size: 13px;
+	color: #ffffff;
+	font-weight: bold;
+	width: 90%;
+	display: block;
+	line-height: 21px;
+	height: 21px;
+	text-align: right;
+	padding-right: 5px;
+}
+
+table.gmutable td span.eurogreen em {
+	float: left;
+	margin-left: 5px;
+}
+
+table.gmutable td span.13 {font-size:13px;}
+table.gmutable td span.right {text-align:right;}
+table.gmutable td span.center {text-align:center;}
+
+table.gmutable tr:hover td {
+	background: #fafafa;
+}
+
+table.gmutable tr.selected:hover td {
+	background: #ffff99;
+}
+
+table.gmutable tr:hover td span.graybold {
+	background: #ffffff;
+}
+
+/* EDIT INPUT */
+span.editinput {
+	height: 38px;
+	display: block;
+	background: url(img/edit-bg-r.png) top right no-repeat;
+	position: absolute;
+}
+
+span.editinput span.editinput-inner {
+	height: 38px;
+	display: block;
+	background: url(img/edit-bg.png) top left no-repeat;
+	margin-right: 18px;
+	padding-left: 12px;
+	padding-top: 8px;
+}
+
+span.editinput-inner input {
+	height: 22px;
+	border: 0px;
+}
+
+span.editinput-inner input:focus {
+	outline: none;
+}
+
+

@@ -1,0 +1,173 @@
+div#pathway {
+	height: 22px;
+}
+div#pathway a {
+	color: #339900;
+	text-decoration: none;
+	font-size: 12px;
+	font-family: Arial;
+}
+
+div#pathway span.selected {
+	color: #339900;
+	font-size: 12px;
+	font-family: Arial;
+	font-weight: bold;
+}
+
+div#title {
+	margin-top: 12px;
+	font-size: 22px;
+	font-family: Arial;
+	color: #333333;
+	padding-left: 8px;
+}
+
+div#catname {
+	margin-top: 22px;
+	padding: 8px;
+	color: #09532d;
+	font-size: 16px;
+	font-family: Arial;
+	border-bottom: 2px solid #589442;
+}
+
+div#results {
+	border-bottom: 1px solid #589442;
+	font-family: Arial;
+	font-size: 12px;
+	padding-top: 7px;
+	padding-bottom: 7px;
+}
+
+div#results td{
+	font-family: Arial;
+	font-size: 12px;
+}
+
+span#pagenum {
+	color: #015a01;
+	font-weight: bold;
+}
+
+span#pagetot {
+	color: #333333;
+	font-weight: bold;
+}
+
+div#ordering {
+	color: #333333;
+	font-family: Arial;
+	font-size: 12px;
+}
+
+div#ordering a {
+	text-decoration: none;
+}
+
+div#buttonbar {
+	padding: 7px;
+	border-bottom: 1px solid #589442;
+}
+
+input#newbtn {
+	background: #3364C3;
+	border: 0px;
+	color: #ffffff;
+	font-family: Arial;
+	font-size: 13px;
+	font-weight: bold;
+	height: 22px;
+	cursor: pointer;
+}
+
+input#search {
+	background: #ffffff;
+	border: 1px solid #339900;
+	height: 22px;
+	font-size: 14px;
+	color: #333333;
+	width: 240px;
+}
+
+input#searchbtn {
+	background: #339900;
+	border: 0px;
+	color: #ffffff;
+	font-family: Arial;
+	font-size: 14px;
+	height: 22px;
+	cursor: pointer;
+}
+
+div#resultlist {
+	border-bottom: 1px solid #589442;
+	padding-top: 7px;
+	padding-bottom: 7px;
+}
+
+div#resultsfooter {
+	background: #f3f3f3;
+	font-size: 12px;
+	font-family: Arial;
+	padding-left: 14px;
+}
+
+div#resultsfooter a {
+	font-size: 12px;
+	font-family: Arial;
+}
+
+td#menuspace, td.leftbtns {
+	background: #edf2fd;
+	border-right: 1px solid #3364c3;
+}
+
+#hometitle {
+	color: #3364C3;
+	font-family: Arial;
+	font-size: 14px;
+	font-weight: bold;
+}
+
+#trashtitle {
+	color: #3364C3;
+	font-family: Arial;
+	font-size: 14px;
+	font-weight: bold;
+}
+
+.tree {
+	margin:0; 
+	font-family:Verdana; 
+	font-size:10px; 
+}
+
+.treediv {
+	width: 250px;
+	height:480px;
+	overflow: auto;
+}
+
+/* TRASH */
+div#trashlist {
+	border-bottom: 1px solid #589442;
+	padding-top: 7px;
+	padding-bottom: 7px;
+}
+
+div#trashfooter {
+	background: #f3f3f3;
+	font-size: 12px;
+	font-family: Arial;
+	padding-left: 14px;
+}
+div#trashfooter input {
+	font-size: 12px;
+	font-family: Arial;
+}
+
+div#trashfooter a {
+	font-size: 12px;
+	font-family: Arial;
+}

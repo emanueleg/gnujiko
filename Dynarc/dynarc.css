@@ -1,0 +1,63 @@
+div.dynarc-container {
+	background: url(img/background.png) top left no-repeat;
+	width: 742px;
+	height: 558px;
+	padding: 0px;
+	padding-left: 18px;
+	padding-top: 20px;
+}
+
+div.archive {
+	width: 100px;
+	height: 250px;
+	float: left;
+	padding: 0px;
+	margin: 0px;
+	margin-right: 1px;
+	margin-bottom: 19px;
+	cursor: pointer;
+}
+
+div.archive div.title {
+	margin-left: 8px;
+	margin-top: 52px;
+	line-height: 24px;
+	font-size: 12px;
+	color: #000000;
+	font-family: Trebuchet, Arial, Sans Serif;
+}
+
+div.red {background: url(img/archive-red.png) top left no-repeat;}
+div.orange {background: url(img/archive-orange.png) top left no-repeat;}
+div.yellow {background: url(img/archive-yellow.png) top left no-repeat;}
+div.lightgreen {background: url(img/archive-lightgreen.png) top left no-repeat;}
+div.green {background: url(img/archive-green.png) top left no-repeat;}
+div.lightblue {background: url(img/archive-lightblue.png) top left no-repeat;}
+div.blue {background: url(img/archive-blue.png) top left no-repeat;}
+div.violet {background: url(img/archive-violet.png) top left no-repeat;}
+div.lightmaroon {background: url(img/archive-lightmaroon.png) top left no-repeat;}
+div.maroon {background: url(img/archive-maroon.png) top left no-repeat;}
+
+/*-------------------------------------------------------------------------------------------------------------------*/
+
+div.serp a {
+	background: url(img/serppgbull.png) top left no-repeat;
+	width: 16px;
+	height: 16px;
+	margin-left: 1px;
+	margin-right: 1px;
+	font-size: 10px;
+	color: #000000;
+	text-decoration: none;
+	padding-left:5px;
+	padding-right:6px;
+	padding-top:2px;
+	padding-bottom:2px;
+}
+
+div.serp a.active {
+	background: url(img/serppgbull-active.png) top left no-repeat;
+	color: #ffffff;
+	font-weight: bold;
+}
+

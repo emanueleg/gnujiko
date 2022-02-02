@@ -1,0 +1,21 @@
+table.editsearch {
+	border: 1px solid #666666;
+	cursor: default;
+	background-color: #ffffff;
+	-moz-user-select: none;
+}
+
+table.editsearch td.item {
+	font-size: 11px;
+	background-color: #ffffff;
+	color: #000000;
+	padding: 2px;
+	white-space: nowrap;
+}
+
+table.editsearch td.itemselected {
+	font-size: 11px;
+	background-color: #3366CC;
+	color: #ffffff;
+	padding: 2px;
+}

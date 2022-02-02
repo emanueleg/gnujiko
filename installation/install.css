@@ -1,0 +1,166 @@
+div.install-form {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	margin-left: -320px;
+	margin-top: -240px;
+	border: 3px solid #005c94;
+	border-radius: 3px;
+	width: 640px;
+	height: 480px;
+}
+
+
+h3.blue-comics {
+	font-family: "Comic Sans MS", cursive, sans-serif;
+	font-size: 20px;
+	color: #005c94;
+	text-align: center;
+	margin: 0px;
+	padding: 10px;
+}
+
+hr {height: 1px;border: 0px;background: #aaaaaa;margin-top:10px;margin-bottom:10px;}
+div.header {height: 56px; padding-left: 10px;}
+div.header img.logo {float:left; vertical-align:top;margin-top:10px;margin-right:10px}
+div.header em {
+	display: block;
+	height: 18px;
+	background: #6699cc;
+	border: 0px;
+	border-radius: 3px;
+	padding-left: 6px;
+	padding-right: 6px;
+	line-height: 18px;
+	font-family: Arial;
+	font-size: 12px;
+	color: #ffffff;
+	font-weight: bold;
+	float: left;
+	margin-top: 16px;
+	margin-right: 20px;
+}
+
+div.header span.distro-title {font-family: "Trebuchet", Arial; font-size:20px; color:#0169c9; line-height:56px;}
+
+table.toolbar td.toolbar-title {
+	background: url(img/toolbar.png) top left no-repeat;
+	font-family: Arial;
+	font-size: 16px;
+	color: #ffffff;
+	height: 49px;
+	padding-left: 16px;
+	line-height: 16px;
+}
+
+table.toolbar td.toolbar-step {
+	background: url(img/toolbar.png) top right no-repeat;
+	width: 150px;
+	font-family: Arial;
+	font-size: 14px;
+	color: #ffffff;
+	text-align: center;
+	line-height: 49px;
+	font-style: italic;
+	padding-right: 10px;
+}
+
+div.contents {
+	margin-top: 10px;
+	padding: 10px;
+	height: 300px;
+	overflow: auto;
+}
+
+div.footer {
+	width: 620px;
+	margin-left: 10px;
+	border-top: 1px solid #aaaaaa;
+	padding-top: 6px;
+}
+
+a.left-button {
+	display: block;
+	float: left;
+	background: url(img/blue-button-left.png) top left no-repeat;
+	height: 33px;
+	padding: 0px;
+	padding-left: 20px;
+	text-decoration: none;
+}
+
+a.left-button span {
+	display: block;
+	height: 33px;
+	background: url(img/blue-button.png) top right no-repeat;
+	font-family: Arial;
+	font-size: 14px;
+	color: #ffffff;
+	line-height: 33px;
+	padding-right: 20px;
+}
+
+a.right-button {
+	display: block;
+	float: right;
+	background: url(img/blue-button-left.png) top left no-repeat;
+	height: 33px;
+	padding: 0px;
+	padding-left: 20px;
+	text-decoration: none;
+}
+
+a.right-button span {
+	display: block;
+	height: 33px;
+	background: url(img/blue-button.png) top right no-repeat;
+	font-family: Arial;
+	font-size: 14px;
+	color: #ffffff;
+	line-height: 33px;
+	padding-right: 20px;
+}
+
+span.smallgray, div.smallgray {
+	font-family: Arial;
+	font-size: 12px;
+	color: #333333;
+	font-style: italic;
+	padding-left: 10px;
+}
+
+div.edit {
+	background: url(img/edit-left.png) top left no-repeat;
+	padding: 0px;
+	height: 38px;
+	display: block;
+}
+
+div.edit input.text {
+	border: 0px;
+	margin: 0px;
+	margin-left: 20px;
+	background: url(img/edit.png) top right no-repeat;
+	height: 38px;
+	font-family: Arial;
+	font-size: 16px;
+	color: #000000;
+	line-height: 38px;
+	padding-right: 20px;
+	width: 190px;
+	outline: none;
+	font-weight: bold;
+}
+
+div.error-box {
+	position: absolute;
+	border: 3px solid #b50000;
+	border-radius: 3px;
+	background: #ffffff;
+	color: #f31903;
+	font-family: Arial;
+	font-size: 12px;
+	padding: 10px;
+	overflow: auto;
+}
+

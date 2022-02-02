@@ -1,0 +1,22 @@
+table.dyntable tr.selected {
+	background: #bdceef;
+}
+
+table.dyntable th {
+	background: #f3f3f3;
+	color: #666666;
+	font-family: Arial;
+	font-size: 14px;
+	text-align: left;
+	padding-left: 7px;
+}
+
+table.dyntable td {
+	background: transparent;
+	border-right: 1px solid #f3f3f3;
+	border-bottom: 1px solid #f3f3f3;
+	padding: 2px 7px 2px 7px;
+	font-family: Arial;
+	font-size: 12px;
+}
+

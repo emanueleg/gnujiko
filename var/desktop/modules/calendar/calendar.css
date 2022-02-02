@@ -1,0 +1,109 @@
+div.calmod-header {
+	height: 42px;
+	border: 1px solid #5b98c7;
+	background: url(img/headbg.png) top left repeat-x;
+	padding: 0px;
+}
+
+div.calmod-header img.prevbtn {border:0px;cursor:pointer}
+div.calmod-header img.nextbtn {border:0px;cursor:pointer}
+
+div.calmod-header td.calmod-handle {
+	font-family: "Trebuchet", Arial;
+	font-size: 16px;
+	color: #e2eff9;
+	font-weight: bold;
+	text-align: center;
+	vertical-align: middle;
+}
+
+div.calmod-header table.calmod-days td {
+	text-align: center;
+	font-family: Arial;
+	font-size: 11px;
+	color: #ffffff;
+}
+
+table.calmod-grid {
+	border-collapse: collapse;
+}
+
+table.calmod-grid td {
+	height: 22px;
+	font-family: Arial;
+	font-size: 12px;
+	background: #ffffff;
+	width: 14.28%;
+	text-align: center;
+	vertical-align: middle;
+	cursor: pointer;
+	border: 1px solid #e1e1e1;	
+}
+
+table.calmod-grid td.today {
+	background: url(img/today.png) top left repeat-x;
+	color: #ffffff;
+}
+
+table.calmod-grid td.out {
+	background: #f2f2f2;
+	color: #999999;
+}
+
+table.calmod-grid td.appointment {
+	background: #fdf066;
+	color: #b88100;
+}
+
+/* BACK */
+div.calmod-back {
+	border: 1px solid #c2c2c2;
+	background: #eeeeee;
+}
+
+div.calmod-back td.header {
+	background: url(img/backheadbg.png) top left repeat-x;
+	height: 28px;
+	vertical-align: middle;
+	text-align: center;
+	font-family: "Trebuchet", Arial, sans-serif;
+	font-size: 16px;
+	font-weight: bold;
+	color: #eeeeee;
+}
+
+div.plugbar {
+	display: block;
+	background: #666666;
+	height: 22px;
+	border-radius: 3px;
+	font-family: Arial;
+	font-size: 10px;
+	color: #eeeeee;
+	line-height: 22px;
+	padding: 0px;
+	padding-left: 5px;
+	padding-right: 5px;
+	margin-left: 5px;
+	margin-right: 5px;
+	margin-bottom: 5px;
+}
+
+span.moduleplug {
+	float: right;
+	font-family: Arial;
+	font-size: 9px;
+	font-weight: bold;
+	color: #eeeeee;
+	line-height: 22px;
+	height: 22px;
+}
+
+span.moduleplug img.plug {
+
+	vertical-align: middle;
+	margin-left: 3px;
+
+
+}
+

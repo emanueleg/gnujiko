@@ -1,0 +1,522 @@
+div.edit-product-form {
+	background: url(img/edit-item-bg.png) top left no-repeat;
+	width: 814px;
+	height: 514px;
+	padding: 10px;
+}
+
+/* MAIN TAB */
+
+ul.maintab {
+	list-style: none;
+	height: 22px;
+	border-bottom: 1px solid #f66c01;
+	padding-left: 12px;
+}
+
+ul.maintab li {
+	float: left;
+	height: 21px;
+	padding-left: 10px;
+	padding-right: 10px;
+	border-left: 1px solid #d9d9d9;
+	border-top: 1px solid #d9d9d9;
+	border-right: 1px solid #d9d9d9;
+	background: url(img/tab-bg.png) bottom left repeat-x;
+	-moz-user-select: none;
+    -webkit-user-select: none;
+}
+
+ul.maintab li span.title {
+	font-family: Arial;
+	font-size: 10px;
+	font-weight: bold;
+	color: #6699cc;
+	line-height: 21px;
+	cursor: pointer;
+}
+
+ul.maintab li.selected {
+	background: url(img/tab-selected-bg.png) top left repeat-x;
+	border-left: 1px solid #f66c01;
+	border-top: 1px solid #f66c01;
+	border-right: 1px solid #f66c01;
+	border-bottom: 1px solid #ffffff;
+}
+
+ul.maintab li.selected span.title {color: #013397;}
+
+
+/* TAB PAGES */
+div.tabpage {
+	height: 360px;
+	margin-bottom: 10px;
+	padding-left: 4px;
+	overflow: auto;
+}
+
+div.tabpage span.smallh3 {
+	font-family: Arial;
+	font-size: 10px;
+	color: #005c94;
+	font-weight: bold;
+}
+
+div.tabpage textarea.item-description {
+	border: 1px solid #0169c9;
+	background: #ffffff;
+	font-family: Arial;
+	font-size: 12px;
+	color: #333333;
+	height: 126px;
+	width: 100%;
+	padding: 4px;
+	resize: none;
+}
+
+/* HEADER */
+div.header {
+	height: 25px;
+	white-space: nowrap;
+	overflow: hidden;
+	padding-left: 10px;
+	font-family: Arial;
+	font-size: 12px;
+	color: #ffffff;
+}
+
+div.header span.itemcode {font-size:14px; color:#ffff99; line-height: 25px;}
+div.header span.title {font-size:14px; color: #eeeeee; line-height: 25px;margin-left:20px;font-weight:bold;}
+
+div.header-right {
+	height: 25px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-align: center;
+	padding-left: 10px;
+	padding-right: 10px;
+	font-family: Arial;
+	font-size: 14px;
+	color: #666699;
+	font-weight: bold;
+	line-height: 25px;
+}
+
+/* INFO TABLE FORM */
+table.infotableform td {
+	height: 22px;
+}
+
+table.infotableform td.field, table.infotableform span.field {
+	font-family: Arial;
+	font-size: 12px;
+	font-weight: bold;
+	color: #005c94;
+	padding-right: 10px;
+	text-align: right;
+}
+
+table.infotableform td.small, table.infotableform span.small {font-size:10px;line-height:10px;}
+table.infotableform td.lightblue {color:#0084c8;}
+
+table.infotableform td.value input {
+	height: 21px;
+	border: 1px solid #dadada;
+	font-family: Arial;
+	font-size: 12px;
+	color: #000000;
+	background: #ffffff;
+}
+
+table.infotableform td.value input:focus {background:#ffffbe; border-color:#ffdb9d;}
+table.infotableform td.value input::selection {background: #3364C3; color:#ffffff;}
+table.infotableform td.value input::-moz-selection {background: #3364C3; color:#ffffff;}
+table.infotableform td.value input::-webkit-selection {background: #3364C3; color:#ffffff;}
+
+
+/* THUMBNAILS */
+ul.thumb-buttons {
+	list-style: none;
+	width: 19px;
+	margin: 0px;
+	padding: 0px;
+	margin-left: 4px;
+	float: left;
+	height: 128px;
+}
+
+ul.thumb-buttons li {
+	width: 19px;
+	height: 19px;
+	background: url(img/thumb-bullet.png) top left no-repeat;
+	font-family: Arial;
+	font-size: 12px;
+	font-weight: bold;
+	color: #ffffff;
+	line-height: 19px;
+	text-align: center;
+	margin-bottom: 1px;
+	cursor: pointer;
+}
+
+ul.thumb-buttons li.selected {
+	background: url(img/thumb-bullet-selected.png) top left no-repeat;
+}
+
+div.thumb-preview {
+	width: 128px;
+	height: 128px;
+	border: 1px solid #789cce;
+	float: left;
+	margin-left: 2px;
+	background-size: 128px;
+	background-repeat: no-repeat;
+	background-position: center 4px;
+}
+
+div.thumb-preview img.delete-button {
+	float: right;
+	cursor: pointer;
+	visibility: hidden;
+}
+
+div.thumb-preview:hover img.delete-button {visibility: visible;}
+
+/* BUTTONS */
+ul.basicbuttons {
+	margin: 0px;
+	padding: 0px;
+	height: 32px;
+	list-style: none;
+}
+
+ul.basicbuttons li {
+	float: left;
+	background: url(img/button_l.png) top left no-repeat;
+	height: 31px;
+	margin-right: 10px;
+}
+
+ul.basicbuttons li span {
+	background: url(img/button.png) top right no-repeat;
+	margin-left: 10px;
+	height: 31px;
+	display: block;
+	font-family: Arial;
+	font-size: 12px;
+	color: #585858;
+	font-weight: bold;
+	line-height: 30px;
+	padding-right: 10px;
+	cursor: pointer;
+}
+
+ul.basicbuttons li span img {
+	float: left;
+	vertical-align: top;
+	
+}
+
+/* RIGHT SECTION */
+h3.rightsec-blue {
+	height: 21px;
+	margin: 0px;
+	margin-top: 0px;
+	margin-bottom: 10px;
+	background: url(img/rightsec-blue-l.png) top left no-repeat;
+	padding: 0px;
+}
+
+h3.rightsec-blue span.title {
+	height: 21px;
+	background: url(img/rightsec-blue.png) top right no-repeat;
+	line-height: 21px;
+	font-family: arial;
+	font-size: 13px;
+	color: #ffffff;
+	display: block;
+	margin-left: 10px;
+}
+
+div.right-section {
+	border-bottom: 1px dashed #99ccff;
+	height: 25px;
+	line-height: 21px;
+	font-family: arial;	
+	font-size: 12px;
+}
+
+div.right-section a {
+	line-height: 25px;
+	font-family: arial;
+	font-size: 12px;
+	color: #013397;
+	text-decoration: none;
+}
+
+div.right-section a img {
+	margin-right: 5px;
+	float: left;
+	vertical-align: top;
+}
+
+
+span.gray11 {font-family: arial; font-size: 11px; color: #333333;}
+span.black11 {font-family: arial; font-size: 11px; color: #000000;}
+span.red11 {font-family: arial; font-size: 11px; color: #980101;}
+span.blue11 {font-family: arial; font-size: 11px; color: #013397;}
+
+/* BLUENUV */
+ul.bluenuv {
+	margin: 0px;
+	padding: 0px;
+	list-style: none;
+	height: 24px;
+}
+
+ul.bluenuv li {
+	float: left;
+	height: 24px;
+	cursor: pointer;
+	margin-right: 10px;
+}
+
+ul.bluenuv li.selected {
+	background: url(img/bluenuv-r.png) top right no-repeat;
+}
+
+ul.bluenuv li span {
+	height: 24px;
+	display: block;
+	font-family: Arial;
+	font-size: 10px;
+	font-weight: bold;
+	color:#0169c9;
+	padding-left: 5px;
+	padding-right: 5px;
+	line-height: 19px;
+	float: left;
+}
+
+ul.bluenuv li img {
+	float: right;
+	visibility: hidden;
+	cursor: pointer;
+	margin-right: 5px;
+}
+
+ul.bluenuv li.selected span {
+	background: url(img/bluenuv.png) top left no-repeat;
+	color: #ffffff;
+}
+
+ul.bluenuv li.selected img {
+	visibility: visible;
+}
+
+div.idocpage {
+	height: 330px;
+	overflow: auto;
+	clear: both;
+}
+
+span.link-green {
+	cursor: pointer;
+	font-size: 12px;
+	font-weight: bold;
+	color: #009100;
+	line-height: 16px;
+	font-family: Arial;
+}
+
+span.link-green img {
+	float: left;
+	vertical-align: middle;
+	margin-right: 3px;
+}
+
+h3.orangebar {
+	height: 19px;
+	background: #ff9900;
+	color: #ffffff;
+	font-size: 13px;
+	font-family: Arial;
+	margin: 0px;
+	line-height: 19px;
+	margin-left: 10px;
+	padding-left: 10px;
+}
+
+
+
+table.pricelists {
+	width: 586px;
+}
+
+table.pricelists th {
+	background: #eeeeee;
+	font-family: Arial;
+	font-size: 9px;
+	color: #000000;
+}
+
+table.pricelists td {
+	font-family: Arial;
+	font-size: 12px;
+	color: #000000;
+}
+
+table.pricelists td em {float: left;}
+
+table.pricelists tr.row0 td {background: #ffffcc;}
+table.pricelists tr.row1 td {background: #ffff99;}
+
+table.pricelists tr.selected td {background: #fafade;}
+table.pricelists tr.unselected td {
+	background: #fafafa;
+	color: #cccccc;
+	text-decoration: line-through;
+}
+
+
+table#vendors-table td {background: #fafade;}
+
+div.pricelists-table-footer {
+	height: 30px;
+	border-top: 1px solid #ff9900;
+	border-bottom: 1px solid #ff9900;
+}
+
+div.pricelists-table-footer span.btn-add {
+	line-height: 30px;
+	font-family: Arial;
+	font-size: 10px;
+	font-weight: bold;
+	color: #015a01;
+	cursor: pointer;
+	background: url(img/add-icon.gif) left center no-repeat;
+	padding-left: 20px;
+	height: 30px;
+	display: block;
+	float: left;
+	margin-left: 6px;
+}
+
+div.pricelists-table-footer span.btn-del {
+	line-height: 30px;
+	font-family: Arial;
+	font-size: 10px;
+	font-weight: bold;
+	color: #d40000;
+	cursor: pointer;
+	background: url(img/delete.png) left center no-repeat;
+	padding-left: 20px;
+	height: 30px;
+	display: block;
+	float: left;
+	margin-left: 30px;
+}
+
+
+/* TOOLBAR */
+div.attachments-toolbar {
+	width: 580px;
+	height: 40px;
+	background: #aaccee;
+	margin-bottom: 20px;
+	border: 0px;
+	border-radius: 6px;
+}
+
+div.attachments-toolbar span.title {
+	font-size: 14px;
+	color: #ffffff;
+	font-weight: bold;
+}
+
+div.attachments-toolbar span.spanblue {
+	font-size: 12px;
+	color: #0169c9;
+	font-weight: bold;
+}
+
+div.attachments-toolbar span.smallblue {
+	font-size: 10px;
+	color: #003366;
+}
+
+/* ATTACHMENTS */
+td.attachments-tb-buttons a {
+	font-size: 10px;
+	color: #003366;
+	text-decoration: none;
+	vertical-align: middle;
+}
+
+td.attachments-tb-buttons img {
+	vertical-align: middle;
+}
+
+div.attachments-topbar {
+	font-size: 12px;
+	padding-left: 20px;
+}
+
+div.attachments-topbar span.spanblue {
+	font-size: 12px;
+	font-weight: bold;
+	color: #336699;
+}
+
+div.attachments-explore {
+	height: 280px;
+	overflow: auto;
+	padding-left: 12px;
+
+}
+
+div.attachments-explore div.attachment {
+	width: 100px;
+	height: 100px;
+	float: left;
+	text-align: center;
+	overflow: hidden;
+	padding-top: 8px;
+	margin: 8px;
+}
+
+div.attachments-explore div.attachment:hover {
+	background: url(img/attachment-bg.png) top left no-repeat;
+}
+
+div.attachments-explore div.attachment a {
+	text-decoration: none;
+	color: #000000;
+	font-size: 12px;
+}
+
+div.attachments-explore div.attachment a.btnedit {
+	float: left;
+	margin-left: 8px;
+	visibility: hidden;
+}
+
+div.attachments-explore div.attachment a.btndel {
+	float: right;
+	margin-right: 8px;
+	visibility: hidden;
+}
+
+div.attachments-explore div.attachment:hover a.btnedit {visibility: visible;}
+div.attachments-explore div.attachment:hover a.btndel {visibility: visible;}
+
+div.editform {
+	position: absolute;
+	width: 420px;
+	height: 340px;
+	background: #ffffff;
+	border: 6px solid #c1d9ff;
+	padding: 13px;
+	font-size: 14px;
+}
+

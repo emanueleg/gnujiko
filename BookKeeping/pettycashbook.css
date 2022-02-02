@@ -1,0 +1,383 @@
+div.mainmenu {
+	height: 28px;
+	width: 100px;
+	background: #108cfe;
+	border: 0px;
+	border-radius: 3px;
+	cursor: pointer;
+}
+
+div.mainmenu span {
+	width: 75px;
+	height: 28px;
+	float: left;
+
+	font-family: Arial;
+	font-size: 14px;
+	color: #ffffff;
+	font-weight: bold;
+	line-height: 28px;
+	white-space: nowrap;
+	overflow: hidden;
+	margin-left: 8px;
+}
+
+div.mainmenu img {
+	float: right;
+	margin-right: 8px;
+}
+
+/* BUTTONS */
+ul.basicbuttons {
+	margin: 0px;
+	padding: 0px;
+	height: 32px;
+	list-style: none;
+}
+
+ul.basicbuttons li {
+	float: left;
+	background: url(img/button_l.png) top left no-repeat;
+	height: 31px;
+	margin-right: 10px;
+}
+
+ul.basicbuttons li span {
+	background: url(img/button.png) top right no-repeat;
+	margin-left: 10px;
+	height: 31px;
+	display: block;
+	font-family: Arial;
+	font-size: 12px;
+	color: #585858;
+	font-weight: bold;
+	line-height: 30px;
+	padding-right: 10px;
+	cursor: pointer;
+}
+
+ul.basicbuttons li span img {
+	float: left;
+	vertical-align: top;
+	
+}
+
+input.searchinput {
+	background: #ffffff;
+	border: 1px solid #6699cc;
+	height: 25px;
+	font-family: Arial, serif;
+	font-size: 12px;
+	color: #333333;
+	border-radius: 2px;
+}
+
+
+/* ITEM LIST */
+div.itemlist-container {
+	overflow-y: scroll;
+}
+
+table.itemlist th {
+	height: 22px;
+	background: url(img/tb-th.png) top left repeat-x;
+	font-family: Arial, serif;
+	font-size: 10px;
+	color: #333333;
+	vertical-align: middle;
+	padding-left: 4px;
+	padding-right: 4px;
+}
+
+table.itemlist th small {font-size: 8px;}
+
+table.itemlist td {
+	font-family: Arial, serif;
+	font-size: 13px;
+	color: #333333;
+	vertical-align: middle;
+	padding-left: 4px;
+	padding-right: 4px;
+	border-bottom: 1px solid #cccccf;
+	height: 32px;
+}
+
+table.itemlist tr.label td {
+	font-family: Arial, serif;
+	font-size: 14px;
+	color: #666666;
+	vertical-align: middle;
+	padding-left: 4px;
+	padding-right: 4px;
+	border-bottom: 1px solid #cccccf;
+	height: 32px;
+	background: #f7f7f7;
+}
+
+table.itemlist tr.selected td {background:#ffffbc;}
+
+table.itemlist td em {
+	float: left;
+	color: #333333;
+}
+
+table.itemlist td.smalllink {
+	font-family: Arial;
+	font-size: 11px;
+}
+
+table.itemlist td.smalllink a {
+	color: #013397;
+	text-decoration: none;
+}
+
+table.itemlist td.date a {
+	color: #3364C3;
+	font-family: Arial;
+	font-size: 12px;
+	text-decoration:none;
+}
+
+table.itemlist td.incomes {
+	border-left: 1px solid #dadada;
+	border-right: 1px solid #dadada;
+	background: #f0ffe1;
+	text-align: right;
+	font-size: 12px;
+}
+
+table.itemlist td.expenses {
+	border-right: 1px solid #dadada;
+	background: #efffc2;
+	text-align: right;
+	font-size: 12px;
+}
+
+table.itemlist td a.link {
+	font-family: Arial, serif;
+	font-size: 11px;
+	color: #013397;
+	font-weight: bold;
+	text-decoration: none;
+}
+
+table.itemlist td span.subject {
+	font-family: Arial, serif;
+	font-size: 11px;
+	color: #013397;	
+	font-weight: bold;
+}
+
+table.itemlist td span.status-green {
+	height: 21px;
+	display: block;
+	background: #339900;
+	font-family: Arial, serif;
+	font-size: 13px;
+	color: #ffffff;
+	line-height: 21px;
+	text-align: center;
+}
+
+table.itemlist td span.status-open {
+	height: 21px;
+	display: block;
+	font-family: Arial, serif;
+	font-size: 11px;
+	color: #333333;
+	line-height: 21px;
+	text-align: center;
+}
+
+table.itemlist td span.status-normal {
+	height: 21px;
+	display: block;
+	font-family: Arial, serif;
+	font-size: 11px;
+	color: #333333;
+	vertical-align: middle;
+	line-height: 21px;
+	text-align: right;
+}
+
+table.itemlist td span.status-small {
+	height: 21px;
+	display: block;
+	font-family: Arial, serif;
+	font-size: 9px;
+	color: #333333;
+	vertical-align: middle;
+	text-align: right;
+}
+
+table.itemlist td span.status-xsmall {
+	height: 21px;
+	display: block;
+	font-family: Arial, serif;
+	font-size: 9px;
+	color: #333333;
+	vertical-align: middle;
+	text-align: right;
+	line-height: 9px;
+}
+
+table.itemlist td img.status-icon {
+	float: right;
+	vertical-align: middle;
+	margin: 5px;
+}
+
+table.itemlist td span.13 {
+	font-size: 13px;
+	color: #333333;
+}
+
+table.itemlist td span.blue {color: #013397;}
+table.itemlist td span.red {color: #d40000;}
+
+table.itemlist td a.code {font-size:11px; font-weight: bold; color:#013397; text-decoration:none;}
+table.itemlist td a.linkname {font-size:11px; color:#333333; text-decoration:none;}
+
+/* DOC FOOTER RESULTS */
+table.docfooter-results th {
+	height: 14px;
+	line-height: 14px;
+	font-family: Arial;
+	font-size: 10px;
+	text-align: center;
+	border-left: 1px solid #ffffff;
+	border-right: 1px solid #ffffff;
+}
+
+table.docfooter-results td {
+	background: #0169c9;
+	height: 18px;
+	line-height: 18px;
+	font-family: Arial;
+	font-size: 13px;
+	font-weight: bold;
+	color: #eeeeee;
+	text-align: right;
+	border-left: 1px solid #ffffff;
+	border-right: 1px solid #ffffff;
+	padding-left: 7px;
+	padding-right: 7px;
+	white-space: nowrap;
+}
+
+table.docfooter-results td em {
+	float: left;
+	line-height: 18px;
+	font-family: Arial;
+	font-size: 13px;
+	font-weight: bold;
+	color: #eeeeee;
+	margin-right: 10px;
+}
+
+table.docfooter-results th.blue {background: #0169c9; color: #b3defd;}
+table.docfooter-results td.blue {background: #0169c9;}
+
+table.docfooter-results th.green {background: #339900; color: #ccff99;}
+table.docfooter-results td.green {background: #339900;}
+
+div.loading {
+	margin-top: 10px;
+	margin-bottom: 10px;
+	height: 235px;
+	background: url(img/loading.gif) center center no-repeat;
+}
+
+div.otherresultsbtn-div {
+	margin-bottom: 30px;
+	margin-top: 30px;
+}
+
+span.otherresultsbtn {
+	width: 320px;
+	height: 32px;
+	font-family: Arial;
+	font-size: 18px;
+	font-weight: bold;
+	color: #666666;
+	text-align: center;
+	line-height: 32px;
+	border: 1px solid #dadada;
+	background: #fafafa;
+	display: block;
+	cursor: pointer;
+}
+
+div.footerresults {
+	border-top: 1px solid #0169c9;
+	border-bottom: 1px solid #0169c9;
+	height: 40px;
+	line-height: 40px;
+	font-family: Arial;
+	font-size: 14px;
+	color: #333333;
+}
+
+div.footerresults span.green {
+	font-family: Arial;
+	font-size: 14px;
+	color: #015a01;
+}
+
+/* TOOL BUTTONS */
+span.toolbtn {
+	height: 28px;
+	background: #f3f3f3;
+	border: 1px solid #dadada;
+	border-radius: 2px;
+	display: block;
+	cursor: pointer;
+	width: 100px;
+	float: left;
+	margin-right: 10px;
+}
+
+span.toolbtn span {
+	height: 28px;
+	line-height: 28px;
+	font-family: Arial;
+	font-size: 14px;
+	font-weight: bold;
+	color: #013397;
+	margin-right: 4px;
+}
+
+span.toolbtn span.small {
+	height: 28px;
+	line-height: 12px;
+	font-family: Arial;
+	font-size: 12px;
+	font-weight: bold;
+	color: #013397;
+	margin-right: 4px;
+}
+
+span.toolbtn img {
+	float: left;
+	vertical-align: top;
+	margin-left: 4px;
+	margin-right: 8px;
+}
+
+/* TOTALS */
+table.totals {
+	margin-top: 10px;
+	border-top: 1px solid #c9def4;
+}
+
+table.totals td.result {
+	background: #c9def4;
+	text-align: right;
+	height: 22px;
+	font-family: Arial;
+	font-size: 12px;
+	font-weight: bold;
+	border-right: 1px solid #ffffff;
+	padding-right: 4px;
+}
+

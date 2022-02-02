@@ -1,0 +1,116 @@
+ul.menu {
+	padding: 0px;
+	z-index: 65535;
+}
+ul.menu li {
+	z-index: 65535;
+	float: left;
+	list-style: none;
+	padding-left: 4px;
+	padding-right: 17px;
+	color: #000000;
+	cursor: pointer;
+	font-family: Arial;
+	font-size: 12px;
+	background: transparent url(img/downarrow.png) right center no-repeat;
+}
+ul.menu li:hover {
+	background-color: #cedfff;
+}
+ul.menu li.opened, ul.menu li.opened:hover {
+	background: #bdceef url(img/downarrow.png) right center no-repeat;
+}
+
+/* SUBMENU */
+table.popupmenu-container td.container {
+ background: #ffffff;
+}
+
+table.popupmenu-container td.shadowright {
+	background: url(img/shadow.gif) top right no-repeat;
+	width: 4px;
+}
+
+table.popupmenu-container td.shadowbottomleft {
+	background: url(img/shadow.gif) bottom left no-repeat;
+	height: 4px;
+}
+
+table.popupmenu-container td.shadowbottomright {
+	background: url(img/shadow.gif) bottom right no-repeat;
+	width: 4px;
+	height: 4px;
+}
+
+ul.submenu {
+	z-index: 65535;
+	background: #ffffff;
+	border: 1px solid #cccccf;
+	margin: 0px;
+	padding: 1px;
+	display: none;
+}
+
+ul.submenu li {
+	z-index: 65535;
+	font-family: Arial;
+	font-size: 12px;
+	color: #000000;
+	padding: 2px;
+	list-style: none;
+	cursor: default;
+	-moz-user-select: none;
+	-khtml-user-select: none;
+	border: 1px solid transparent;
+}
+
+ul.submenu li span {
+	font-family: Arial;
+	font-size: 12px;
+	color: #000000;
+	cursor: default;
+	-moz-user-select: none;
+	-khtml-user-select: none;
+}
+
+ul.submenu li img {
+	text-align: left;
+	vertical-align: top;
+	width: 16px;
+	margin-right: 5px;
+}
+
+ul.submenu li.closed {
+	padding-right: 14px;
+	background: #ffffff url(img/rightarrow.png) right center no-repeat;
+}
+
+ul.submenu li.closed:hover {
+	padding-right: 14px;
+	background: #eeeeee url(img/rightarrow.png) right center no-repeat;
+}
+
+ul.submenu li.opened, ul.submenu li.opened:hover {
+	padding-right: 14px;
+	background: #bdceef url(img/rightarrow.png) right center no-repeat;
+	border: 1px solid #316bc5;
+}
+
+ul.submenu li:hover {
+	background: #eeeeee;
+}
+
+ul.submenu li.disabled:hover, ul.submenu li.separator:hover {
+	background: #ffffff;
+}
+
+ul.submenu li.disabled, ul.submenu li.disabled span {
+	color: #777777;
+}
+
+ul.submenu li.separator, ul.submenu li.separator:hover {
+	height: 2px;
+	border-bottom: 1px solid #c5c5c5;
+	margin-bottom: 5px;
+}
+

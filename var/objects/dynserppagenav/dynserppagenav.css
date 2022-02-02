@@ -1,0 +1,15 @@
+div.serppagenav {
+	font-size: 13px;
+	font-family: Arial;
+}
+
+div.serppagenav span.selected {
+	color: red;
+	font-weight: bold;
+}
+
+div.serppagenav a {
+	color: blue;
+	font-family: Arial;
+	font-size: 13px;
+}

@@ -1,0 +1,275 @@
+body {
+ font-family: Arial;
+ margin: 0px;
+ background: #e5ecfa;
+ padding: 20px;
+}
+
+hr {
+	height: 2px;
+	border: 0px;
+	background: url(../images/hr.png) repeat-x;
+	clear: both;
+	margin-top: 20px;
+	margin-bottom: 10px;
+}
+
+td {
+ font-size: 90%;
+}
+
+div, p {
+	font-size: 90%;
+}
+
+/* TOP MENU */
+ul.topmenu {
+	list-style-type: none;
+}
+
+ul.topmenu li {
+	padding: 6px 12px 6px 12px;
+	float: left;
+	margin-right: 1px;
+	margin-top: 10px;
+}
+ul.topmenu li.active {
+	margin-top: 0px;
+	padding: 12px 12px 10px 12px;
+}
+
+ul.topmenu li a {
+	color: #ffffff;
+	font-size: 12px;
+	font-weight: bold;
+	text-decoration: none;
+}
+
+ul.topmenu li.col1 {background: #ff6600;}
+ul.topmenu li.col2 {background: #ff9900;}
+ul.topmenu li.col3 {background: #ffc022;}
+ul.topmenu li.col4 {background: #b88100;}
+ul.topmenu li.col5 {background: #339900;}
+
+/* MAIN MENU */
+ul.mainmenu {
+	list-style-type: none;
+	padding: 0px;
+	width: 260px;
+}
+
+ul.mainmenu li {
+	margin-left: 7px;
+	background: url(../images/box-0.gif) 0px 7px no-repeat;
+	padding-left: 14px;
+}
+
+ul.mainmenu li a {
+	font-size: 12px;
+	color: #333333;
+	text-decoration: none;
+}
+
+ul.mainmenu li a:hover {
+	text-decoration: underline;
+}
+
+ul.mainmenu li.active {
+	background: url(../images/box-1.gif) 0px 7px no-repeat;
+}
+
+ul.mainmenu li.active a {
+	font-weight: bold;
+}
+
+ul.mainmenu li.mainmenu-home {
+	margin: 0px 0px 10px 0px;
+	background: url(../images/caret-t.png) 0px 7px no-repeat;
+	border-bottom: 1px solid #333333;
+	padding-top: 4px;
+	padding-bottom: 2px;
+	padding-left: 14px;
+}
+
+ul.mainmenu li.mainmenu-home a {
+	font-family: Arial;
+	font-size: 14px;
+	color: #333333;
+	text-decoration: none;
+}
+
+ul.mainmenu li.mainmenu-home a:hover {
+	text-decoration: underline;
+}
+
+ul.mainmenu li.mainmenu-section {
+	margin: 0px 0px 10px 0px;
+	background: url(../images/caret-u.png) 0px 7px no-repeat;
+	border-bottom: 1px solid #333333;
+	padding-top: 4px;
+	padding-bottom: 2px;
+	padding-left: 14px;
+}
+
+ul.mainmenu li.mainmenu-section a {
+	font-family: Arial;
+	font-size: 14px;
+	color: #333333;
+	text-decoration: none;
+}
+
+ul.mainmenu li.mainmenu-section a:hover {
+	text-decoration: underline;
+}
+
+/* NUOVO */
+td.manual-header-left {
+	background: url(../images/header.png) top left no-repeat;
+	height: 120px;
+	padding: 20px;
+	width: 200px;
+}
+td.manual-header-right {
+	background: url(../images/header.png) top right no-repeat;
+	padding: 20px;
+}
+td.manual-sidebar {
+	background: url(../images/contents_bg.png) top left repeat-y;
+	padding: 20px;
+}
+td.manual-contents {
+	background: url(../images/contents_bg.png) top right repeat-y;
+	padding: 20px;
+	border-left: 1px solid #aaccee;
+}
+td.manual-footer-left {
+	background: url(../images/footer.png) bottom left no-repeat;
+	height: 120px;
+}
+td.manual-footer-right {
+	background: url(../images/footer.png) bottom right no-repeat;
+	border-left: 1px solid #aaccee;
+}
+
+/* CONTENTS CSS */
+h2 {
+	border-top: 0;
+	border-right: 0;
+	border-left: 0;
+
+	color: #ff6600;
+	font-size: 26px;
+	font-weight: bold;
+}
+
+h3 {
+	border-top: 0;
+	border-right: 0;
+	border-left: 0;
+	border-bottom: 1px solid #ffc022;
+	color: #f44800;
+	font-size: 18px;
+	font-weight: bold;
+}
+
+h4 {
+	border-top: 0;
+	border-right: 0;
+	border-left: 0;
+	border-bottom: 1px solid #E2D8C0;
+	color: #FF7011;
+	font-size: 14px;
+	font-weight: bold;
+}
+
+h2, h3, h4 {
+	margin: 0 0 15px 0;
+	padding: 0 0 5px 0;
+}
+
+dl {
+	background-color:  rgb(247, 247, 247);
+	border: 5px solid #FF7011;
+	padding: 4px 4px 4px 6px;
+	font-size: 90%;
+}
+dl dt {
+	color: #3F2008;
+	font-weight: bold;
+	font-size: small;
+	margin-bottom: 3px;
+}
+
+tt {
+ font-size: 13px;
+}
+
+.section {
+	margin-bottom: 35px;
+	padding: 0;
+	font-size: 90%;
+}
+
+.panel {
+	background: #eeeeff;
+	border: 1px solid #aaaaff;
+	padding: 6px;
+	font-size: 10pt;
+	font-family: monospace;
+}
+
+.source {
+	margin: 1em 0px;
+	padding: 12px;
+	font-family: monospace;
+	font-size: 9pt;
+	background-color: rgb(247, 247, 247);
+	border: 1px solid #999;
+}
+
+.smalltext {
+	color: #666666;
+	font-size: 12px;
+	font-family: Arial;
+}
+
+div.graybar {
+	background: #cccccc;
+	color: #000000;
+	font-size: 13px;
+	font-family: Arial;
+	padding: 6px 12px 6px 12px;
+	margin-bottom: 10px;
+}
+
+span.subtitle {
+	color: #3364c3;
+	font-weight: bold;
+	font-size: 13px;
+	font-family: Verdana;
+}
+
+div.indent {
+	padding: 0px 0px 0px 50px;
+	margin-bottom: 25px;
+}
+
+table.bodyTable th {
+  color: white;
+  background-color: #bbb;
+  text-align: left;
+  font-weight: bold;
+}
+
+table.bodyTable th, table.bodyTable td {
+  font-size: 90%;
+}
+
+table.bodyTable tr.a {
+  background-color: #ddd;
+}
+
+table.bodyTable tr.b {
+  background-color: #eee;
+}
+

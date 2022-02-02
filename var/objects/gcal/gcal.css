@@ -1,0 +1,83 @@
+div.gcal {
+	width: 191px;
+	height: 199px;
+	background: url(img/bg.png) top left no-repeat;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+}
+
+table.gcalheader {
+	width: 180px;
+	margin-left: 3px;
+	margin-top: 14px;
+}
+
+div.gcalprevbtn {
+	width: 28px;
+	height: 21px;
+	background: url(img/prevbtn.png) top left no-repeat;
+	cursor: pointer;
+	margin-left: 6px;
+}
+
+div.gcalnextbtn {
+	width: 28px;
+	height: 21px;
+	background: url(img/nextbtn.png) top left no-repeat;
+	cursor: pointer;
+	margin-right: 6px;
+}
+
+div.gcaltext {
+	font-family: Trebuchet, Arial;
+	font-size: 10px;
+	color: #ffffff;
+	line-height: 12px;
+	font-weight: bold;
+	text-align: center;
+}
+
+
+table.gcalgrid {
+	margin-left: 3px;
+	margin-top: 7px;
+}
+
+table.gcalgrid th {
+	width: 22px;
+	height: 20px;
+	text-align: center;
+	vertical-align: middle;
+	font-family: Trebuchet, Arial;
+	font-size: 12px;
+	font-weight: bold;
+	color: #aaaaaa;
+}
+
+table.gcalgrid th.week {width: 26px;}
+table.gcalgrid td.week {
+	width: 26px;
+	text-align: left;
+	vertical-align: middle;
+	font-family: Trebuchet, Arial;
+	font-size: 12px;
+	color: #aaaaaa;
+	font-weight: bold;
+	padding-left: 2px;
+}
+
+table.gcalgrid td {
+	text-align: center;
+	vertical-align: middle;
+	font-family: Trebuchet, Arial;
+	font-size: 12px;
+	color: #000000;
+	cursor: pointer;
+}
+
+table.gcalgrid td.selected {
+	background: url(img/sel.png) 1px 1px no-repeat;
+	color: #ffffff;
+	font-weight: bold;
+}
+

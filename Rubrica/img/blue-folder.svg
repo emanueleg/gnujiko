@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="662"
+   height="456"
+   viewBox="52 308 662 456"
+   inkscape:export-xdpi="4.8292031"
+   inkscape:export-ydpi="4.8292031"
+   inkscape:version="0.47 r22583"
+   sodipodi:docname="blue-folder.svg"
+   sodipodi:version="0.32"
+   id="svg2"
+   version="1.1">
+  <metadata
+     id="metadata4">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:title>Blue Folder</dc:title>
+        <dc:description />
+        <dc:subject>
+          <rdf:Bag>
+            <rdf:li>hash</rdf:li>
+            <rdf:li>icon</rdf:li>
+            <rdf:li />
+            <rdf:li>education</rdf:li>
+            <rdf:li>computer</rdf:li>
+            <rdf:li>folder</rdf:li>
+          </rdf:Bag>
+        </dc:subject>
+        <dc:publisher>
+          <cc:Agent
+             rdf:about="http://www.openclipart.org">
+            <dc:title>Seth Yastrov</dc:title>
+          </cc:Agent>
+        </dc:publisher>
+        <dc:creator>
+          <cc:Agent>
+            <dc:title>Seth Yastrov</dc:title>
+          </cc:Agent>
+        </dc:creator>
+        <dc:rights>
+          <cc:Agent>
+            <dc:title>Seth Yastrov</dc:title>
+          </cc:Agent>
+        </dc:rights>
+        <dc:date />
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <cc:license
+           rdf:resource="http://web.resource.org/cc/PublicDomain" />
+        <dc:language>en</dc:language>
+      </cc:Work>
+      <cc:License
+         rdf:about="http://web.resource.org/cc/PublicDomain">
+        <cc:permits
+           rdf:resource="http://web.resource.org/cc/Reproduction" />
+        <cc:permits
+           rdf:resource="http://web.resource.org/cc/Distribution" />
+        <cc:permits
+           rdf:resource="http://web.resource.org/cc/DerivativeWorks" />
+      </cc:License>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs3">
+    <inkscape:perspective
+       sodipodi:type="inkscape:persp3d"
+       inkscape:vp_x="0 : 228 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_z="662 : 228 : 1"
+       inkscape:persp3d-origin="331 : 152 : 1"
+       id="perspective16" />
+    <linearGradient
+       id="linearGradient1699">
+      <stop
+         id="stop1700"
+         offset="0.0000000"
+         style="stop-color: rgb(1, 126, 255); stop-opacity: 1;" />
+      <stop
+         id="stop1701"
+         offset="1.0000000"
+         style="stop-color: rgb(236, 250, 255); stop-opacity: 1;" />
+    </linearGradient>
+    <linearGradient
+       gradientTransform="matrix(0.28318075,0,0,0.16267579,306.07894,392.28298)"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient1702"
+       inkscape:collect="always"
+       x1="315.32162"
+       x2="50.829018"
+       xlink:href="#linearGradient1699"
+       y1="908.78278"
+       y2="460.75931" />
+    <linearGradient
+       gradientTransform="matrix(0.30029118,0,0,0.15340671,306.07894,392.28298)"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient1704"
+       inkscape:collect="always"
+       x1="332.32208"
+       x2="160.94328"
+       xlink:href="#linearGradient1699"
+       y1="965.31213"
+       y2="716.09955" />
+  </defs>
+  <sodipodi:namedview
+     bordercolor="#666666"
+     borderopacity="1.0"
+     id="base"
+     inkscape:current-layer="layer1"
+     inkscape:cx="364.0212"
+     inkscape:cy="190.16394"
+     inkscape:guide-bbox="true"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:window-height="949"
+     inkscape:window-width="1280"
+     inkscape:window-x="0"
+     inkscape:window-y="24"
+     inkscape:zoom="1"
+     pagecolor="#ffffff"
+     showguides="true"
+     showgrid="false"
+     inkscape:window-maximized="1" />
+  <g
+     id="layer1"
+     inkscape:groupmode="layer"
+     inkscape:label="Layer 1">
+    <path
+       d="m 327.6615,470.38557 c -1.99845,0.47482 -3.22607,2.46759 -2.75125,4.46604 L 341.4556,547.83 c 0.47482,1.99844 2.46107,3.22762 4.45952,2.7528 l 93.19181,-22.14185 c 1.99844,-0.47482 3.22607,-2.4676 2.75125,-4.46604 l -11.63622,-56.61929 c -0.47482,-1.99844 -2.4676,-3.07158 -4.46604,-2.75125 l -54.35808,8.08596 c 0,0 -5.05256,-8.9404 -7.05101,-8.46558 l -36.68533,6.16082 z"
+       id="rect1061"
+       sodipodi:nodetypes="ccccccccccc"
+       style="color:#000000;fill:url(#linearGradient1702);fill-opacity:1;fill-rule:nonzero;stroke:#446c98;stroke-width:1.34144795;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dashoffset:1.25;marker:none;visibility:visible;display:block" />
+    <path
+       d="m 447.09304,477.47209 -91.57884,15.16556 c -1.99844,0.47482 -3.70284,2.1363 -3.91827,4.065 l -10.03204,51.31908 c 0.42225,1.7772 2.37104,3.09878 4.36949,2.62396 l 93.18858,-22.14109 c 1.99844,-0.47482 2.64941,-2.17194 3.05753,-3.92982 l 9.28304,-44.75183 c 0.12498,-3.25458 -2.52553,-2.5167 -4.36949,-2.35086 z"
+       id="rect1063"
+       sodipodi:nodetypes="ccccccccc"
+       style="opacity:0.824903;color:#000000;fill:url(#linearGradient1704);fill-opacity:1;fill-rule:nonzero;stroke:#446c98;stroke-width:1.34144795;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dashoffset:1.25;marker:none;visibility:visible;display:block" />
+  </g>
+</svg>

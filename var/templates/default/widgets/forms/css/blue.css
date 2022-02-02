@@ -1,0 +1,44 @@
+table.default-simple-form th.title {
+ background: url(../img/blue_widget.png) top left no-repeat;
+ height: 46px;
+ text-align: left;
+ padding-left: 10px;
+ font-family: Arial;
+ font-size: 16px;
+ font-weight: bold;
+ color: #ffffff;
+ white-space: nowrap;
+}
+
+table.default-simple-form th.head-btns {
+ background: url(../img/blue_widget.png) top right no-repeat;
+ height: 46px;
+ padding-right: 7px;
+ text-align: right;
+}
+
+table.default-simple-form td.footer-left {
+ background: url(../img/blue_widget.png) bottom left no-repeat;
+ height: 37px;
+ padding-left: 20px;
+}
+
+table.default-simple-form td.footer-right {
+ background: url(../img/blue_widget.png) bottom right no-repeat;
+ height: 37px;
+ padding-right: 12px;
+ padding-bottom: 7px;
+ text-align: right;
+ white-space: nowrap;
+}
+
+table.default-simple-form-tablecontents td.borderleft {
+ background: transparent url(../img/blue_widget.png) 0px -46px no-repeat;
+ width: 7px;
+}
+
+table.default-simple-form-tablecontents td.borderright {
+ background: transparent url(../img/blue_widget.png) right -46px no-repeat;
+ width: 7px;
+}
+

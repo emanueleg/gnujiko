@@ -1,0 +1,94 @@
+div.docopt-header {
+	background: url(img/nuv.png) top left no-repeat;
+	width: 200px;
+	height: 10px;
+	display: block;
+	overflow: hidden;
+	white-space: nowrap;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+}
+
+div.docopt-footer {
+	background: url(img/nuv.png) bottom left no-repeat;
+	width: 200px;
+	height: 10px;
+	display: block;
+	overflow: hidden;
+	white-space: nowrap;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+}
+
+div.docopt-body {
+	background: url(img/nuv.png) left center no-repeat;
+	width: 200px;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+}
+
+div.docopt-body div.docopt-item {
+	margin-left: 14px;
+	width: 168px;
+	border-top: 1px solid #cccccf;
+	padding: 7px;
+	clear: both;
+}
+
+div.docopt-item a {
+	font-family: Arial, sans-serif;
+	font-size: 11px;
+	font-weight: bold;
+	color: #013397;
+	line-height: 16px;
+	text-decoration: none;
+}
+
+div.docopt-item a img {
+	border: 0px;
+	margin-right: 3px;
+	float: left;
+	vertical-align: top;
+}
+
+div.docopt-item span.spangray {
+	font-family: Arial, sans-serif;
+	font-size: 10px;
+	font-weight: bold;
+	color: #666666;
+}
+
+div.docopt-item div.convdocthumb {
+	width: 40px;
+	float: left;
+	margin: 5px;
+	text-align: center;
+	cursor: pointer;
+}
+
+div.convdocthumb a {
+	font-family: Arial, sans-serif;
+	font-size: 10px;
+	color: #013397;
+	font-weight: normal;
+	text-align: center;
+}
+
+div.convdocthumb span {
+	font-family: Arial, sans-serif;
+	font-size: 10px;
+	color: #013397;
+	text-align: center;
+}
+
+div.convdocthumb img {
+	border: 0px;
+	height: 22px;
+}
+
+div.docopt-status-div {
+	font-family: Arial, sans-serif;
+	font-size: 10px;
+	color: #666666;
+}
+

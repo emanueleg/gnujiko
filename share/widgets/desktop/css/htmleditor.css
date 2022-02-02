@@ -1,0 +1,41 @@
+table.editorheader {
+	background: #5787e6;
+	height: 24px;
+	font-family: Arial,sans-serif;
+	margin: 0px;
+}
+
+table.editorheader td {
+	font-family: "Trebuchet", arial;
+	font-size: 13px;
+	color: #ffffff;
+	padding-left: 10px;
+	font-weight: bold;
+}
+
+ul.roundmenu {
+	list-style-type: none;
+	margin: 0px;
+	padding: 0px;
+}
+
+ul.roundmenu li {
+	float: left;
+	height: 16px;
+	background: #aaccee;
+	border: 0px;
+	border-radius: 8px;
+	padding-left: 8px;
+	padding-right: 8px;
+	margin-right: 10px;
+	font-family: "Trebuchet", arial;
+	font-size: 12px;
+	font-weight: bold;
+	color: #ffffff;
+	cursor: pointer;
+}
+
+ul.roundmenu li.selected {
+	background: #fdca01;
+	color: #333333;
+}

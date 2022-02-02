@@ -1,0 +1,205 @@
+div.standardwidget {
+	padding: 20px;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
+    -moz-box-shadow: 0 1px 3px #666;
+    -webkit-box-shadow: 0 1px 3px #666;
+    box-shadow: 0 1px 3px #666;
+    background-color: #fff;
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f7f7f7');
+    background-image: -moz-linear-gradient(top, #fff, #f7f7f7);
+    background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#fff), to(#f7f7f7));
+    background-image: -webkit-linear-gradient(top, #fff, #f7f7f7);
+	background-image: linear-gradient(to bottom, #ffffff, #f7f7f7);
+}
+
+h2 {
+	font-size: 18px;
+	padding: 0px;
+	margin-top: 0px;
+	font-family: Helvetica, Arial, sans-serif;
+}
+
+h3 {
+	font-size: 14px;
+	padding: 0px;
+	margin-top: 0px;
+	margin-bottom: 3px;
+	font-family: Helvetica, Arial, sans-serif;
+}
+
+h4 {
+	font-size: 12px;
+	padding: 0px;
+	margin-top: 0px;
+	margin-bottom: 3px;
+	font-family: Helvetica, Arial, sans-serif;
+}
+
+hr {
+	border: 0px;
+	background: #dddddd;
+	height: 1px;
+}
+
+label {
+	font-family: Helvetica, Arial, sans-serif;
+	font-size: 13px;
+	color: #333333;
+}
+
+input.button-blue {
+	height: 27px;
+	border-radius: 2px;
+	border: 1px solid #0062b7;
+	font-family: Verdana,Geneva,sans-serif;
+	font-size: 13px;
+	white-space: nowrap;
+	padding-left: 10px;
+	padding-right: 10px;
+	padding-bottom: 5px;
+	cursor: pointer;
+	padding-top: 0px;
+	vertical-align: top;
+	color: #ffffff;
+
+    -moz-box-shadow: 0 1px 2px #666;
+    -webkit-box-shadow: 0 1px 2px #666;
+    box-shadow: 0 1px 2px #666;
+
+    /*filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#0084cc', endColorstr='#0045cc');
+    background-image: -moz-linear-gradient(top, #0084cc, #0045cc);
+    background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#0084cc), to(#0045cc));
+    background-image: -webkit-linear-gradient(top, #0084cc, #0045cc);
+	background-image: linear-gradient(to bottom, #0084cc, #0045cc);*/
+	
+	background-color: #009ed0;
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#009ed0', endColorstr='#0066a6');
+	background-image: -moz-linear-gradient(top, #009ed0, #0066a6);
+	background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#009ed0), to(#0066a6));
+	background-image: -webkit-linear-gradient(top, #009ed0, #0066a6);
+	background-image: linear-gradient(to bottom, #009ed0, #0066a6);
+}
+
+input.button-gray {
+	height: 27px;
+	border-radius: 2px;
+	border: 1px solid #dddddd;
+	font-family: Verdana,Geneva,sans-serif;
+	font-size: 13px;
+	white-space: nowrap;
+	padding-left: 10px;
+	padding-right: 10px;
+	padding-bottom: 5px;
+	cursor: pointer;
+	padding-top: 0px;
+	vertical-align: top;
+
+    -moz-box-shadow: 0 1px 2px #666;
+    -webkit-box-shadow: 0 1px 2px #666;
+    box-shadow: 0 1px 2px #666;
+
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f7f7f7');
+    background-image: -moz-linear-gradient(top, #fcfcfc, #e6e6e6);
+    background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#fcfcfc), to(#e6e6e6));
+    background-image: -webkit-linear-gradient(top, #fcfcfc, #e6e6e6);
+	background-image: linear-gradient(to bottom, #fcfcfc, #e6e6e6);
+}
+
+input.button-red {
+	height: 27px;
+	border-radius: 2px;
+	border: 1px solid #c44742;
+	font-family: Verdana,Geneva,sans-serif;
+	font-size: 13px;
+	white-space: nowrap;
+	padding-left: 10px;
+	padding-right: 10px;
+	padding-bottom: 5px;
+	cursor: pointer;
+	padding-top: 0px;
+	vertical-align: top;
+	color: #ffffff;
+
+    -moz-box-shadow: 0 1px 2px #666;
+    -webkit-box-shadow: 0 1px 2px #666;
+    box-shadow: 0 1px 2px #666;
+
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ec5d59', endColorstr='#be3730');
+    background-image: -moz-linear-gradient(top, #ec5d59, #be3730);
+    background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#ec5d59), to(#be3730));
+    background-image: -webkit-linear-gradient(top, #ec5d59, #be3730);
+	background-image: linear-gradient(to bottom, #ec5d59, #be3730);
+}
+
+input.button-green {
+	height: 27px;
+	border-radius: 2px;
+	border: 1px solid green;
+	font-family: Verdana,Geneva,sans-serif;
+	font-size: 13px;
+	white-space: nowrap;
+	padding-left: 10px;
+	padding-right: 10px;
+	padding-bottom: 5px;
+	cursor: pointer;
+	padding-top: 0px;
+	vertical-align: top;
+	color: #ffffff;
+
+    -moz-box-shadow: 0 1px 2px #666;
+    -webkit-box-shadow: 0 1px 2px #666;
+    box-shadow: 0 1px 2px #666;
+
+	background-color: #4e7300;
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#68a200', endColorstr='#4e7300');
+	background-image: -moz-linear-gradient(top, #68a200, #4e7300);
+	background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#68a200), to(#4e7300));
+	background-image: -webkit-linear-gradient(top, #68a200, #4e7300);
+	background-image: linear-gradient(to bottom, #68a200, #4e7300);
+}
+
+input.button-yellow {
+	height: 27px;
+	border-radius: 2px;
+	border: 1px solid #c44742;
+	font-family: Verdana,Geneva,sans-serif;
+	font-size: 13px;
+	white-space: nowrap;
+	padding-left: 10px;
+	padding-right: 10px;
+	padding-bottom: 5px;
+	cursor: pointer;
+	padding-top: 0px;
+	vertical-align: top;
+
+    -moz-box-shadow: 0 1px 2px #666;
+    -webkit-box-shadow: 0 1px 2px #666;
+    box-shadow: 0 1px 2px #666;
+
+	background-color: #ffe672;
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffe672', endColorstr='#eaad52');
+	background-image: -moz-linear-gradient(top, #ffe672, #eaad52);
+	background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#ffe672), to(#eaad52));
+	background-image: -webkit-linear-gradient(top, #ffe672, #eaad52);
+	background-image: linear-gradient(to bottom, #ffe672, #eaad52);
+	color: #333;
+}
+
+input.edit {
+	height: 24px;
+	border: 1px solid #dddddd;
+    -moz-box-shadow: 0 1px 2px #ccc;
+    -webkit-box-shadow: 0 1px 2px #ccc;
+    box-shadow: 0 1px 2px #ccc;
+}
+
+input.edit-error {
+	height: 24px;
+	border: 1px solid #dddddd;
+    -moz-box-shadow: 0 1px 2px #ccc;
+    -webkit-box-shadow: 0 1px 2px #ccc;
+    box-shadow: 0 1px 2px #ccc;
+	background: #ff0000;
+}
+

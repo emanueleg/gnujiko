@@ -1,0 +1,130 @@
+table.hacktvform-bluewidget tr.header-open td.topleftcorner {
+	background: url(../img/bluewidget/headopen.png) top left no-repeat;
+	width: 50px;
+	height: 28px;
+	vertical-align: bottom;
+	text-align: center;
+}
+
+table.hacktvform-bluewidget tr.header-open td.toprightcorner {
+	background: url(../img/bluewidget/headopen.png) top right no-repeat;
+	width: 50px;
+	height: 28px;
+	vertical-align: bottom;
+	text-align: center;
+}
+
+table.hacktvform-bluewidget tr.header-open td.headertitle {
+	background: url(../img/bluewidget/headopen.png) top center no-repeat;
+	font-family: arial, sans-serif;
+	font-size: 12px;
+	color: #ffffff;
+	font-weight: bold;
+	line-height: 23px;
+	vertical-align: bottom;
+	cursor: move;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+}
+
+
+
+table.hacktvform-bluewidget tr.header-closed td.topleftcorner {
+	background: url(../img/bluewidget/headclosed.png) top left no-repeat;
+	width: 50px;
+	height: 28px;
+	vertical-align: bottom;
+	text-align: center;
+}
+
+table.hacktvform-bluewidget tr.header-closed td.toprightcorner {
+	background: url(../img/bluewidget/headclosed.png) top right no-repeat;
+	width: 50px;
+	height: 28px;
+	vertical-align: bottom;
+	text-align: center;
+}
+
+table.hacktvform-bluewidget tr.header-closed td.headertitle {
+	background: url(../img/bluewidget/headclosed.png) top center no-repeat;
+	font-family: arial, sans-serif;
+	font-size: 12px;
+	color: #ffffff;
+	font-weight: bold;
+	line-height: 23px;
+	vertical-align: bottom;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+	cursor: move;
+}
+
+table.hacktvform-bluewidget td.border-left {
+	background: url(../img/bluewidget/background.png) center left no-repeat;
+}
+
+table.hacktvform-bluewidget td.border-right {
+	background: url(../img/bluewidget/background.png) center right no-repeat;
+}
+
+div.hacktvform-bluewidget-body {
+	background: #ffffff;
+	overflow: auto;
+}
+
+table.hacktvform-bluewidget tr.footer td.bottomleftcorner {
+	background: url(../img/bluewidget/background.png) bottom left no-repeat;
+}
+
+table.hacktvform-bluewidget tr.footer td.bottomrightcorner {
+	background: url(../img/bluewidget/background.png) bottom right no-repeat;
+}
+
+table.hacktvform-bluewidget tr.footer td.footer-content {
+	background: url(../img/bluewidget/background.png) bottom center no-repeat;
+}
+
+/* TRAY */
+div.hacktvform-bluewidget-tray {
+	background: transparent;
+	/*height: 100px;*/
+	/*margin-top: -100px;*/
+	margin-left: 18px;
+	margin-right: 16px;
+}
+
+table.hacktvform-bluewidget-tray td.trayleftcorner {
+	background: url(../img/bluewidget/tray.png) top left no-repeat;
+	width: 32px;
+	height: 18px;
+}
+
+table.hacktvform-bluewidget-tray td.trayrightcorner {
+	background: url(../img/bluewidget/tray.png) top right no-repeat;
+	width: 32px;
+	height: 18px;
+}
+
+table.hacktvform-bluewidget-tray td.traytitle {
+	background: url(../img/bluewidget/tray.png) top center no-repeat;
+	height: 18px;
+	font-family: arial, sans-serif;
+	font-size: 12px;
+	color: #ffffff;
+	font-weight: bold;
+	vertical-align: middle;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+}
+
+table.hacktvform-bluewidget-tray td.trayleft {
+	background: url(../img/bluewidget/tray.png) center left no-repeat;
+}
+
+table.hacktvform-bluewidget-tray td.trayright {
+	background: url(../img/bluewidget/tray.png) center right no-repeat;
+}
+
+table.hacktvform-bluewidget-tray td.traybody {
+	background: url(../img/bluewidget/tray.png) center center no-repeat;
+}
+

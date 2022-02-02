@@ -1,0 +1,85 @@
+/* BASIC MENU */
+ul.basicmenu {
+	list-style: none;
+	height: 22px;
+	margin: 0px;
+	padding: 0px;
+}
+
+ul.basicmenu li {
+	float: left;
+	margin-right: 2px;
+	height: 22px;
+}
+
+ul.basicmenu li span {
+	display: block;
+	height: 22px;
+	margin-left: 10px;
+	padding-right: 20px;
+	cursor: pointer;
+	font-family: Arial;
+	font-size: 13px;
+	font-weight: bold;
+	color: #ffffff;
+	line-height: 20px;
+}
+
+ul.basicmenu li span img {
+	float: left;
+	vertical-align: center;
+}
+ul.basicmenu li.gray {background: url(img/basicmenu-gray-l.png) top left no-repeat;}
+ul.basicmenu li.lightgray {background: url(img/basicmenu-lightgray-l.png) top left no-repeat;}
+ul.basicmenu li.blue {background: url(img/basicmenu-blue-l.png) top left no-repeat;}
+
+ul.basicmenu li.gray span {background: url(img/basicmenu-gray.png) top right no-repeat;}
+ul.basicmenu li.lightgray span {background: url(img/basicmenu-lightgray.png) top right no-repeat;}
+ul.basicmenu li.blue span {background: url(img/basicmenu-blue.png) top right no-repeat;}
+
+/* DOC FOOTER RESULTS */
+table.docfooter-results {
+	margin-top: 5px;
+}
+
+table.docfooter-results th {
+	height: 14px;
+	line-height: 14px;
+	font-family: Arial;
+	font-size: 10px;
+	text-align: center;
+	border-left: 1px solid #ffffff;
+	border-right: 1px solid #ffffff;
+}
+
+table.docfooter-results td {
+	background: #0169c9;
+	height: 18px;
+	line-height: 18px;
+	font-family: Arial;
+	font-size: 13px;
+	font-weight: bold;
+	color: #eeeeee;
+	text-align: right;
+	border-left: 1px solid #ffffff;
+	border-right: 1px solid #ffffff;
+	padding-left: 7px;
+	padding-right: 7px;
+	white-space: nowrap;
+}
+
+table.docfooter-results td em {
+	float: left;
+	line-height: 18px;
+	font-family: Arial;
+	font-size: 13px;
+	font-weight: bold;
+	color: #eeeeee;
+	margin-right: 10px;
+}
+
+table.docfooter-results th.blue {background: #0169c9; color: #b3defd;}
+table.docfooter-results td.blue {background: #0169c9;}
+
+table.docfooter-results th.green {background: #339900; color: #ccff99;}
+table.docfooter-results td.green {background: #339900;}

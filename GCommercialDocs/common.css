@@ -1,0 +1,28 @@
+ul.docmenu {
+	margin: 0px;
+	padding: 0px;
+	list-style-type: none;
+}
+
+ul.docmenu li {
+	height: 58px;
+	font-family: Arial;
+	font-size: 14px;
+	font-weight: bold;
+	color: #000000;
+	line-height: 58px;
+	cursor: pointer;
+	overflow: hidden;
+}
+
+ul.docmenu li.selected {
+	background: url(img/doc-bg.png) top left no-repeat;
+}
+
+ul.docmenu li img {
+	float: left;
+	margin-right: 8px;
+	margin-top: 11px;
+	margin-left: 10px;
+}
+

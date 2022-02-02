@@ -1,0 +1,20 @@
+div.tabbar {
+	width: 100%;
+	background: #aaccee url(../img/cat_toolbar_bg.png) top left no-repeat;
+	height: 38px;
+}
+
+div.tabbar table td {
+	background: transparent;
+}
+
+div.contents {
+	background: #ffffff url(../img/cat_contents_bg.png) top left no-repeat;
+}
+
+div.contents table.contents-table td {
+	background: transparent;
+	font-family: Arial;
+	font-size: 14px;
+	color: #333333;
+}

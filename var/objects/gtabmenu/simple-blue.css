@@ -1,0 +1,113 @@
+/* MENU */
+ul.simple-blue {
+	text-align: left;
+}
+
+ul.simple-blue li {
+	float: left;
+	list-style: none;
+	height: 29px;
+	background: url(simple-blue/tab.png) -10px 0px no-repeat;
+	padding: 0px;
+	margin-top: 5px;
+}
+
+ul.simple-blue li.first {
+	background: url(simple-blue/tab.png) top left no-repeat;
+}
+
+ul.simple-blue li.first a, ul.simple-blue li.first span {
+	background: transparent;
+	padding-right: 5px;
+}
+
+ul.simple-blue li.prior {
+	background: url(simple-blue/tab.png) -20px 0px no-repeat;
+}
+
+ul.simple-blue li.prior a, ul.simple-blue li.prior span {
+	background: url(simple-blue/tab.png) top left no-repeat;
+	padding-left: 5px;
+}
+
+ul.simple-blue li.last {
+	background: url(simple-blue/tab.png) top right no-repeat;
+}
+
+ul.simple-blue li.next {
+	background: url(simple-blue/tab.png) -20px 0px no-repeat;
+}
+
+ul.simple-blue li.next a, ul.simple-blue li.next span {
+	background: url(simple-blue/tab.png) top right no-repeat;
+	padding-left: 5px;
+}
+
+ul.simple-blue li a, ul.simple-blue li span {
+	height: 29px;
+	background: url(simple-blue/tab.png) top right no-repeat;
+	margin-left: 5px;
+	padding-right: 10px;
+	font-family: Arial;
+	font-size: 12px;
+	font-weight: bold;
+	color: #ffffff;
+	text-decoration: none;
+	display: block;
+	padding-top: 7px;
+	cursor: pointer;
+}
+
+ul.simple-blue li.selected {
+	margin-top: 0px;
+	height: 34px;
+	background: url(simple-blue/tab_selected_right.png) top right no-repeat;
+	padding: 0px;
+}
+
+ul.simple-blue li.selected a, ul.simple-blue li.selected span {
+	height: 34px;
+	background: url(simple-blue/tab_selected.png) top left no-repeat;
+	margin-right: 5px;
+	padding-left: 5px;
+	margin-left: 0px;
+	padding-right: 5px;
+	display: block;
+	font-family: Arial;
+	font-size: 12px;
+	font-weight: bold;
+	color: #000000;
+	vertical-align: middle;
+	padding-top: 10px;
+}
+
+/* BUTTONS */
+ul.simple-blue-buttons {
+	text-align: left;
+	margin: 0px;
+}
+
+ul.simple-blue-buttons li {
+	float: left;
+	list-style: none;
+	height: 26px;
+	background: url(simple-blue/button_right.png) top right no-repeat;
+	padding: 0px;
+	margin-right: 8px;
+}
+
+ul.simple-blue-buttons li a, ul.simple-blue-buttons li span {
+	height: 26px;
+	background: url(simple-blue/button.png) top left no-repeat;
+	padding-left: 10px;
+	margin-right: 10px;
+	font-family: Arial;
+	font-size: 14px;
+	font-weight: bold;
+	color: #ffffff;
+	text-decoration: none;
+	display: block;
+	padding-top: 4px;
+	cursor: pointer;
+}
+

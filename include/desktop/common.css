@@ -1,0 +1,81 @@
+div.gnujiko-desktop-page {
+	height: 200px;
+	overflow: auto;
+	position: relative;
+}
+
+div.gnujiko-desktop-module {
+	margin: 5px;
+}
+
+div.gnujiko-desktop-droparea {
+
+}
+
+div.gnujiko-desktop-module-front-panel {
+	margin: 0px;
+	padding: 0px;
+	background: transparent;
+	border: 0px;
+	clear: both;
+}
+
+div.gnujiko-desktop-module-back-panel {
+	margin: 0px;
+	padding: 0px;
+	background: transparent;
+	border: 0px;
+	clear: both;
+}
+
+img.plug {
+	cursor: pointer;
+}
+
+img#gnujiko-desktop-module-menu-button {
+	cursor: pointer;
+	position: absolute;
+	z-index: 9600;
+}
+
+table#gnujiko-desktop-module-menu {
+	background: #ffffff;
+	border: 1px solid #999999;
+	border-radius: 2px;
+	position: absolute;
+	z-index: 9500;
+}
+
+table#gnujiko-desktop-module-menu th {
+	height: 22px;
+	font-family: "Trebuchet", Arial;
+	font-size: 12px;
+	color: #000000;
+	cursor: default;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+}
+
+table#gnujiko-desktop-module-menu td {
+	height: 20px;
+	font-family: "Trebuchet", Arial;
+	font-size: 12px;
+	color: #000000;
+	line-height: 20px;
+	cursor: pointer;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
+table#gnujiko-desktop-module-menu td img {
+	float: left;
+	vertical-align: middle;
+	margin-right: 10px;
+}
+
+table#gnujiko-desktop-module-menu td:hover {
+	background: #e4f3fe;
+}
+

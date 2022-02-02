@@ -1,0 +1,30 @@
+table.pricelists {
+	width: 586px;
+}
+
+table.pricelists th {
+	background: #aaaaaa;
+	font-family: Arial;
+	font-size: 9px;
+	color: #000000;
+}
+
+table.pricelists td {
+	font-family: Arial;
+	font-size: 12px;
+	color: #000000;
+}
+
+table.pricelists td em {float: left;}
+
+table.pricelists tr.row0 td {background: #ffffcc;}
+table.pricelists tr.row1 td {background: #ffff99;}
+
+table.pricelists tr.selected td {background: #fafade;}
+table.pricelists tr.unselected td {
+	background: #fafafa;
+	color: #999999;
+	/*text-decoration: line-through;*/
+}
+
+

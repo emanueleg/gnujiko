@@ -1,0 +1,182 @@
+div.todomod-frontpanel {
+	background: #ffffff;
+	border: 1px solid #5b98c7;
+	border-radius: 3px;
+}
+
+div.todomod-header {
+	height: 42px;
+	border-bottom: 1px solid #5b98c7;
+	background: url(img/headbg.png) top left repeat-x;
+	padding: 0px;
+}
+
+div.todomod-header img.prevbtn {border:0px;cursor:pointer}
+div.todomod-header img.nextbtn {border:0px;cursor:pointer}
+
+div.todomod-header td.todomod-handle {
+	font-family: "Trebuchet", Arial;
+	font-size: 16px;
+	color: #ffffff;
+	font-weight: bold;
+	text-align: center;
+	vertical-align: middle;
+}
+
+div.todomod-header table.todomod-refdate td {
+	font-family: Arial;
+	font-size: 11px;
+	color: #ffffff;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
+
+div.todomod-container {
+	height: 300px;
+	overflow: auto;
+	padding: 10px;
+}
+
+div.schedule-item {
+	padding-bottom: 10px;
+	border-bottom: 1px solid #5b98c7;
+	margin-bottom: 10px;
+}
+
+div.schedule-item div.schedule-item-header {
+	height:16px;
+}
+
+div.schedule-item div.schedule-item-header span {
+	font-family: Arial;
+	font-size: 12px;
+	color: #000000;
+	font-weight: bold;
+}
+
+span.schedule-smalltext {
+	font-family: Arial;
+	font-size: 10px;
+	color: #000000;
+}
+
+div.schedule-section {
+	font-family: Arial;
+	font-size: 10px;
+	color: #000000;
+	margin-bottom: 10px;
+}
+
+div.todomod-footer {
+	height: 32px;
+	background: #5b98c7;
+	font-family: Arial;
+	font-size: 11px;
+	font-style: italic;
+	padding-left: 3px;
+	padding-right: 3px;
+	line-height: 22px;
+	color: #ffffff;
+	padding-top: 5px;
+}
+
+div.todomod-footer input.todolist-edit {
+	height: 22px;
+	border: 1px solid #5a7edc;
+	border-radius: 3px;
+	background: #ffffff;
+	font-family: arial, sans-serif;
+	font-size: 12px;
+	color: #333333;
+}
+
+div.todomod-footer img.todoadd {
+	cursor: pointer;
+	float: right;
+	margin-top: 5px;
+}
+
+div.todomod-footer span.ndocs {
+	float: left;
+	line-height: 22px;
+}
+
+div.todomod-footer span.totamount {
+	float: right;
+	line-height: 22px;
+}
+
+
+/* BACK */
+div.todomod-backpanel {
+	border: 1px solid #c2c2c2;
+	background: #eeeeee;
+	border-radius: 3px;
+}
+
+div.todomod-backpanel td.header {
+	background: url(img/backheadbg.png) top left repeat-x;
+	height: 28px;
+	vertical-align: middle;
+	text-align: center;
+	font-family: "Trebuchet", Arial, sans-serif;
+	font-size: 16px;
+	font-weight: bold;
+	color: #ffffff;
+}
+
+div.plugbar {
+	display: block;
+	background: #666666;
+	height: 22px;
+	border-radius: 3px;
+	font-family: Arial;
+	font-size: 10px;
+	color: #eeeeee;
+	line-height: 22px;
+	padding: 0px;
+	padding-left: 5px;
+	padding-right: 5px;
+	margin-left: 5px;
+	margin-right: 5px;
+	margin-bottom: 5px;
+}
+
+span.moduleplug {
+	float: right;
+	font-family: Arial;
+	font-size: 9px;
+	font-weight: bold;
+	color: #eeeeee;
+	line-height: 22px;
+	height: 22px;
+}
+
+span.moduleplug img.plug {
+	vertical-align: middle;
+	margin-left: 3px;
+}
+
+
+/* TODO LIST */
+table.todolist td {
+	height: 36px;
+	border-bottom: 1px solid #dadada;
+	font-family: arial, sans-serif;
+	font-size: 12px;
+	color: #333333;
+}
+
+table.todolist td.completed {color: #015a01;}
+table.todolist td.urgent {color: #f31903;font-weight:bold;}
+
+table.todolist td img {
+	cursor: pointer;
+}
+
+table.todolist td a {
+	text-decoration: none;
+	color: inherit;
+}
+

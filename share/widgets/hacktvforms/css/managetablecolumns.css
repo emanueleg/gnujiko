@@ -1,0 +1,60 @@
+div.graywidget {
+	background: #f5f5f5;
+	border: 1px solid #999999;
+	border-radius: 4px;
+}
+
+div.graywidget-header {
+	margin: 2px;
+	background: #444444;
+	height: 25px;
+	line-height: 25px;
+	font-family: Arial;
+	font-size: 14px;
+	color: #ffffff;
+	font-weight: bold;
+	padding-left: 10px;
+	border: 0px;
+	border-radius: 2px;
+}
+
+img.widget-close {
+	float: right;
+	margin-right: 10px;
+	cursor: pointer;
+	margin-top: 5px;
+}
+
+div.graywidget-section {
+	border-bottom: 1px solid #dfdfdf;
+	margin: 10px;
+	padding-bottom: 10px;
+}
+
+div.graywidget-section span.section-title {
+	font-family: Arial;
+	font-size: 14px;
+	color: #888888;
+}
+
+div.graywidget-section td {
+	font-family: Arial;
+	font-size: 12px;
+	color: #333333;
+}
+
+input.edit {
+	background: #ffffff;
+	border: 1px solid #dfdfdf;
+	border-radius: 2px;
+}
+
+input.locked {
+	background: #777777;
+	color: #fafafa;
+}
+
+div.graywidget-footer {
+	margin: 10px;
+}
+

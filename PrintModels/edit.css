@@ -1,0 +1,328 @@
+table.idoc-master-table td.idoc-title {
+	font-family: Arial;
+	font-size: 18px;
+	font-weight: bold;
+	color: #666666;
+}
+
+table.idoc-master-table td.idoc-right-space {
+	background: url(img/idoc-right-bar.png) top left repeat-y;
+	
+}
+
+/* IDOC-TAB */
+ul.idoc-tab {
+	margin: 0px;
+	padding: 0px;
+	list-style: none;
+	border-bottom: 3px solid #0084c8;
+	height: 21px;
+}
+
+ul.idoc-tab li {
+	float: left;
+	margin-right: 1px;
+	background: url(img/tab-menu-l.png) top left no-repeat;
+	height: 21px;
+	padding-left: 10px;
+}
+
+ul.idoc-tab li a {
+	display: block;
+	background: url(img/tab-menu.png) top right no-repeat;
+	text-decoration: none;
+	height: 21px;
+	line-height: 21px;
+	font-family: Arial;
+	font-size: 9px;
+	color: #336699;
+	padding-right: 10px;
+	font-weight: bold;
+}
+
+ul.idoc-tab li.selected {
+	background: url(img/tab-selected-l.png) top left no-repeat;
+}
+
+ul.idoc-tab li.selected a {
+	display: block;
+	background: url(img/tab-selected.png) top right no-repeat;
+	text-decoration: none;
+	height: 21px;
+	line-height: 21px;
+	font-family: Arial;
+	font-size: 9px;
+	color: #ffffff;
+	padding-right: 10px;
+	font-weight: bold;
+}
+
+/* SECTIONS */
+h3.idoc-yellow-section {
+	background: #ffff99;
+	height: 23px;
+	font-family: Arial;
+	font-size: 11px;
+	line-height: 23px;
+	padding-left: 8px;
+	margin-bottom: 0px;
+	margin-top: 20px;
+}
+
+h3.idoc-section {
+	background: #e7eff7;
+	height: 23px;
+	font-family: Arial;
+	font-size: 11px;
+	line-height: 23px;
+	padding-left: 8px;
+	margin-bottom: 0px;
+	margin-top: 10px;
+}
+
+/* IDOC-SMALLTABLE */
+table.idoc-smalltable td {
+	font-family: Arial;
+	font-size: 12px;
+	padding-bottom: 5px;
+	padding-top: 5px;
+	border-bottom: 1px dashed #dadada;
+}
+
+table.idoc-smalltable td a {
+	font-family: Arial;
+	font-size: 12px;
+	color: #0169c9;
+}
+
+p {
+	font-size: 12px;
+}
+
+hr {
+	height: 1px;
+	border: 0px;
+	background: #dadada;
+}
+
+/* TOOL-OBJECTS */
+div.tool-objects {
+	padding: 2px;
+}
+
+div.tool-objects div {
+	float: left;
+	margin: 2px;
+	background: #ffffff;
+	width: 26px;
+	height: 26px;
+	display: block;
+	border-radius: 2px;
+ 	border-collapse: collapse;
+ 	border: 1px solid #dadada;
+	cursor: pointer;
+}
+
+div.tool-objects div:hover {border-color: #eec73e;}
+
+div.tool-objects div img {
+	margin-left: 2px;
+	margin-top: 2px;
+}
+
+/* TOOL SECTIONS */
+div.tool-section {
+	clear: both;
+	margin-top: 30px;
+}
+
+div.tool-section div.tool-title {
+	height: 22px;
+	background: #aaccee;
+ 	border-collapse: collapse;
+ 	border: 0px;
+	border-radius: 2px;
+}
+
+div.tool-section div.tool-title img {
+	float: left;
+	vertical-align: top;
+	margin-right: 4px;
+}
+
+div.tool-section div.tool-title span {
+	font-family: Arial;
+	font-size: 11px;
+	color: #003366;
+	font-weight: bold;
+	line-height: 22px;
+}
+
+div.tool-section p.param {
+	font-family: Arial;
+	font-size: 10px;
+	font-weight: bold;
+	color: #0169c9;
+	padding: 2px;
+}
+
+div.tool-section input.text {
+	background: #ffffff;
+	border: 1px solid #dadada;
+	height: 21px;
+	font-size: 12px;
+	color: #333333;
+ 	border-collapse: collapse;
+	border-radius: 1px;
+}
+
+div.tool-section input.radio {
+	font-family: Arial;
+	font-size: 10px;
+	color: #013397;
+}
+
+select#parserkeys option {
+	font-size: 10px;
+}
+
+div#tool-image-thumbnail {
+	width: 128px;
+	height: 128px;
+	display: block;
+	border: 1px solid #789cce;
+	background-color: #ffffff;
+	margin: 4px;
+
+	background-size: 128px;
+	background-repeat: no-repeat;
+	background-position: center 4px;
+}
+
+/* BUTTONS */
+ul.basicbuttons {
+	margin: 0px;
+	padding: 0px;
+	height: 32px;
+	list-style: none;
+}
+
+ul.basicbuttons li {
+	float: left;
+	background: url(img/button_l.png) top left no-repeat;
+	height: 31px;
+	margin-right: 10px;
+}
+
+ul.basicbuttons li span {
+	background: url(img/button.png) top right no-repeat;
+	margin-left: 10px;
+	height: 31px;
+	display: block;
+	font-family: Arial;
+	font-size: 12px;
+	color: #585858;
+	font-weight: bold;
+	line-height: 30px;
+	padding-right: 10px;
+	cursor: pointer;
+}
+
+ul.basicbuttons li span img {
+	float: left;
+	vertical-align: top;
+	
+}
+
+/* TABLE */
+div#table-column-container {
+
+}
+
+
+div#table-column-container div.column {
+	height: 20px;
+	background: #e7eff7;
+	border: 0px;
+ 	border-collapse: collapse;
+	border-radius: 2px;
+	margin-bottom: 1px;
+}
+
+div#table-column-container div.column a {
+	font-family: Arial;
+	font-size: 10px;
+	color: #003366;
+	line-height: 20px;
+	font-weight: bold;
+	text-decoration: none;
+}
+
+div#table-column-container div.disabled {background: #eeeeee;}
+div#table-column-container div.disabled a {color: #aaaaaa;}
+
+div#table-column-container div.column img.icon {
+	margin-top: 2px;
+	margin-left: 2px;
+	float: left;
+	vertical-align: top;
+	margin-right: 5px;
+	cursor: pointer;
+}
+
+div#table-column-container div.column div.arrows {
+	height: 20px;
+	float: right;
+	width: 24px;
+	display: block;
+}
+
+div#table-column-container div.column div.arrows div.arrowdown {
+	margin-top: 5px;
+	width: 9px;
+	height: 9px;
+	display: block;
+	background: url(img/arrows-up-down.gif) top left no-repeat;
+	margin-right: 1px;
+	cursor: pointer;
+	float: left;
+}
+
+div#table-column-container div.column div.arrows div.arrowup {
+	margin-top: 5px;
+	width: 9px;
+	height: 9px;
+	display: block;
+	background: url(img/arrows-up-down.gif) top right no-repeat;
+	margin-left: 1px;
+	cursor: pointer;
+	float: left;
+}
+
+div#tablerowprop {
+	clear: both;
+	padding: 4px;
+}
+
+div#tablerowprop p.param {
+	font-family: Arial;
+	font-size: 10px;
+	font-weight: bold;
+	color: #0169c9;
+	padding: 2px;
+	margin: 0px;
+	border-bottom: 1px dashed #fafafa;
+	margin-top: 2px;
+	margin-bottom: 2px;
+}
+
+div#tablerowprop input.text {
+	background: #ffffff;
+	border: 1px solid #dadada;
+	height: 21px;
+	font-size: 12px;
+	color: #333333;
+ 	border-collapse: collapse;
+	border-radius: 1px;
+}
+

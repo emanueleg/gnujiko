@@ -1,0 +1,69 @@
+td.subcat-container {
+	background: url(img/catbg.png) top left repeat-y;
+}
+
+/* CAT MENU */
+ul.catmenu {
+	list-style-type: none;
+	margin: 0px;
+	padding: 0px;
+	margin-left: 5px;
+	margin-right: 5px;
+}
+
+ul.catmenu li {
+	height: 45px;
+	border-bottom: 1px solid #666666;
+	font-family: Trebuchet, Arial;
+	font-size: 13px;
+	color: #ffffff;
+	line-height: 45px;
+	overflow: hidden;
+	cursor: pointer;
+}
+
+ul.catmenu li.selected {
+	background: url(img/catsel.png) 0px 2px no-repeat;
+}
+
+ul.catmenu li img {
+	margin-left: 6px;
+	margin-top: 11px;
+	margin-right: 6px;
+	float: left;
+}
+
+ul.catmenu li em {
+	background: url(img/black-em.png) top left no-repeat;
+	width: 28px;
+	height: 16px;
+	display: block;
+	float: right;
+	margin-right: 11px;
+	margin-top: 14px;
+	text-align: center;
+	font-family: Trebuchet, Arial;
+	font-size: 10px;
+	color: #ffffff;
+	line-height: 16px;
+}
+
+div.thumbnail {
+	/*border: 1px solid #3364C3;*/
+	/*width: 96px;
+	height: 136px;*/
+	width: 256px;
+	height: 256px;
+	float: left;
+	vertical-align: top;
+	margin-right: 5px;
+	overflow: hidden;
+	background-position: center;
+}
+
+div.thumbnail img {
+	/*width: 96px;*/
+	width: 256px;
+}
+
+

@@ -1,0 +1,20 @@
+table.dynarc-newitem {
+	background: url(../img/newitem_bg.png) top left no-repeat;
+	width: 530px;
+	height: 78px;
+}
+
+table.dynarc-newitem td {
+	font-family: Arial;
+	font-size: 14px;
+	color: #333333;
+	font-weight: bold;
+	padding-bottom: 4px;
+	padding-left: 7px;
+}
+
+table.dynarc-newitem td.title {
+	font-size: 18px;
+	padding-top: 4px;
+}
+

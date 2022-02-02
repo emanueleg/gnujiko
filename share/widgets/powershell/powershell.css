@@ -1,0 +1,160 @@
+div.powershell-widget {
+	background: url(img/powershell-form-bg.png) top left no-repeat;
+	width: 692px;
+	height: 532px;
+	padding-left: 26px;
+	padding-top: 26px;
+}
+
+div.powershell-widget-inner {
+	width: 640px;
+	height: 480px;
+	padding: 0px;
+}
+
+/* HEADER */
+div.powershell-widget-header {
+}
+
+/* BODY */
+div.powershell-widget-body {
+}
+
+/* FOOTER */
+div.powershell-widget-footer {
+	height: 40px;
+}
+
+div.powershell-widget-page {
+	height: 358px;
+}
+
+div#gshell {
+	margin:0px; padding: 6px;
+	height: 346px;
+	overflow: auto;
+}
+
+img#button-play {
+	margin-top: 4px;
+	cursor: pointer;
+	margin-left: 10px;
+}
+
+span.button-close {
+	display: block;
+	height: 20px;
+	background: #555753;
+	border: 2px solid #d3d7cf;
+	border-radius: 12px;
+	padding-left: 12px;
+	padding-right: 12px;
+	font-family: arial, sans-serif;
+	font-size: 13px;
+	font-weight: bold;
+	color: #eeeeee;
+	cursor: pointer;
+	float: right;
+	margin-right: 10px;
+	line-height: 20px;
+	margin-top: 2px;
+}
+
+/* BUTTONS */
+div.powershell-button { background: url(img/powershell-button.png) top left no-repeat;
+	width: 64px;
+	height: 64px;
+	cursor: pointer;
+	margin-left: 3px;
+	margin-right: 3px;
+	float: right;
+}
+
+div.powershell-button-selected { background: url(img/powershell-button-selected.png) top left no-repeat;
+	width: 64px;
+	height: 64px;
+	cursor: pointer;
+	margin-left: 3px;
+	margin-right: 3px;
+	float: right;
+}
+
+div.powershell-button img {margin-left: 8px; margin-top: 8px;}
+div.powershell-button-selected img {margin-left: 8px; margin-top: 8px;}
+
+
+/* COMMAND LIST TABLE */
+table.command-list-table th {
+	height: 24px;
+	background: #333333;
+	font-family: arial, sans-serif;
+	font-size: 10px;
+	color: #eeeeee;
+}
+
+table.command-list-table td {
+	padding-top: 10px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #dadada;
+}
+
+table.command-list-table td.cmd-number {
+	font-family: arial, sans-serif;
+	font-size: 14px;
+	font-weight: bold;
+	color: #000000;
+	text-align: center;
+	vertical-align: middle;
+}
+
+textarea.cmd-textarea {
+	width: 100%;
+	height: 50px;
+	background: #eaf6fe;
+	border: 1px solid #aaccee;
+	border-radius: 2px;
+	font-family: arial,sans-serif;
+	font-size: 12px;
+	color: #000000;
+	resize: vertical;
+}
+
+textarea.cmd-textarea:focus {
+	outline: none;
+	background: #ffffca;
+	border: 1px solid #fdca01;
+}
+
+/* LOG LIST TABLE */
+table.log-list-table th {
+	height: 24px;
+	background: #333333;
+	font-family: arial, sans-serif;
+	font-size: 10px;
+	color: #eeeeee;
+}
+
+table.log-list-table td {
+	padding-top: 10px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #dadada;
+	font-family: arial, sans-serif;
+	font-size: 13px;
+}
+
+table.log-list-table td.cmd-number {
+	width: 60px;
+	font-family: arial, sans-serif;
+	font-size: 14px;
+	font-weight: bold;
+	color: #000000;
+	text-align: center;
+	vertical-align: middle;
+}
+
+table.log-list-table td.logtime {
+	font-size: 10px;
+	width: 120px;
+	text-align: center;
+}
+

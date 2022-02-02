@@ -1,0 +1,167 @@
+div.excel-widget {
+	background: url(img/background.png) top left no-repeat;
+	width: 851px;
+	height: 652px;
+	margin: 0px;
+	padding-left: 28px;
+	padding-top: 26px;
+}
+
+div.excel-widget div.excel-header {
+	width: 795px;
+	height: 28px;
+}
+
+div.excel-header span.excel-title {
+	font-family: arial, sans-serif;
+	font-size: 14px;
+	font-weight: bold;
+	color: #ffffff;
+	padding-left: 10px;
+	line-height: 28px;
+}
+
+div.excel-header a.button-close {
+	float: right;
+	margin-right: 2px;
+	margin-top: 2px;
+}
+
+a.button-close img {
+	border:0px;
+}
+
+span.bluetitle {
+	font-family: arial, sans-serif;
+	font-size: 18px;
+	color: #013397;
+}
+
+div.excel-table-container {
+	width: 770px;
+	height: 200px;
+	overflow: auto;
+	margin: 10px;
+}
+
+table.excel-table th {
+	font-family: arial, sans-serif;
+	font-size: 12px;
+	font-weight: bold;
+	color: #333333;
+	background: #aaccee;
+	border-top: 1px solid #0197fd;
+	border-bottom: 1px solid #0197fd;
+	border-right: 1px solid #0197fd;
+	height: 20px;
+	line-height: 20px;
+	min-width: 80px;
+	white-space: nowrap;
+	padding-right: 5px;
+}
+
+table.excel-table th input {
+	float: left;
+}
+
+table.excel-table td {
+	font-family: arial, sans-serif;
+	font-size: 12px;
+	color: #333333;
+	background: #ffffff;
+	border-bottom: 1px solid #dadada;
+	border-right: 1px solid #dadada;
+	height: 20px;
+	line-height: 20px;
+	min-width: 80px;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
+table.excel-table td.head {
+	background: #0197fd;
+	color: #ffffff;
+	font-weight: bold;
+}
+
+
+div.excel-keys-container {
+	width: 770px;
+	height: 225px;
+	overflow: auto;
+	margin: 10px;
+}
+
+table.excel-keys-table {
+	border-top: 1px solid #dadada;
+}
+
+table.excel-keys-table th {
+	height: 30px;
+	line-height: 30px;
+	font-family: arial, sans-serif;
+	font-size: 14px;
+	color: #333333;
+	border-bottom: 1px solid #dadada;
+}
+
+table.excel-keys-table td {
+	height: 30px;
+	padding: 5px;
+	border-bottom: 1px solid #dadada;
+}
+
+table.excel-keys-table div.column {
+	font-family: arial, sans-serif;
+	font-size: 12px;
+	font-weight: bold;
+	color: #333333;
+	background: #aaccee;
+	border: 1px solid #0197fd;
+	height: 20px;
+	line-height: 20px;
+	width: 80px;
+	text-align: center;
+}
+
+a.graybutton {
+	height: 26px;
+	background: #aaaaaa;
+	border: 1px solid #777777;
+	border-radius: 3px;
+	padding-left: 10px;
+	padding-right: 10px;
+	font-family: arial,sans-serif;
+	font-size: 13px;
+	font-weight: bold;
+	color: #ffffff;
+	line-height: 26px;
+	white-space: nowrap;
+	display: block;
+	text-decoration: none;
+}
+
+a.bluebutton {
+	height: 26px;
+	background: #0066c5;
+	border: 1px solid #3b87d1;
+	border-radius: 3px;
+	padding-left: 10px;
+	padding-right: 10px;
+	font-family: arial,sans-serif;
+	font-size: 13px;
+	font-weight: bold;
+	color: #ffffff;
+	line-height: 26px;
+	white-space: nowrap;
+	display: block;
+	text-decoration: none;
+}
+
+div.excel-footer {
+	width: 785px;
+	height: 36px;
+	border-top: 2px solid #0169c9;
+	padding: 5px;
+}
+

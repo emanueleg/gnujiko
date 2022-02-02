@@ -1,0 +1,68 @@
+table.form th {
+	font-family: Arial;
+	font-size: 10px;
+	color: #000000;
+	text-align: left;
+	font-weight: normal;
+}
+
+table.form td {
+	font-family: Arial;
+	font-size: 12px;
+	color: #000000;
+}
+
+table.form td.customer {
+	height: 32px;
+	background: url(img/clipboard-customer-bg.png) top left no-repeat;
+	padding-left: 10px;
+}
+
+table.form td.customer span {
+	font-family: Arial;
+	font-size: 14px;
+	font-weight: bold;
+	color: #ffffff;
+	line-height: 32px;
+}
+
+table.form td.customer input {
+	border: 1px solid #3364C3;
+	background: #ffffff;
+}
+
+table.form td.customer img {
+	margin-top: 8px;
+	margin-left: 3px;
+}
+
+table.form td hr {
+	height: 1px;
+	border: 0px;
+	background: #108cfe;
+	margin-top: 20px;
+	margin-bottom: 20px;
+}
+
+/* BLUE BUTTON */
+span.bluebtn {
+	height: 32px;
+	background: url(img/bluemenu-btn-r.png) top right no-repeat;
+	cursor: pointer;
+	display: block;
+}
+
+span.bluebtn-title {
+	background: url(img/bluemenu-btn.png) top left no-repeat;
+	margin-right: 25px;
+	padding-left: 10px;
+	height: 32px;
+	display: block;
+	white-space: nowrap;
+	font-family: Arial;
+	font-size: 14px;
+	font-weight: bold;
+	color: #ffffff;
+	overflow: hidden;
+	line-height: 32px;
+}

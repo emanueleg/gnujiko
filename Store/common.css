@@ -1,0 +1,144 @@
+div.storetab {
+	height: 56px;
+	background: url(img/storetab.png) top left no-repeat;
+	margin-top: 2px;
+	margin-left: 8px;
+	cursor: pointer;
+}
+
+div.storetab img {
+	float: left;
+	vertical-align: middle;
+	margin: 4px;
+	margin-right: 10px;
+}
+
+div.storetab span {
+	font-family: Trebuchet, Verdana;
+	font-size: 14px;
+	font-weight: bold;
+	color: #888888;
+	height: 56px;
+	display: block;
+	padding: 6px;
+}
+
+
+div.storetab-selected {
+	background: url(img/storetab-selected-top.png) top left no-repeat;
+	margin-top: 2px;
+	margin-left: 8px;
+	cursor: pointer;
+}
+
+div.storetab-selected img {
+	float: left;
+	vertical-align: middle;
+	margin: 4px;
+	margin-right: 10px;
+}
+
+div.storetab-selected span {
+	font-family: Trebuchet, Verdana;
+	font-size: 14px;
+	font-weight: bold;
+	color: #013397;
+	height: 44px;
+	display: block;
+	padding: 6px;
+}
+
+div.storetab-contents {
+	background: url(img/storetab-selected.png) bottom left no-repeat;
+	padding: 10px;
+	font-size: 12px;
+}
+
+div.storetab-contents div.hr {
+	height: 10px;
+	border-top: 1px solid #dadada;
+}
+
+div.storetab-contents a.orange {
+	font-family: Arial;
+	font-size: 12px;
+	color: #f44800;
+	text-decoration: none;
+	font-weight: bold;
+	line-height: 20px;
+}
+
+div.storetab-contents a.orange img {
+	margin-right: 4px;
+	text-align: left;
+	vertical-align: middle;
+}
+
+div.storetab div.storetab-contents {display:none;}
+
+/* store-ul-small */
+ul.store-ul-small {
+	margin: 0px;
+	padding: 0px;
+	list-style: none;
+}
+
+ul.store-ul-small li {
+	font-size: 12px;
+	color: #333333;
+	font-family: Trebuchet, Arial;
+	padding-left: 10px;
+	height: 22px;
+	line-height: 22px;
+}
+
+ul.store-ul-small li a {
+	font-size: 12px;
+	color: #333333;
+	font-family: Trebuchet, Arial;
+	text-decoration: none;
+}
+
+ul.store-ul-small li.selected {
+	background: #ffff99;
+}
+
+ul.store-ul-small li.selected a {
+	font-weight: bold;
+}
+
+div.storepage {
+	background: #ffffff;
+	border: 0px;
+	border-radius: 8px;
+	margin-top: 10px;
+	margin-right: 8px;
+}
+
+/* LINK BUTTONS */
+ul.linkbuttons {
+	margin: 0px;
+	padding: 0px;
+	list-style-type: none;
+	clear: both;
+}
+
+ul.linkbuttons li {
+	height: 16px;
+	display: block;
+	clear: both;
+}
+
+ul.linkbuttons li a {
+	font-family: Arial, sans-serif;
+	font-size: 13px;
+	color: #3364C3;
+	line-height: 23px;
+	text-decoration: none;
+}
+
+ul.linkbuttons li a img {
+	margin-right: 4px;
+	border: 0px;
+}
+

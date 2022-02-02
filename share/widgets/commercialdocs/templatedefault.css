@@ -1,0 +1,110 @@
+div.default-widget {
+	background: #ffffff;
+	border: 4px solid #5787e6;
+	padding: 4px;
+}
+
+div.default-widget h3.header {
+	background: #5787e6;
+	height: 24px;
+	font-family: Arial,sans-serif;
+	font-size: 13px;
+	color: #ffffff;
+	line-height: 24px;
+	padding-left: 4px;
+	margin: 0px;
+}
+
+div.default-widget img.default-widget-close {
+	position: absolute;
+	right: 14px;
+	top: 21px;
+	cursor: pointer;
+}
+
+div.default-widget div.default-widget-page {
+	font-family: Arial,sans-serif;
+	font-size: 13px;
+	color: #333333;
+}
+
+div.default-widget div.default-widget-footer {
+	border-top: 1px solid #5787e6;
+	height: 30px;
+	padding-top: 10px;
+}
+
+span.left-button {
+	display: block;
+	float: left;
+	width: 72px;
+	height: 29px;
+	font-family: Arial,sans-serif;
+	font-size: 13px;
+	font-weight: bold;
+	text-align: center;
+	line-height: 29px;
+	margin-right: 5px;
+	cursor: pointer;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+}
+
+span.right-button {
+	display: block;
+	float: right;
+	width: 72px;
+	height: 29px;
+	font-family: Arial,sans-serif;
+	font-size: 13px;
+	font-weight: bold;
+	text-align: center;
+	line-height: 29px;
+	margin-left: 5px;
+	cursor: pointer;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+}
+
+span.blue {background: url(img/templatedefault/buttons.png) top left no-repeat; color: #ffffff;}
+span.gray {background: url(img/templatedefault/buttons.png) 0px -40px no-repeat; color: #333333;}
+span.red {background: url(img/templatedefault/buttons.png) 0px -80px no-repeat; color: #ffffff;}
+
+div.default-widget h2.section {
+	font-family: Arial, sans-serif;
+	font-size: 16px;
+	color: #000000;
+	margin: 0px;
+	padding: 0px;
+	margin-top: 10px;
+}
+
+div.default-widget p {
+	margin-left: 10px;
+	font-family: Arial, sans-serif;
+	font-size: 13px;
+	color: #333333;
+}
+
+div.default-widget p td {
+	font-family: Arial, sans-serif;
+	font-size: 13px;
+	color: #333333;
+}
+
+hr.default-widget-section-separator {
+	height: 1px;
+	background: #5787e6;
+	border: 0px;
+}
+
+div.default-widget input.editblue {
+	background: #ffffff;
+	border: 1px solid #5787e6;
+	border-radius: 1px;
+	height: 21px;
+	font-family: Arial, sans-serif;
+	font-size: 13px;
+	color: #333333;
+}
+

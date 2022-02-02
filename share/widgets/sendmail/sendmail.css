@@ -1,0 +1,196 @@
+div.attachments-outer {
+	height: 370px;
+	padding-left: 10px;
+	overflow: auto;
+}
+
+div.attachment {
+	font-family: Trebuchet, Arial;
+	font-size: 10px;
+	color: #013397;
+	height: 22px;
+	line-height: 11px;
+	margin-top: 5px;
+}
+
+div.attachment img {
+	float: left;
+	vertical-align: top;
+	margin-right: 5px;
+}
+
+div.attachment img.removebtn {
+	float: right;
+	cursor: pointer;
+	visibility: hidden;
+}
+
+div.attachment:hover img.removebtn {visibility: visible;}
+
+div.emailbg {
+	background: url(img/email.png) top left no-repeat;
+	height: 60px;
+	padding-left: 100px;
+}
+
+div.emailbg p {
+	padding-top: 5px;
+	padding-bottom: 5px;
+	border-bottom: 1px solid #dadada;
+}
+
+span.title {
+	font-family: arial,sans-serif;
+	font-size: 12px;
+	color: #0197fd;
+	margin-right: 10px;
+}
+
+input.text {
+	border: 1px solid #0197fd;
+	border-radius: 2px;
+	height: 21px;
+	background: #ffffff;
+	font-family: arial,sans-serif;
+	font-size: 12px;
+	color: #333333;
+}
+
+textarea.textarea {
+	border: 1px solid #6699cc;
+	border-radius: 3px;
+	resize: none;
+}
+
+div#contactfinder {
+	width: 502px;
+	height: 322px;
+	position: absolute;
+	left: 20px;
+	top: 110px;
+	background: url(img/contact-finder-bg.png) top left no-repeat;
+}
+
+div#contactfinder td {
+	background: transparent;
+}
+
+img.contactaddbtn {
+	float: right;
+	cursor: pointer;
+	vertical-align: top;
+	margin-right: 16px;
+}
+
+span.searchspan {
+	font-family: arial, sans-serif;
+	font-size: 13px;
+	color: #000000;
+	font-weight: bold;
+}
+
+div#contact-finder-catlist {
+	margin-top: 10px;
+	font-family: arial, sans-serif;
+	font-size: 10px;
+	height: 22px;
+	overflow: auto;
+}
+
+span.bigblue {
+	font-family: arial, sans-serif;
+	font-size: 14px;
+	font-weight: bold;
+	color: #013397;
+}
+
+span#rubcat-title {
+	font-family: arial, sans-serif;
+	font-size: 14px;
+	font-weight: bold;
+	color: #333333;
+}
+
+span.smallblue {
+	font-family: arial, sans-serif;
+	font-size: 10px;
+	color: #013397;
+}
+
+
+table#contact-list th {
+	text-align: left;
+	background: #0197fd;
+	height: 16px;
+	font-family: arial, sans-serif;
+	font-size: 10px;
+	vertical-align: middle;
+	color: #ffffff;
+}
+
+table#contact-list td {
+	height: 16px;
+	font-family: arial, sans-serif;
+	font-size: 10px;
+	color: #000000;
+	vertical-align: middle;
+	background: #fafafa;
+	border-bottom: 1px solid #cccccf;
+}
+
+
+table#contact-list td.selected {
+	background: #b3defd;
+	border-bottom: 1px solid #ffffff;
+}
+
+table.contact-list-footer {
+	width: 490px;
+	margin-left: 5px;
+}
+
+table.contact-list-footer th {
+	text-align: left;
+	background: #0197fd;
+	height: 16px;
+	font-family: arial, sans-serif;
+	font-size: 10px;
+	vertical-align: middle;
+	color: #ffffff;
+	padding-left: 10px;
+}
+
+span.buttongray {
+	height: 21px;
+	cursor: pointer;
+	border: 1px solid #aaaaaa;
+	border-radius: 3px;
+	padding-left: 5px;
+	padding-right: 5px;
+	line-height: 21px;
+	font-family: arial, sans-serif;
+	font-size: 12px;
+	color: #777777;
+	background: #eeeeee;
+	display: block;
+	float: left;
+	margin-left: 10px;
+}
+
+span.buttonblue {
+	height: 21px;
+	cursor: pointer;
+	border: 1px solid #013397;
+	border-radius: 3px;
+	padding-left: 5px;
+	padding-right: 5px;
+	line-height: 21px;
+	font-family: arial, sans-serif;
+	font-size: 12px;
+	color: #eeeeee;
+	background: #0169c9;
+	display: block;
+	float: right;
+	margin-right: 10px;
+}
+
