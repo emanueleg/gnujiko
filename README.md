@@ -1,6 +1,6 @@
 # gnujiko
 
-fork non ufficiale del progetto [Alpatech Gnujiko](http://gnujiko.alpatech.it/), che sembra non essere più mantenuto / unofficial fork of the [Alpatech Gnujiko](http://gnujiko.alpatech.it/) project, which seems no longer maintained
+fork non ufficiale del progetto [Alpatech Gnujiko](http://gnujiko.alpatech.it/), che è stato ufficialmente sospeso / unofficial fork of the [Alpatech Gnujiko](http://gnujiko.alpatech.it/) project, which is no longer developed
 
 ![Gnujiko Home](docs/home.jpg "Gnujiko Home")
 
